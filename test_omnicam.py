@@ -5,14 +5,16 @@ Generates a synthetic 4K video with spoken tones and pauses, executes the full
 AI Director and Render pipeline, and verifies audio-visual cuts end-to-end.
 """
 
+import json
 import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
-from omnicam.audio_analyzer import AudioAnalyzer
-from omnicam.director import CameraDirector
+from omnicam.audio_analyzer import AudioAnalyzer, SpeechSegment
+from omnicam.director import CameraDirector, CameraAngle
 from omnicam.render_engine import RenderConfig, RenderEngine
 from omnicam.vision_tracker import VisionTracker
 
@@ -302,7 +304,34 @@ def run_tests():
         req_ui = urllib.request.urlopen("http://localhost:8899/")
         ui_html = req_ui.read().decode("utf-8")
         assert "OMNICAM" in ui_html
+        assert "handleNativeFileSelect" in ui_html
+        assert "openFileBrowser" in ui_html
         print(f"  [✓] Web Studio UI verified at http://localhost:8899/ ({len(ui_html)} bytes HTML)")
+
+        # Verify Find Local endpoint (Gallery fast-path)
+        req_find = urllib.request.urlopen("http://localhost:8899/api/find_local?name=" + os.path.basename(input_vid))
+        find_res = json.loads(req_find.read().decode("utf-8"))
+        assert find_res.get("found") is True
+        assert find_res.get("path") == input_vid
+        print(f"  [✓] Web API /api/find_local verified: instant match found.")
+
+        # Verify Upload endpoint (Gallery stream)
+        dummy_content = b"\x00\x00\x00\x18ftypmp42"
+        req_up = urllib.request.Request(
+            "http://localhost:8899/api/upload",
+            data=dummy_content,
+            headers={"X-Filename": "test_gallery.mp4", "Content-Type": "video/mp4"},
+        )
+        up_res = json.loads(urllib.request.urlopen(req_up).read().decode("utf-8"))
+        assert up_res.get("status") == "uploaded"
+        assert os.path.isfile(up_res.get("path"))
+        print(f"  [✓] Web API /api/upload verified: binary stream uploaded successfully.")
+
+        # Verify Browse endpoint (Device Navigator)
+        req_browse = urllib.request.urlopen("http://localhost:8899/api/browse?dir=" + os.path.dirname(input_vid))
+        browse_res = json.loads(req_browse.read().decode("utf-8"))
+        assert "entries" in browse_res and len(browse_res["entries"]) >= 1
+        print(f"  [✓] Web API /api/browse verified: {len(browse_res['entries'])} entries listed.")
 
         # Verify Analysis API endpoint
         req_post = urllib.request.Request(

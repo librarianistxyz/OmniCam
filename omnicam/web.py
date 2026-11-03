@@ -1671,6 +1671,263 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <script>
     let currentShots = [];
 
+    // ========================================================================
+    // HTML UTILITIES & GALLERY PICKER
+    // ========================================================================
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    async function handleNativeFileSelect(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+
+      const badge = document.getElementById('uploadStatusBadge');
+      const msg = document.getElementById('uploadStatusMsg');
+      badge.style.display = 'block';
+      badge.style.background = '#EBF3FF';
+      badge.style.color = '#0052CC';
+      badge.style.borderColor = '#BFDBFE';
+      msg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking video: <strong>' + escapeHtml(file.name) + '</strong>...';
+
+      // 1. Fast path: see if video already exists on device storage
+      try {
+        const findRes = await fetch('/api/find_local?name=' + encodeURIComponent(file.name) + '&size=' + file.size);
+        const findData = await findRes.json();
+        if (findData.found && findData.path) {
+          document.getElementById('inputVideo').value = findData.path;
+          badge.style.background = '#ECFDF5';
+          badge.style.color = '#059669';
+          badge.style.borderColor = '#A7F3D0';
+          msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Gallery video linked: <strong>' + escapeHtml(file.name) + '</strong> (' + (file.size / (1024 * 1024)).toFixed(1) + ' MB)';
+          input.value = '';
+          return;
+        }
+      } catch (err) {
+        // Fall back to upload
+      }
+
+      // 2. Stream into workspace uploads folder
+      msg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading from Gallery (0%)...';
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/upload', true);
+      xhr.setRequestHeader('X-Filename', encodeURIComponent(file.name));
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+      xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          msg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading from Gallery (' + pct + '%)...';
+        }
+      };
+
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          try {
+            const resp = JSON.parse(xhr.responseText);
+            if (resp.path) {
+              document.getElementById('inputVideo').value = resp.path;
+              badge.style.background = '#ECFDF5';
+              badge.style.color = '#059669';
+              badge.style.borderColor = '#A7F3D0';
+              msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Ready to edit: <strong>' + escapeHtml(file.name) + '</strong> (' + (file.size / (1024 * 1024)).toFixed(1) + ' MB)';
+              input.value = '';
+              return;
+            }
+          } catch (e) {}
+        }
+        badge.style.background = '#FEF2F2';
+        badge.style.color = '#DC2626';
+        badge.style.borderColor = '#FECACA';
+        msg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Upload failed. Try "Browse Device" or typing path directly.';
+      };
+
+      xhr.onerror = function() {
+        badge.style.background = '#FEF2F2';
+        badge.style.color = '#DC2626';
+        badge.style.borderColor = '#FECACA';
+        msg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Connection failed while loading video.';
+      };
+
+      xhr.send(file);
+    }
+
+    // ========================================================================
+    // DEVICE FILE NAVIGATOR MODAL HANDLERS
+    // ========================================================================
+    let browserCurrentDir = '';
+    let browserParentDir = null;
+    let browserAllEntries = [];
+
+    function openFileBrowser(dir) {
+      const modal = document.getElementById('deviceBrowserModal');
+      modal.style.display = 'flex';
+      loadBrowserDir(dir || 'default');
+    }
+
+    function closeFileBrowser() {
+      const modal = document.getElementById('deviceBrowserModal');
+      modal.style.display = 'none';
+    }
+
+    function navigateBrowserUp() {
+      if (browserParentDir) {
+        loadBrowserDir(browserParentDir);
+      }
+    }
+
+    async function loadBrowserDir(dir) {
+      const listContainer = document.getElementById('browserListContainer');
+      const breadcrumbs = document.getElementById('browserBreadcrumbs');
+      const rootsBar = document.getElementById('browserRootsBar');
+      const statusText = document.getElementById('browserStatusText');
+      const upBtn = document.getElementById('browserUpBtn');
+      const searchInput = document.getElementById('browserSearchInput');
+      if (searchInput) searchInput.value = '';
+
+      listContainer.innerHTML = '<div style="padding: 2.5rem; text-align: center; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Reading device storage...</div>';
+
+      try {
+        const res = await fetch('/api/browse?dir=' + encodeURIComponent(dir || 'default'));
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        browserCurrentDir = data.current_dir;
+        browserParentDir = data.parent_dir;
+        browserAllEntries = data.entries || [];
+
+        // Up button state
+        upBtn.disabled = !browserParentDir;
+        upBtn.style.opacity = browserParentDir ? '1' : '0.4';
+
+        // Render Quick Roots
+        rootsBar.innerHTML = '';
+        (data.quick_roots || []).forEach(r => {
+          const chip = document.createElement('span');
+          chip.className = 'browser-root-chip';
+          chip.innerHTML = '<i class="fa-solid ' + r.icon + '"></i> ' + escapeHtml(r.label);
+          chip.onclick = () => loadBrowserDir(r.path);
+          rootsBar.appendChild(chip);
+        });
+
+        // Render Breadcrumbs
+        breadcrumbs.innerHTML = '';
+        (data.breadcrumbs || []).forEach((b, i) => {
+          if (i > 0) {
+            const sep = document.createElement('span');
+            sep.className = 'crumb-sep';
+            sep.innerText = '/';
+            breadcrumbs.appendChild(sep);
+          }
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'crumb-btn';
+          btn.innerText = b.name;
+          btn.onclick = () => loadBrowserDir(b.path);
+          breadcrumbs.appendChild(btn);
+        });
+
+        renderBrowserList(browserAllEntries);
+      } catch (err) {
+        listContainer.innerHTML = '<div style="padding: 2.5rem; text-align: center; color: #DC2626;"><i class="fa-solid fa-triangle-exclamation"></i> ' + escapeHtml(err.message) + '</div>';
+        statusText.innerText = 'Error reading storage folder';
+      }
+    }
+
+    function renderBrowserList(entries) {
+      const listContainer = document.getElementById('browserListContainer');
+      const statusText = document.getElementById('browserStatusText');
+      listContainer.innerHTML = '';
+
+      if (!entries || entries.length === 0) {
+        listContainer.innerHTML = '<div style="padding: 2.5rem; text-align: center; color: var(--text-muted);"><i class="fa-regular fa-folder-open"></i> This folder contains no files.</div>';
+        statusText.innerText = '0 items found';
+        return;
+      }
+
+      let videoCount = 0;
+      let dirCount = 0;
+
+      entries.forEach(item => {
+        if (item.is_video) videoCount++;
+        if (item.is_dir) dirCount++;
+
+        const div = document.createElement('div');
+        div.className = 'browser-item';
+
+        const left = document.createElement('div');
+        left.className = 'browser-item-left';
+
+        const iconBox = document.createElement('div');
+        iconBox.className = 'browser-item-icon ' + (item.is_dir ? 'icon-folder' : (item.is_video ? 'icon-video' : 'icon-file'));
+        iconBox.innerHTML = '<i class="fa-solid ' + (item.is_dir ? 'fa-folder' : (item.is_video ? 'fa-video' : 'fa-file')) + '"></i>';
+
+        const nameSpan = document.createElement('div');
+        nameSpan.className = 'browser-item-name';
+        nameSpan.innerText = item.name;
+
+        left.appendChild(iconBox);
+        left.appendChild(nameSpan);
+
+        const meta = document.createElement('div');
+        meta.className = 'browser-item-meta';
+
+        if (item.is_video) {
+          const badge = document.createElement('span');
+          badge.className = 'badge-video';
+          badge.innerText = item.size || 'VIDEO';
+          meta.appendChild(badge);
+        } else if (item.is_dir) {
+          const badge = document.createElement('span');
+          badge.style.fontSize = '0.75rem';
+          badge.style.color = 'var(--text-muted)';
+          badge.innerText = 'Folder';
+          meta.appendChild(badge);
+        }
+
+        div.appendChild(left);
+        div.appendChild(meta);
+
+        if (item.is_dir) {
+          div.onclick = () => loadBrowserDir(item.path);
+        } else if (item.is_video) {
+          div.onclick = () => selectBrowserFile(item.path);
+        }
+
+        listContainer.appendChild(div);
+      });
+
+      statusText.innerText = `${videoCount} video(s), ${dirCount} folder(s)`;
+    }
+
+    function filterBrowserList(query) {
+      if (!query || !query.trim()) {
+        renderBrowserList(browserAllEntries);
+        return;
+      }
+      const q = query.toLowerCase().trim();
+      const filtered = browserAllEntries.filter(e => e.name.toLowerCase().includes(q));
+      renderBrowserList(filtered);
+    }
+
+    function selectBrowserFile(filePath) {
+      document.getElementById('inputVideo').value = filePath;
+      closeFileBrowser();
+      const badge = document.getElementById('uploadStatusBadge');
+      const msg = document.getElementById('uploadStatusMsg');
+      badge.style.display = 'block';
+      badge.style.background = '#ECFDF5';
+      badge.style.color = '#059669';
+      badge.style.borderColor = '#A7F3D0';
+      msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Selected: <strong>' + escapeHtml(filePath.split('/').pop()) + '</strong>';
+    }
+
     function setFolderPath(folder) {
       document.getElementById('inputVideo').value = folder + '/';
       document.getElementById('inputVideo').focus();
@@ -1977,6 +2234,40 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                 self.send_json({"error": str(e)}, status=500)
             return
 
+        if path == "/api/find_local":
+            qs = urllib.parse.parse_qs(parsed.query)
+            filename = qs.get("name", [None])[0]
+            size_str = qs.get("size", [None])[0]
+            if not filename:
+                self.send_json({"found": False})
+                return
+
+            clean_name = os.path.basename(urllib.parse.unquote(filename))
+            target_size = int(size_str) if size_str and size_str.isdigit() else None
+
+            candidate_dirs = [
+                "/sdcard/DCIM/Camera",
+                "/sdcard/Movies",
+                "/sdcard/Download",
+                os.path.expanduser("~/storage/dcim/Camera"),
+                os.path.expanduser("~/storage/movies"),
+                os.path.abspath("uploads"),
+                os.getcwd(),
+            ]
+            for d in candidate_dirs:
+                if os.path.isdir(d):
+                    full = os.path.join(d, clean_name)
+                    if os.path.isfile(full):
+                        try:
+                            if target_size is None or os.path.getsize(full) == target_size:
+                                self.send_json({"found": True, "path": full})
+                                return
+                        except OSError:
+                            pass
+
+            self.send_json({"found": False})
+            return
+
         if path == "/api/scan":
             files = scan_media_files()
             self.send_response(200)
@@ -2028,17 +2319,12 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length).decode("utf-8")
-        try:
-            params = json.loads(body) if body else {}
-        except Exception:
-            params = {}
-
         if path == "/api/upload":
             raw_fn = self.headers.get("X-Filename", "device_video.mp4")
             filename = urllib.parse.unquote(raw_fn)
             filename = os.path.basename(filename)
+            if not filename or filename in (".", ".."):
+                filename = f"video_{int(time.time())}.mp4"
             upload_dir = os.path.abspath("uploads")
             os.makedirs(upload_dir, exist_ok=True)
             dest_path = os.path.join(upload_dir, filename)
@@ -2055,6 +2341,13 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
 
             self.send_json({"status": "uploaded", "path": dest_path})
             return
+
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length).decode("utf-8") if length > 0 else ""
+        try:
+            params = json.loads(body) if body else {}
+        except Exception:
+            params = {}
 
         if path == "/api/analyze":
             input_path = params.get("input_path")
