@@ -147,6 +147,8 @@ def run_tests():
             bgm_path="ambient",
             bgm_volume=0.20,
             captions_file=ass_path,
+            stabilize=True,
+            stabilize_smoothing=15,
             preset="ultrafast",
         )
         engine = RenderEngine(input_vid, config=config)

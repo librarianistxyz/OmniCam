@@ -164,6 +164,18 @@ def main():
         help="Optional path to existing .ass or .srt subtitle file to burn onto video.",
     )
     parser.add_argument(
+        "--stabilize",
+        "--gimbal",
+        action="store_true",
+        help="Enable 2-pass Digital Gimbal Horizon Stabilization (neutralizes walking bounce & handheld shake).",
+    )
+    parser.add_argument(
+        "--stabilize-smoothing",
+        type=int,
+        default=25,
+        help="Horizon stabilization smoothing radius in frames (default: 25). Higher numbers = smoother gimbal drift.",
+    )
+    parser.add_argument(
         "--dry-run",
         "--preview",
         action="store_true",
@@ -266,6 +278,8 @@ def main():
         caption_color=args.caption_color,
         whisper_model=args.whisper_model,
         captions_file=args.captions_file,
+        stabilize=args.stabilize,
+        stabilize_smoothing=args.stabilize_smoothing,
         show_hud=not args.no_hud,
         show_title=bool(args.title),
         title_text=args.title,

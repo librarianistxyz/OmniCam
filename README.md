@@ -65,10 +65,13 @@ By cropping into distinct regions of a 4K sensor (up to $1.8\times$ zoom) and re
 ## ✨ Features
 
 - **⚡ Invisible Cut Engine**: Silences and pauses are removed. Every single cut triggers an automatic angle switch so the edit feels natural and deliberate.
+- **🎥 Digital Gimbal Horizon Stabilization**: 2-pass optical motion analysis (`vidstabdetect` / `vidstabtransform`) stabilizes walking bounce, handheld camera shake, and horizon tilt—rendering butter-smooth gimbal motion without heavy hardware rigs.
 - **🎙️ Studio Audio Mastering**:
   - High-pass filter at 80Hz (eliminates handling thumps and wind rumble).
+  - Sidechain compressed auto-ducking background music (`--bgm`) that ducks ~22dB during speech and swells in pauses.
   - EBU R128 Loudness Normalization (`loudnorm`, -16 LUFS, ready for YouTube/Reels/TikTok).
   - Boundary micro-fades to prevent clicks and pops.
+- **🔤 Hormozi / MrBeast Active-Word Animated Captions**: Offline Whisper transcription generates high-contrast neon subtitles that light up word-by-word synchronously with speech, remapped mathematically across edited takes.
 - **🎨 Cinematic Color Grading**:
   - `cinematic`: Contrast S-curve, warm highlights, subtle cool shadow balance.
   - `podcast`: Vibrant modern YouTube tech aesthetic.
@@ -125,6 +128,8 @@ Total Camera Switches: 3
 
 ```bash
 python3 omnicam.py input.mp4 \
+  --stabilize \               # 2-pass Digital Gimbal Horizon Stabilization (walking & shake fix)
+  --stabilize-smoothing 25 \  # Gimbal smoothing radius in frames (default: 25)
   --pacing dynamic \          # Director pacing: dynamic, podcast, documentary, dramatic
   --color cinematic \         # Color grade: cinematic, podcast, vintage, none
   --captions \                # Burn dynamic "Hormozi / MrBeast" active-word animated subtitles

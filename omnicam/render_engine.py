@@ -18,6 +18,7 @@ from .captions import (
     generate_hormozi_ass,
     remap_words_to_edited_timeline,
 )
+from .stabilizer import VideoStabilizer, is_vidstab_supported
 
 
 @dataclass
@@ -34,6 +35,8 @@ class RenderConfig:
     caption_color: str = "yellow"  # "yellow", "green", "cyan", "red", "white"
     whisper_model: str = "tiny.en"
     captions_file: Optional[str] = None
+    stabilize: bool = False
+    stabilize_smoothing: int = 25
     show_hud: bool = True
     show_title: bool = True
     title_text: str = "OMNICAM AI • MULTI-CAM PRODUCTION"
@@ -179,6 +182,24 @@ class RenderEngine:
                 except Exception as ex:
                     print(f"  [!] Warning: Subtitle generation failed: {ex}. Rendering video without burned subtitles.")
 
+        # Handle Digital Gimbal 2-pass horizon stabilization
+        temp_trf_file = None
+        self.active_trf_path = None
+        if self.config.stabilize:
+            if is_vidstab_supported():
+                t_trf = tempfile.NamedTemporaryFile(suffix=".trf", delete=False)
+                t_trf.close()
+                temp_trf_file = t_trf.name
+                try:
+                    stabilizer = VideoStabilizer(smoothing=self.config.stabilize_smoothing)
+                    stabilizer.detect_transforms(self.input_video, temp_trf_file, progress_callback)
+                    self.active_trf_path = temp_trf_file
+                except Exception as ex:
+                    print(f"  [!] Warning: Gimbal stabilization Pass 1 failed: {ex}. Proceeding with raw motion.")
+                    self.active_trf_path = None
+            else:
+                print("  [!] Notice: libvidstab not detected in local FFmpeg. Proceeding without optical stabilization.")
+
         try:
             if len(shot_plans) > 40 or self.config.force_chunk_mode:
                 return self._render_chunked(shot_plans, output_path, progress_callback)
@@ -193,6 +214,11 @@ class RenderEngine:
             if temp_ass_file and os.path.isfile(temp_ass_file):
                 try:
                     os.remove(temp_ass_file)
+                except OSError:
+                    pass
+            if temp_trf_file and os.path.isfile(temp_trf_file):
+                try:
+                    os.remove(temp_trf_file)
                 except OSError:
                     pass
 
@@ -272,6 +298,17 @@ class RenderEngine:
         th = self.config.target_height
         color_filter = self._get_color_filter()
 
+        # Digital Gimbal Master Stabilization
+        if self.active_trf_path and os.path.isfile(self.active_trf_path):
+            escaped_trf = self.active_trf_path.replace("\\", "/").replace(":", "\\:")
+            filter_parts.append(
+                f"[0:v]vidstabtransform=input='{escaped_trf}':smoothing={self.config.stabilize_smoothing}:"
+                f"optalgo=gauss:interpol=bicubic:zoom=2:crop=black[v_stabilized]"
+            )
+            v_master_src = "[v_stabilized]"
+        else:
+            v_master_src = "[0:v]"
+
         for idx, shot in enumerate(shot_plans):
             seg = shot.segment
             s_start = seg.start
@@ -282,7 +319,7 @@ class RenderEngine:
             cx, cy, cw, ch = crop["x"], crop["y"], crop["w"], crop["h"]
 
             # Video branch
-            v_in = f"[0:v]trim=start={s_start}:end={s_end},setpts=PTS-STARTPTS"
+            v_in = f"{v_master_src}trim=start={s_start}:end={s_end},setpts=PTS-STARTPTS"
 
             if shot.angle == CameraAngle.SLOW_PUSH:
                 zoom_expr = f"(1.0 + 0.20*(t/{dur:.3f}))"
@@ -465,6 +502,10 @@ class RenderEngine:
 
                 scale_f = f"scale={tw}:{th}:flags=lanczos,setsar=1"
                 v_chain_list = [crop_f, scale_f]
+
+                if self.active_trf_path and os.path.isfile(self.active_trf_path):
+                    escaped_trf = self.active_trf_path.replace("\\", "/").replace(":", "\\:")
+                    v_chain_list.insert(0, f"vidstabtransform=input='{escaped_trf}':smoothing={self.config.stabilize_smoothing}:optalgo=gauss:interpol=bicubic:zoom=2:crop=black")
 
                 if self.config.transition_flash and idx > 0 and dur > 0.3:
                     v_chain_list.append("fade=t=in:st=0:d=0.06:color=white@0.25")
