@@ -111,13 +111,15 @@ def run_tests():
             assert 0 <= c["y"] <= 2160 - c["h"]
         print("  [✓] Crop coordinates geometry verified strictly within 4K bounds.")
 
-        # 4. Test Render Engine
-        print("\n[Test 3] Testing Multi-Angle Render Engine...")
+        # 4. Test Render Engine with Auto-Ducking BGM
+        print("\n[Test 3] Testing Multi-Angle Render Engine with Auto-Ducking BGM...")
         config = RenderConfig(
             target_width=1280,
             target_height=720,
             color_grade="cinematic",
             normalize_audio=True,
+            bgm_path="ambient",
+            bgm_volume=0.20,
             preset="ultrafast",
         )
         engine = RenderEngine(input_vid, config=config)

@@ -127,10 +127,14 @@ Total Camera Switches: 3
 python3 omnicam.py input.mp4 \
   --pacing dynamic \          # Director pacing: dynamic, podcast, documentary, dramatic
   --color cinematic \         # Color grade: cinematic, podcast, vintage, none
+  --bgm /path/to/lofi.mp3 \   # Auto-ducking BGM audio track (or 'ambient'/'lofi')
+  --bgm-volume 0.22 \         # Music level before ducking (ducks to -22dB during speech)
+  --title "MY PODCAST" \      # Opening lower-third title banner
+  --subtitle "EPISODE 1" \    # Opening lower-third subtitle
   --silence-thresh -32.0 \    # Sensitivity in dB (lower = only quietest pauses cut)
   --min-silence 0.35 \        # Minimum pause in seconds to trigger cut
   --zoom 1.75 \               # Punch-in zoom factor
-  --resolution 1080p \        # Target output: 1080p, 4k, 720p
+  --resolution 720p \         # Target output: 720p (default), 1080p, 4k
   -o finished_master.mp4
 ```
 

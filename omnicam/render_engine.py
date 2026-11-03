@@ -1,7 +1,7 @@
 """
 Render Engine for OmniCam
 Compiles shot plans, dynamic angle transitions, Hollywood color grading,
-and broadcast lower-third titles into an optimized FFmpeg pipeline.
+broadcast lower-third titles, and auto-ducking background music into an optimized FFmpeg pipeline.
 """
 
 from dataclasses import dataclass
@@ -23,6 +23,8 @@ class RenderConfig:
     color_grade: str = "cinematic"  # "cinematic", "podcast", "vintage", "none"
     normalize_audio: bool = True
     highpass_audio: bool = True
+    bgm_path: Optional[str] = None
+    bgm_volume: float = 0.22
     show_hud: bool = True
     show_title: bool = True
     title_text: str = "OMNICAM AI • MULTI-CAM PRODUCTION"
@@ -75,10 +77,26 @@ def find_system_font() -> Optional[str]:
     return None
 
 
+def generate_ambient_track(output_wav: str, duration: float = 60.0):
+    """Generates a warm, royalty-free C-Major ambient harmonic bed for auto-ducking."""
+    af = (
+        f"aevalsrc='0.11*sin(2*PI*130.81*t) + 0.09*sin(2*PI*164.81*t) + "
+        f"0.08*sin(2*PI*196.00*t) + 0.05*sin(2*PI*246.94*t) + 0.04*sin(2*PI*261.63*t)':s=44100"
+    )
+    cmd = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-f", "lavfi", "-i", af,
+        "-t", str(duration),
+        "-c:a", "pcm_s16le",
+        output_wav,
+    ]
+    subprocess.run(cmd, check=True)
+
+
 class RenderEngine:
     """
     Renders multi-angle cuts with professional broadcast graphics,
-    optical transitions, and studio audio mastering.
+    optical transitions, auto-ducking background music, and studio audio mastering.
     """
 
     def __init__(self, input_video: str, config: Optional[RenderConfig] = None):
@@ -107,10 +125,28 @@ class RenderEngine:
         if progress_callback:
             progress_callback(0.05, "Initializing FFmpeg cinematic pipeline...")
 
-        if len(shot_plans) > 40 or self.config.force_chunk_mode:
-            return self._render_chunked(shot_plans, output_path, progress_callback)
-        else:
-            return self._render_single_pass(shot_plans, output_path, progress_callback)
+        # Handle built-in ambient synth bed if requested
+        temp_ambient_file = None
+        if self.config.bgm_path and self.config.bgm_path.lower() in ("ambient", "lofi", "chill", "generate"):
+            temp_ambient = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+            temp_ambient.close()
+            temp_ambient_file = temp_ambient.name
+            if progress_callback:
+                progress_callback(0.08, "Synthesizing warm royalty-free ambient audio bed...")
+            generate_ambient_track(temp_ambient_file, duration=90.0)
+            self.config.bgm_path = temp_ambient_file
+
+        try:
+            if len(shot_plans) > 40 or self.config.force_chunk_mode:
+                return self._render_chunked(shot_plans, output_path, progress_callback)
+            else:
+                return self._render_single_pass(shot_plans, output_path, progress_callback)
+        finally:
+            if temp_ambient_file and os.path.isfile(temp_ambient_file):
+                try:
+                    os.remove(temp_ambient_file)
+                except OSError:
+                    pass
 
     def _get_color_filter(self) -> str:
         filters = []
@@ -120,19 +156,14 @@ class RenderEngine:
             filters.append("eq=contrast=1.12:brightness=0.01:saturation=1.20")
             filters.append("colorbalance=rs=0.04:gs=-0.01:bs=-0.03:rm=-0.02:bm=0.04:rh=0.03:bh=-0.02")
         elif grade == "podcast":
-            # Modern crisp YouTube tech studio
             filters.append("eq=contrast=1.08:brightness=0.02:saturation=1.14")
         elif grade == "vintage":
-            # Warm analog documentary
             filters.append("eq=contrast=1.02:saturation=0.88,colorbalance=gs=0.02:bs=-0.04")
 
-        # Optical vignette (creates natural depth falloff)
         if self.config.vignette and grade != "none":
             filters.append("vignette=PI/4.5")
 
-        # Cinema lens micro-sharpening
         filters.append("unsharp=3:3:0.6:3:3:0.0")
-
         return ",".join(filters)
 
     def _get_hud_filter(self, angle: CameraAngle, tw: int, th: int) -> str:
@@ -150,9 +181,8 @@ class RenderEngine:
         badge_text = badge_map.get(angle, f"CAM // {angle.value}")
 
         font_arg = f":fontfile='{self.font_path}'"
-        # Display badge for the first 2.5s of each cut
-        bg_box = f"drawbox=x=25:y=25:w=225:h=32:color=black@0.65:t=fill:enable='between(t,0,2.5)'"
-        rec_dot = f"drawbox=x=35:y=36:w=10:h=10:color=red@0.9:t=fill:enable='between(t,0,2.5)'"
+        bg_box = "drawbox=x=25:y=25:w=225:h=32:color=black@0.65:t=fill:enable='between(t,0,2.5)'"
+        rec_dot = "drawbox=x=35:y=36:w=10:h=10:color=red@0.9:t=fill:enable='between(t,0,2.5)'"
         txt = (
             f"drawtext={font_arg}:text='{badge_text}':fontcolor=white:fontsize=14:x=54:y=33:enable='between(t,0,2.5)'"
         )
@@ -168,7 +198,6 @@ class RenderEngine:
         if end_t <= 1.0:
             return ""
 
-        # Lower-third box geometry
         box_y = th - 95
         box_w = tw - 50
         bg_box = f"drawbox=x=25:y={box_y}:w={box_w}:h=65:color=black@0.75:t=fill:enable='between(t,0.3,{end_t:.2f})'"
@@ -188,8 +217,7 @@ class RenderEngine:
         progress_callback: Optional[Callable[[float, str], None]] = None,
     ) -> str:
         """
-        Builds a single elegant FFmpeg filter_complex graph.
-        Zero intermediate disk writes; maximum rendering speed.
+        Builds a single elegant FFmpeg filter_complex graph with auto-ducking BGM.
         """
         filter_parts: List[str] = []
         tw = self.config.target_width
@@ -209,7 +237,6 @@ class RenderEngine:
             v_in = f"[0:v]trim=start={s_start}:end={s_end},setpts=PTS-STARTPTS"
 
             if shot.angle == CameraAngle.SLOW_PUSH:
-                # Dynamic push-in zoom: crops dynamically over time from 1.0x to 1.20x
                 zoom_expr = f"(1.0 + 0.20*(t/{dur:.3f}))"
                 w_expr = f"(iw/{zoom_expr})"
                 h_expr = f"(ih/{zoom_expr})"
@@ -222,7 +249,6 @@ class RenderEngine:
             scale_filter = f"scale={tw}:{th}:flags=lanczos,setsar=1"
             v_chain_list = [v_in, crop_filter, scale_filter]
 
-            # Transition: subtle 2-frame optical bloom / white flash on camera cuts
             if self.config.transition_flash and idx > 0 and dur > 0.3:
                 v_chain_list.append("fade=t=in:st=0:d=0.06:color=white@0.25")
             elif dur > 0.4:
@@ -231,17 +257,14 @@ class RenderEngine:
             if color_filter:
                 v_chain_list.append(color_filter)
 
-            # Camera Angle HUD watermark
             hud_f = self._get_hud_filter(shot.angle, tw, th)
             if hud_f:
                 v_chain_list.append(hud_f)
 
-            # Opening Lower-Third Title
             title_f = self._get_title_overlay(idx, dur, tw, th)
             if title_f:
                 v_chain_list.append(title_f)
 
-            # Cinema Letterbox bars (2.35:1 Anamorphic)
             if self.config.letterbox and not self.config.is_portrait:
                 bar_h = int(th * 0.08)
                 v_chain_list.append(f"drawbox=x=0:y=0:w={tw}:h={bar_h}:color=black:t=fill")
@@ -261,7 +284,7 @@ class RenderEngine:
             a_out_label = f"[a{idx}]"
             filter_parts.append(f"{a_chain}{a_out_label}")
 
-        # Concat stage (interleaved pairs)
+        # Concat stage
         num_shots = len(shot_plans)
         interleaved_concat_inputs: List[str] = []
         for idx in range(num_shots):
@@ -272,28 +295,53 @@ class RenderEngine:
             f"{concat_in_str}concat=n={num_shots}:v=1:a=1[v_stitched][a_stitched]"
         )
 
-        # Audio Mastering filters
-        final_a_chain = "[a_stitched]"
-        audio_filters: List[str] = []
+        # Voice Clean-up
         if self.config.highpass_audio:
-            audio_filters.append("highpass=f=80")
-        if self.config.normalize_audio:
-            audio_filters.append("loudnorm=I=-16:TP=-1.5:LRA=11")
+            filter_parts.append("[a_stitched]highpass=f=80[a_voice]")
+        else:
+            filter_parts.append("[a_stitched]anull[a_voice]")
 
-        if audio_filters:
-            filter_parts.append(f"{final_a_chain}{','.join(audio_filters)}[a_final]")
+        # Background Music & Auto-Ducking Pipeline
+        has_bgm = self.config.bgm_path and os.path.isfile(self.config.bgm_path)
+        total_speech_dur = sum(s.segment.duration for s in shot_plans)
+        if has_bgm:
+            bgm_vol = self.config.bgm_volume
+            # Trim BGM to exact speech duration and sidechain-compress against speech
+            filter_parts.append(
+                f"[1:a]atrim=duration={total_speech_dur:.3f},volume={bgm_vol:.3f},asetpts=PTS-STARTPTS[bgm_raw]"
+            )
+            # Sidechain Ducking: ducks BGM by ~20-22dB when speech is present, swells smoothly during pauses
+            filter_parts.append(
+                "[bgm_raw][a_voice]sidechaincompress=threshold=0.035:ratio=9:attack=35:release=450[ducked_bgm]"
+            )
+            filter_parts.append(
+                f"[a_voice][ducked_bgm]amix=inputs=2:duration=first:dropout_transition=0,atrim=duration={total_speech_dur:.3f}[a_mixed]"
+            )
+            final_audio_in = "[a_mixed]"
+        else:
+            final_audio_in = "[a_voice]"
+
+        # Audio Mastering (EBU R128 Loudness Normalization)
+        if self.config.normalize_audio:
+            filter_parts.append(f"{final_audio_in}loudnorm=I=-16:TP=-1.5:LRA=11[a_final]")
             final_a_label = "[a_final]"
         else:
-            final_a_label = "[a_stitched]"
+            final_a_label = final_audio_in
 
         full_filtergraph = ";\n".join(filter_parts)
 
-        # Prepare FFmpeg command with universal mobile parameters
+        # Prepare FFmpeg command
         cmd = [
             "ffmpeg",
             "-y",
             "-hide_banner",
             "-i", self.input_video,
+        ]
+
+        if has_bgm:
+            cmd += ["-stream_loop", "-1", "-i", self.config.bgm_path]
+
+        cmd += [
             "-filter_complex", full_filtergraph,
             "-map", "[v_stitched]",
             "-map", final_a_label,
@@ -306,12 +354,13 @@ class RenderEngine:
             "-c:a", self.config.audio_codec,
             "-ar", "44100",
             "-b:a", "192k",
+            "-shortest",
             "-movflags", "+faststart",
             output_path,
         ]
 
         if progress_callback:
-            progress_callback(0.20, f"Rendering {num_shots} studio angles with cinematic grade...")
+            progress_callback(0.20, f"Rendering {num_shots} studio angles with auto-ducking BGM...")
 
         t_start = time.time()
         res = subprocess.run(cmd, capture_output=True, text=True)
@@ -352,7 +401,6 @@ class RenderEngine:
 
                 chunk_file = os.path.join(temp_dir, f"chunk_{idx:04d}.mp4")
 
-                # Video filter
                 if shot.angle == CameraAngle.SLOW_PUSH:
                     zoom_expr = f"(1.0 + 0.20*(t/{dur:.3f}))"
                     crop_f = f"crop=w='(iw/{zoom_expr})':h='(ih/{zoom_expr})':x='{cx + cw/2.0}-(w/2)':y='{cy + ch/2.0}-(h/2)'"
@@ -385,7 +433,6 @@ class RenderEngine:
 
                 v_chain = ",".join(v_chain_list)
 
-                # Audio filter
                 fade_in_d = min(0.015, dur / 4.0)
                 fade_out_d = min(0.015, dur / 4.0)
                 fade_out_st = max(0.0, dur - fade_out_d)
@@ -426,12 +473,7 @@ class RenderEngine:
                 for cf in chunk_files:
                     f.write(f"file '{cf}'\n")
 
-            # Final concat and audio master
-            audio_master = []
-            if self.config.highpass_audio:
-                audio_master.append("highpass=f=80")
-            if self.config.normalize_audio:
-                audio_master.append("loudnorm=I=-16:TP=-1.5:LRA=11")
+            has_bgm = self.config.bgm_path and os.path.isfile(self.config.bgm_path)
 
             concat_cmd = [
                 "ffmpeg",
@@ -440,8 +482,27 @@ class RenderEngine:
                 "-safe", "0",
                 "-i", concat_list,
             ]
-            if audio_master:
-                concat_cmd += ["-af", ",".join(audio_master)]
+            if has_bgm:
+                concat_cmd += ["-stream_loop", "-1", "-i", self.config.bgm_path]
+
+            if has_bgm:
+                bgm_vol = self.config.bgm_volume
+                total_speech_dur = sum(s.segment.duration for s in shot_plans)
+                filtergraph = (
+                    "[0:a]highpass=f=80[a_voice]; "
+                    f"[1:a]atrim=duration={total_speech_dur:.3f},volume={bgm_vol:.3f},asetpts=PTS-STARTPTS[bgm_raw]; "
+                    "[bgm_raw][a_voice]sidechaincompress=threshold=0.035:ratio=9:attack=35:release=450[ducked_bgm]; "
+                    f"[a_voice][ducked_bgm]amix=inputs=2:duration=first:dropout_transition=0,atrim=duration={total_speech_dur:.3f},loudnorm=I=-16:TP=-1.5:LRA=11[a_final]"
+                )
+                concat_cmd += ["-filter_complex", filtergraph, "-map", "0:v", "-map", "[a_final]", "-shortest"]
+            else:
+                audio_master = []
+                if self.config.highpass_audio:
+                    audio_master.append("highpass=f=80")
+                if self.config.normalize_audio:
+                    audio_master.append("loudnorm=I=-16:TP=-1.5:LRA=11")
+                if audio_master:
+                    concat_cmd += ["-af", ",".join(audio_master)]
 
             concat_cmd += [
                 "-c:v", self.config.video_codec,

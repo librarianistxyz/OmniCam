@@ -132,6 +132,16 @@ def main():
         help="Add 2.35:1 Anamorphic cinema bars (letterbox) for high-end cinematic widescreen look.",
     )
     parser.add_argument(
+        "--bgm",
+        help="Path to background music audio file (e.g., /sdcard/Movies/lo-fi.mp3), or 'ambient'/'lofi' for built-in royalty-free ambient bed.",
+    )
+    parser.add_argument(
+        "--bgm-volume",
+        type=float,
+        default=0.22,
+        help="BGM volume level before ducking (default: 0.22). Automatically ducks to -22dB during speech.",
+    )
+    parser.add_argument(
         "--dry-run",
         "--preview",
         action="store_true",
@@ -228,6 +238,8 @@ def main():
         color_grade=args.color,
         normalize_audio=not args.no_normalize_audio,
         highpass_audio=not args.no_normalize_audio,
+        bgm_path=args.bgm,
+        bgm_volume=args.bgm_volume,
         show_hud=not args.no_hud,
         show_title=bool(args.title),
         title_text=args.title,
