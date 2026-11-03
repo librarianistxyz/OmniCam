@@ -1,5 +1,9 @@
 # 🎬 OmniCam: AI Virtual Multi-Camera Director
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Android%20(Termux)-green.svg)](https://github.com/librarianistxyz/OmniCam)
+[![Privacy](https://img.shields.io/badge/Privacy-100%25%20Offline%20%7C%20Zero%20Cloud-orange.svg)](https://github.com/librarianistxyz/OmniCam)
+
 > **Transform raw, handheld single-camera phone footage into a multi-camera studio production — fully automated, zero cloud, 100% offline.**
 
 ---
@@ -162,22 +166,25 @@ python3 omnicam.py input.mp4 \
    pkg update && pkg install -y git python ffmpeg
    ```
 
-2. **Clone / Pull your repository**:
+2. **Clone repository**:
    ```bash
-   git clone <YOUR_REPO_URL>
-   cd "samsung s9"
+   git clone https://github.com/librarianistxyz/OmniCam.git
+   cd OmniCam
    ```
 
-3. **Record in 4K on Samsung Camera**:
-   - Open Samsung Camera $\to$ Settings $\to$ Rear Video Size $\to$ **UHD (3840x2160)**.
+3. **Record in 4K on Phone Camera**:
+   - Open Camera $\to$ Settings $\to$ Rear Video Size $\to$ **UHD / 4K (3840x2160)**.
    - Record your speech holding the phone naturally.
 
-4. **Run OmniCam on the recorded video**:
+4. **Launch Web Studio or CLI**:
    ```bash
    # Termux storage access
    termux-setup-storage
 
-   # Run director on camera video
+   # Option A: Visual Web Studio (open http://localhost:8080 in Chrome)
+   ./omnicam.sh --web
+
+   # Option B: Automated CLI edit
    ./omnicam.sh ~/storage/dcim/Camera/20261103_120000.mp4 -o ~/storage/dcim/Camera/edited_studio.mp4
    ```
 
@@ -191,10 +198,16 @@ Run the built-in end-to-end synthetic verification test suite:
 python3 test_omnicam.py
 ```
 
-This generates a synthetic 4K video with spoken tones and silence gaps, executes the full silence detector, camera director, and render engine, and verifies zero-jump-cut compliance and audio normalization automatically.
+This generates a synthetic 4K video with spoken tones and silence gaps, executes the full silence detector, camera director, B-roll insertions, animated captions, and render engine, verifying zero-jump-cut compliance and audio normalization automatically.
 
 ---
 
-## 📄 License
-MIT License. Created for creators who want high-production content without manual timeline editing.
+## 📄 License & Attribution
+
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.  
+See the [LICENSE](LICENSE) file for complete details.
+
+**Copyright (C) 2026 librarianistxyz (<https://github.com/librarianistxyz/OmniCam>)**
+
+*Under the AGPLv3, you are free to run, study, modify, and distribute this software, provided that any derivative works or network deployments (including web services or SaaS) remain 100% open-source under the exact same AGPLv3 terms with original author copyright notices preserved.*
 

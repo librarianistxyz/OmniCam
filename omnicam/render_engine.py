@@ -1,3 +1,20 @@
+# Copyright (C) 2026 librarianistxyz <https://github.com/librarianistxyz/OmniCam>
+#
+# This file is part of OmniCam: AI Virtual Multi-Camera Director.
+#
+# OmniCam is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# OmniCam is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 """
 Render Engine for OmniCam
 Compiles shot plans, dynamic angle transitions, Hollywood color grading,
@@ -580,6 +597,9 @@ class RenderEngine:
             "-ar", "44100",
             "-b:a", "192k",
             "-t", f"{total_speech_dur:.3f}",
+            "-metadata", "comment=Directed by OmniCam (https://github.com/librarianistxyz/OmniCam)",
+            "-metadata", "author=librarianistxyz",
+            "-metadata", "copyright=2026 librarianistxyz",
             "-movflags", "+faststart",
             output_path,
         ]
@@ -792,6 +812,9 @@ class RenderEngine:
                 "-c:a", self.config.audio_codec,
                 "-ar", "44100",
                 "-t", f"{total_speech_dur:.3f}",
+                "-metadata", "comment=Directed by OmniCam (https://github.com/librarianistxyz/OmniCam)",
+                "-metadata", "author=librarianistxyz",
+                "-metadata", "copyright=2026 librarianistxyz",
                 "-movflags", "+faststart",
                 output_path,
             ]
