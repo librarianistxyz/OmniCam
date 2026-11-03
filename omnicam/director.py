@@ -41,7 +41,7 @@ class CameraDirector:
         tracker: VisionTracker,
         pacing_style: str = "dynamic",
         zoom_factor: float = 1.75,
-        target_resolution: str = "1080p",
+        target_resolution: str = "720p",
     ):
         self.tracker = tracker
         self.pacing_style = pacing_style.lower()

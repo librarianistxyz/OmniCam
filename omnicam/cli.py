@@ -102,9 +102,9 @@ def main():
     )
     parser.add_argument(
         "--resolution",
-        choices=["1080p", "4k", "720p"],
-        default="1080p",
-        help="Target output resolution (default: 1080p)",
+        choices=["720p", "1080p", "4k"],
+        default="720p",
+        help="Target output resolution (default: 720p for ultra-fast mobile rendering)",
     )
     parser.add_argument(
         "--no-normalize-audio",

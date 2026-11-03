@@ -63,7 +63,7 @@ def run_tests():
 
     with tempfile.TemporaryDirectory(prefix="omnicam_test_") as tmp_dir:
         input_vid = os.path.join(tmp_dir, "synthetic_input_4k.mp4")
-        output_vid = os.path.join(tmp_dir, "master_output_1080p.mp4")
+        output_vid = os.path.join(tmp_dir, "master_output_720p.mp4")
 
         # 1. Create Synthetic Video
         create_synthetic_4k_test_video(input_vid, duration=8.0)
@@ -114,8 +114,8 @@ def run_tests():
         # 4. Test Render Engine
         print("\n[Test 3] Testing Multi-Angle Render Engine...")
         config = RenderConfig(
-            target_width=1920,
-            target_height=1080,
+            target_width=1280,
+            target_height=720,
             color_grade="cinematic",
             normalize_audio=True,
             preset="ultrafast",

@@ -17,16 +17,34 @@ from .director import CameraAngle, ShotPlan
 
 @dataclass
 class RenderConfig:
-    target_width: int = 1920
-    target_height: int = 1080
+    target_width: int = 1280
+    target_height: int = 720
     color_grade: str = "cinematic"  # "cinematic", "podcast", "vintage", "none"
     normalize_audio: bool = True
     highpass_audio: bool = True
     video_codec: str = "libx264"
     audio_codec: str = "aac"
-    crf: int = 20
+    crf: int = 21
     preset: str = "fast"
     force_chunk_mode: bool = False
+
+
+def detect_safe_video_codec() -> str:
+    """Detects available H.264 video encoder supported by the local FFmpeg build."""
+    try:
+        res = subprocess.run(["ffmpeg", "-encoders"], capture_output=True, text=True)
+        out = res.stdout
+        if "libx264" in out:
+            return "libx264"
+        elif "h264_mediacodec" in out:
+            return "h264_mediacodec"
+        elif "h264" in out:
+            return "h264"
+        elif "mpeg4" in out:
+            return "mpeg4"
+    except Exception:
+        pass
+    return "libx264"
 
 
 class RenderEngine:
@@ -37,6 +55,8 @@ class RenderEngine:
     def __init__(self, input_video: str, config: Optional[RenderConfig] = None):
         self.input_video = os.path.abspath(input_video)
         self.config = config or RenderConfig()
+        if not self.config.video_codec or self.config.video_codec == "libx264":
+            self.config.video_codec = detect_safe_video_codec()
 
     def render(
         self,
@@ -182,9 +202,13 @@ class RenderEngine:
             "-map", "[v_stitched]",
             "-map", final_a_label,
             "-c:v", self.config.video_codec,
+            "-pix_fmt", "yuv420p",
+            "-profile:v", "main",
+            "-level:v", "3.1",
             "-crf", str(self.config.crf),
             "-preset", self.config.preset,
             "-c:a", self.config.audio_codec,
+            "-ar", "44100",
             "-b:a", "192k",
             "-movflags", "+faststart",
             output_path,
@@ -260,9 +284,13 @@ class RenderEngine:
                     "-vf", v_chain,
                     "-af", a_chain,
                     "-c:v", self.config.video_codec,
+                    "-pix_fmt", "yuv420p",
+                    "-profile:v", "main",
+                    "-level:v", "3.1",
                     "-crf", str(self.config.crf),
                     "-preset", self.config.preset,
                     "-c:a", self.config.audio_codec,
+                    "-ar", "44100",
                     "-b:a", "192k",
                     chunk_file,
                 ]
@@ -300,8 +328,12 @@ class RenderEngine:
                 concat_cmd += ["-af", ",".join(audio_master)]
 
             concat_cmd += [
-                "-c:v", "copy" if not audio_master else self.config.video_codec,
+                "-c:v", self.config.video_codec,
+                "-pix_fmt", "yuv420p",
+                "-profile:v", "main",
+                "-level:v", "3.1",
                 "-c:a", self.config.audio_codec,
+                "-ar", "44100",
                 "-movflags", "+faststart",
                 output_path,
             ]
