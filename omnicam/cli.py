@@ -112,6 +112,26 @@ def main():
         help="Disable studio loudness normalization and highpass filtering.",
     )
     parser.add_argument(
+        "--title",
+        default="OMNICAM AI • MULTI-CAM PRODUCTION",
+        help="Main text for the opening lower-third title card (default: 'OMNICAM AI • MULTI-CAM PRODUCTION')",
+    )
+    parser.add_argument(
+        "--subtitle",
+        default="PRO VIRTUAL STUDIO // 4K CLARITY",
+        help="Subtitle text for the opening lower-third title card",
+    )
+    parser.add_argument(
+        "--no-hud",
+        action="store_true",
+        help="Disable on-screen camera angle watermark badge (CAM 1 • WIDE, CAM 2 • CLOSE-UP).",
+    )
+    parser.add_argument(
+        "--letterbox",
+        action="store_true",
+        help="Add 2.35:1 Anamorphic cinema bars (letterbox) for high-end cinematic widescreen look.",
+    )
+    parser.add_argument(
         "--dry-run",
         "--preview",
         action="store_true",
@@ -193,14 +213,26 @@ def main():
         "4k": (3840, 2160),
         "720p": (1280, 720),
     }
-    target_w, target_h = res_map[args.resolution]
+    base_w, base_h = res_map[args.resolution]
+    if tracker.metadata.is_portrait:
+        target_w, target_h = base_h, base_w
+        print(f"  -> Detected Orientation: PORTRAIT (Vertical {target_w}x{target_h})")
+    else:
+        target_w, target_h = base_w, base_h
+        print(f"  -> Detected Orientation: LANDSCAPE (Horizontal {target_w}x{target_h})")
 
     render_config = RenderConfig(
         target_width=target_w,
         target_height=target_h,
+        is_portrait=tracker.metadata.is_portrait,
         color_grade=args.color,
         normalize_audio=not args.no_normalize_audio,
         highpass_audio=not args.no_normalize_audio,
+        show_hud=not args.no_hud,
+        show_title=bool(args.title),
+        title_text=args.title,
+        subtitle_text=args.subtitle,
+        letterbox=args.letterbox,
         force_chunk_mode=args.chunk_mode,
     )
 

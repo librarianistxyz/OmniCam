@@ -1,7 +1,7 @@
 """
 Vision Tracker & Subject Framing for OmniCam
 Tracks speaker presence, stabilizes headroom, and calculates crop coordinates.
-Operates with OpenCV face detection when available, or elegant golden-ratio heuristics.
+Handles native portrait (9:16) and landscape (16:9) orientations and rotation tags.
 """
 
 from dataclasses import dataclass
@@ -30,15 +30,17 @@ class FaceRegion:
 class VideoMetadata:
     width: int
     height: int
+    display_width: int
+    display_height: int
     fps: float
     duration: float
+    is_portrait: bool
 
 
 class VisionTracker:
     """
     Tracks talking-head positioning to compute cinematic multi-camera crop windows.
-    Zero-hard-dependency design: gracefully degrades to golden-ratio heuristics
-    if OpenCV is not installed on Termux.
+    Automatically adapts to horizontal (16:9) or vertical (9:16) smartphone recordings.
     """
 
     def __init__(self, video_path: str):
@@ -54,12 +56,12 @@ class VisionTracker:
 
     @staticmethod
     def _probe_video(video_path: str) -> VideoMetadata:
-        """Extracts resolution, frame rate, and duration via ffprobe."""
+        """Extracts resolution, orientation, frame rate, and duration via ffprobe."""
         cmd = [
             "ffprobe",
             "-v", "error",
             "-select_streams", "v:0",
-            "-show_entries", "stream=width,height,r_frame_rate,duration",
+            "-show_entries", "stream=width,height,r_frame_rate,duration:stream_tags=rotate:stream_side_data=rotation",
             "-show_entries", "format=duration",
             "-of", "json",
             video_path,
@@ -68,8 +70,32 @@ class VisionTracker:
         data = json.loads(res.stdout)
 
         stream = data["streams"][0]
-        width = int(stream["width"])
-        height = int(stream["height"])
+        raw_w = int(stream["width"])
+        raw_h = int(stream["height"])
+
+        # Detect orientation rotation metadata common on smartphones
+        rotation = 0
+        if "tags" in stream and "rotate" in stream["tags"]:
+            try:
+                rotation = int(float(stream["tags"]["rotate"]))
+            except (ValueError, TypeError):
+                pass
+        if "side_data_list" in stream:
+            for sd in stream["side_data_list"]:
+                if "rotation" in sd:
+                    try:
+                        rotation = int(float(sd["rotation"]))
+                    except (ValueError, TypeError):
+                        pass
+
+        if abs(rotation) in (90, 270):
+            disp_w = raw_h
+            disp_h = raw_w
+        else:
+            disp_w = raw_w
+            disp_h = raw_h
+
+        is_portrait = disp_h > disp_w
 
         # Parse frame rate
         fps_str = stream.get("r_frame_rate", "30/1")
@@ -86,7 +112,15 @@ class VisionTracker:
         elif "format" in data and "duration" in data["format"]:
             duration = float(data["format"]["duration"])
 
-        return VideoMetadata(width=width, height=height, fps=fps, duration=duration)
+        return VideoMetadata(
+            width=raw_w,
+            height=raw_h,
+            display_width=disp_w,
+            display_height=disp_h,
+            fps=fps,
+            duration=duration,
+            is_portrait=is_portrait,
+        )
 
     def sample_face_region(self, timestamp: float) -> FaceRegion:
         """
@@ -109,7 +143,6 @@ class VisionTracker:
 
             h, w, _ = frame.shape
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            # Detect faces with sensible min/max sizes
             faces = self.face_cascade.detectMultiScale(
                 gray,
                 scaleFactor=1.15,
@@ -120,7 +153,6 @@ class VisionTracker:
             if len(faces) == 0:
                 return default_face
 
-            # Pick the largest face (the speaker in foreground)
             best_face = max(faces, key=lambda f: f[2] * f[3])
             fx, fy, fw, fh = best_face
 
@@ -137,19 +169,24 @@ class VisionTracker:
         self,
         angle_name: str,
         face: FaceRegion,
-        zoom_factor: float = 1.7,
-        out_aspect_ratio: float = 16.0 / 9.0,
+        zoom_factor: float = 1.75,
     ) -> Dict[str, int]:
         """
         Computes the pixel crop bounding box (x, y, w, h) for a specified camera angle.
-        Guarantees that the crop remains fully inside the source canvas.
+        Guarantees that the crop remains strictly inside the source canvas and preserves
+        the video's native aspect ratio (landscape 16:9 or vertical 9:16).
         """
         src_w = self.metadata.width
         src_h = self.metadata.height
 
-        # Wide Shot: Uses entire source canvas
+        # Determine target aspect ratio based on video orientation
+        if self.metadata.is_portrait:
+            out_aspect_ratio = src_w / src_h
+        else:
+            out_aspect_ratio = 16.0 / 9.0
+
+        # Angle 1: Master Wide Shot (Uses full frame or matching aspect ratio)
         if angle_name == "WIDE":
-            # Match target aspect ratio within source canvas
             src_aspect = src_w / src_h
             if src_aspect >= out_aspect_ratio:
                 crop_h = src_h
@@ -161,39 +198,44 @@ class VisionTracker:
                 crop_h = int(crop_w / out_aspect_ratio)
                 crop_x = 0
                 crop_y = (src_h - crop_h) // 2
-            return {"x": crop_x, "y": crop_y, "w": crop_w, "h": crop_h}
+            return {
+                "x": crop_x - (crop_x % 2),
+                "y": crop_y - (crop_y % 2),
+                "w": crop_w - (crop_w % 2),
+                "h": crop_h - (crop_h % 2),
+            }
 
-        # For cropped angles (Close-up, Thirds):
-        # Calculate zoomed crop dimensions preserving target aspect ratio
+        # Cropped Angles: Close-up and Rule-of-Thirds
         crop_w = int(src_w / zoom_factor)
         crop_h = int(crop_w / out_aspect_ratio)
 
-        # Ensure crop height doesn't exceed source height
         if crop_h > src_h:
-            crop_h = src_h
+            crop_h = int(src_h / zoom_factor)
             crop_w = int(crop_h * out_aspect_ratio)
 
-        # Pixel face center
         px_face_x = face.norm_x * src_w
         px_face_y = face.norm_y * src_h
 
-        # Framing offsets depending on camera angle
+        # Framing coordinates
         if angle_name == "CLOSEUP":
-            # Center face horizontally, place eyes at ~1/3 from top of cropped frame
+            # Center face horizontally, place eyes at ~35% headroom
             target_x = px_face_x - (crop_w / 2.0)
             target_y = px_face_y - (crop_h * 0.35)
+
         elif angle_name == "THIRD_LEFT":
-            # Subject framed on left third (1/3), looking right
-            target_x = px_face_x - (crop_w * 0.33)
+            # Visibly offset subject to the left (25% line) with room on the right
+            target_x = px_face_x - (crop_w * 0.25)
             target_y = px_face_y - (crop_h * 0.35)
+
         elif angle_name == "THIRD_RIGHT":
-            # Subject framed on right third (2/3), looking left
-            target_x = px_face_x - (crop_w * 0.67)
+            # Visibly offset subject to the right (75% line) with room on the left
+            target_x = px_face_x - (crop_w * 0.75)
             target_y = px_face_y - (crop_h * 0.35)
+
         elif angle_name in ("SLOW_PUSH", "SLOW_PULL"):
-            # Centered for dynamic zoom
             target_x = px_face_x - (crop_w / 2.0)
             target_y = px_face_y - (crop_h * 0.38)
+
         else:
             target_x = (src_w - crop_w) / 2.0
             target_y = (src_h - crop_h) / 2.0
@@ -209,4 +251,3 @@ class VisionTracker:
         clamped_y = clamped_y - (clamped_y % 2)
 
         return {"x": clamped_x, "y": clamped_y, "w": clamped_w, "h": clamped_h}
-
