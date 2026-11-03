@@ -65,6 +65,7 @@ By cropping into distinct regions of a 4K sensor (up to $1.8\times$ zoom) and re
 ## ✨ Features
 
 - **⚡ Invisible Cut Engine**: Silences and pauses are removed. Every single cut triggers an automatic angle switch so the edit feels natural and deliberate.
+- **🗣️ Filler Word & Vocal Hesitation Removal (`--remove-fillers`)**: Dual-engine lexical (Whisper token matching) and acoustic spectral stationarity filter detects prolonged vocal hesitations ("uh", "um", "ah", "like", "you know") and cuts them out cleanly, turning awkward hesitations into dynamic angle switches.
 - **🎞️ Automatic B-Roll Cutaways (`--broll ./clips/`)**: When explaining concepts for extended takes (>4s), OmniCam automatically cuts to relevant footage or still photos for 2–3s with smooth Ken Burns drift, keeping your voiceover seamless underneath.
 - **🎥 Digital Gimbal Horizon Stabilization**: 2-pass optical motion analysis (`vidstabdetect` / `vidstabtransform`) stabilizes walking bounce, handheld camera shake, and horizon tilt—rendering butter-smooth gimbal motion without heavy hardware rigs.
 - **🎙️ Studio Audio Mastering**:
@@ -129,6 +130,8 @@ Total Camera Switches: 3
 
 ```bash
 python3 omnicam.py input.mp4 \
+  --remove-fillers \          # Cut filler words ('uh', 'um', 'ah', 'like', 'you know') and vocal hesitations
+  --fillers "uh,um,like" \    # Custom target filler words to excise (optional)
   --broll ./clips/ \          # Auto B-roll folder: cuts to secondary footage/photos during long takes (>4s)
   --broll-min-dur 4.0 \       # Minimum speech duration to trigger B-roll (default: 4.0s)
   --broll-length 2.5 \        # Cutaway duration in seconds (default: 2.5s)

@@ -243,6 +243,52 @@ def run_tests():
         assert 5.5 <= broll_dur <= 6.5, f"B-roll cut duration unexpected: {broll_dur}s"
         print(f"  [✓] B-Roll cutaway rendered successfully: {broll_dur:.2f}s with voiceover intact.")
 
+        # 6. Test Filler Word & Hesitation Removal
+        print("\n[Test 5] Testing Filler Word & Vocal Hesitation Removal...")
+        from omnicam.filler_remover import (
+            detect_lexical_fillers,
+            detect_acoustic_hesitations,
+            remove_filler_intervals,
+        )
+
+        test_speech_words = [
+            WordTiming(word="TODAY", start=1.0, end=1.4),
+            WordTiming(word="UM", start=1.5, end=2.0),
+            WordTiming(word="WE", start=2.1, end=2.3),
+            WordTiming(word="ARE", start=2.3, end=2.5),
+            WordTiming(word="LIKE", start=2.6, end=3.0),
+            WordTiming(word="LAUNCHING", start=3.1, end=3.7),
+            WordTiming(word="YOU", start=3.8, end=4.0),
+            WordTiming(word="KNOW", start=4.0, end=4.3),
+            WordTiming(word="OMNICAM", start=4.4, end=5.2),
+        ]
+        lexical_cuts = detect_lexical_fillers(test_speech_words)
+        assert len(lexical_cuts) == 3, f"Expected 3 filler cuts ('UM', 'LIKE', 'YOU KNOW'), got {len(lexical_cuts)}"
+        print(f"  [✓] Lexical filter identified {len(lexical_cuts)} filler intervals ('UM', 'LIKE', 'YOU KNOW').")
+
+        # Test excision of filler intervals from active take
+        raw_take = [SpeechSegment(index=0, start=1.0, end=5.5, duration=4.5, silence_before=1.0)]
+        clean_takes = remove_filler_intervals(raw_take, lexical_cuts)
+        assert len(clean_takes) >= 3, f"Expected segment to be carved into >=3 takes, got {len(clean_takes)}"
+        for ct in clean_takes:
+            # Ensure no clean take overlaps with 'UM' [1.5, 2.0]
+            assert not (ct.start < 1.9 and ct.end > 1.6), "Clean take still contains 'UM' interval"
+        print(f"  [✓] Successfully excised fillers: 1 rambling take carved into {len(clean_takes)} clean takes.")
+
+        # Test acoustic spectral hesitation detector on 0.5s 220Hz drone
+        drone_wav = os.path.join(tmp_dir, "acoustic_drone.wav")
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                "-f", "lavfi", "-i", "sine=frequency=220:sample_rate=16000:duration=0.6",
+                "-c:a", "pcm_s16le", drone_wav,
+            ],
+            check=True,
+        )
+        acoustic_cuts = detect_acoustic_hesitations(drone_wav, min_duration=0.25)
+        assert len(acoustic_cuts) >= 1, "Expected acoustic detector to catch 0.6s 220Hz hesitation drone"
+        print(f"  [✓] Acoustic hesitation filter detected drone: {acoustic_cuts}")
+
     print("\n" + "=" * 65)
     print(" [✓] ALL UNIT & INTEGRATION TESTS PASSED WITH 100% SUCCESS")
     print("=" * 65)

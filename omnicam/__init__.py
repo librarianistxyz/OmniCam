@@ -13,6 +13,12 @@ from .render_engine import RenderEngine
 from .captions import Transcriber, WordTiming, remap_words_to_edited_timeline, generate_hormozi_ass
 from .stabilizer import VideoStabilizer, is_vidstab_supported
 from .broll import BRollManager, BRollAsset
+from .filler_remover import (
+    DEFAULT_FILLER_WORDS,
+    detect_lexical_fillers,
+    detect_acoustic_hesitations,
+    remove_filler_intervals,
+)
 
 __all__ = [
     "AudioAnalyzer",
@@ -31,5 +37,9 @@ __all__ = [
     "is_vidstab_supported",
     "BRollManager",
     "BRollAsset",
+    "DEFAULT_FILLER_WORDS",
+    "detect_lexical_fillers",
+    "detect_acoustic_hesitations",
+    "remove_filler_intervals",
 ]
 

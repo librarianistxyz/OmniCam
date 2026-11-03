@@ -13,6 +13,13 @@ from .director import CameraDirector
 from .render_engine import RenderConfig, RenderEngine
 from .vision_tracker import VisionTracker
 from .broll import BRollManager
+from .captions import Transcriber
+from .filler_remover import (
+    DEFAULT_FILLER_WORDS,
+    detect_lexical_fillers,
+    detect_acoustic_hesitations,
+    remove_filler_intervals,
+)
 
 
 def format_duration(seconds: float) -> str:
@@ -193,6 +200,22 @@ def main():
         help="Target duration in seconds for each B-roll cutaway (default: 2.5s).",
     )
     parser.add_argument(
+        "--remove-fillers",
+        "--filler-removal",
+        action="store_true",
+        help="Detect and cut vocal hesitations ('uh', 'um', 'ah', 'like', 'you know') and acoustic vowel drones.",
+    )
+    parser.add_argument(
+        "--fillers",
+        default="uh,um,uhm,ah,er,err,hmm,mm,like,you know",
+        help="Comma-separated list of target filler words to remove (default: 'uh,um,uhm,ah,er,err,hmm,mm,like,you know').",
+    )
+    parser.add_argument(
+        "--acoustic-fillers",
+        action="store_true",
+        help="Force spectral acoustic hesitation analysis to catch non-transcribed monotone vowel drones.",
+    )
+    parser.add_argument(
         "--dry-run",
         "--preview",
         action="store_true",
@@ -240,6 +263,36 @@ def main():
 
     segments = analyzer.extract_speech_segments(input_path)
     print(f"  -> Detected {len(segments)} spoken takes separated by pauses.")
+
+    if args.remove_fillers or args.acoustic_fillers:
+        print("  -> Scanning for vocal hesitations and filler words ('uh', 'um', 'like', 'you know')...")
+        target_fillers = {f.strip().upper() for f in args.fillers.split(",") if f.strip()}
+        filler_intervals = []
+
+        # 1. Lexical detection via Whisper if available
+        transcriber = Transcriber(model_size=args.whisper_model)
+        if transcriber.is_available() and not args.acoustic_fillers:
+            try:
+                print(f"     Transcribing speech tokens with Whisper ({args.whisper_model})...")
+                words = transcriber.transcribe(input_path)
+                lexical_intervals = detect_lexical_fillers(words, target_fillers=target_fillers)
+                filler_intervals.extend(lexical_intervals)
+                print(f"     Identified {len(lexical_intervals)} spoken filler word tokens.")
+            except Exception as ex:
+                print(f"     Notice: Lexical transcription failed ({ex}). Falling back to acoustic hesitation detection.")
+                acoustic_intervals = detect_acoustic_hesitations(input_path)
+                filler_intervals.extend(acoustic_intervals)
+        else:
+            # 2. Acoustic spectral stationarity detection
+            print("     Analyzing acoustic spectral flatness & stationary vowel drones...")
+            acoustic_intervals = detect_acoustic_hesitations(input_path)
+            filler_intervals.extend(acoustic_intervals)
+            print(f"     Identified {len(acoustic_intervals)} acoustic vocal hesitations.")
+
+        if filler_intervals:
+            orig_count = len(segments)
+            segments = remove_filler_intervals(segments, filler_intervals)
+            print(f"  -> Excised {len(filler_intervals)} hesitations. Split into {len(segments)} clean takes.")
 
     if not segments:
         print("[-] No speech detected in video or audio track is silent.")
