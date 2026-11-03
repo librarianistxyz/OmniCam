@@ -289,6 +289,32 @@ def run_tests():
         assert len(acoustic_cuts) >= 1, "Expected acoustic detector to catch 0.6s 220Hz hesitation drone"
         print(f"  [✓] Acoustic hesitation filter detected drone: {acoustic_cuts}")
 
+        # 7. Test Localhost Mobile Web Studio
+        print("\n[Test 6] Testing Localhost Mobile Web Studio Server & API (port 8899)...")
+        import urllib.request
+        from omnicam.web import launch_web_server
+
+        server_thread = threading.Thread(target=launch_web_server, args=(8899,), daemon=True)
+        server_thread.start()
+        time.sleep(0.5)
+
+        # Verify UI endpoint
+        req_ui = urllib.request.urlopen("http://localhost:8899/")
+        ui_html = req_ui.read().decode("utf-8")
+        assert "OMNICAM" in ui_html
+        print(f"  [✓] Web Studio UI verified at http://localhost:8899/ ({len(ui_html)} bytes HTML)")
+
+        # Verify Analysis API endpoint
+        req_post = urllib.request.Request(
+            "http://localhost:8899/api/analyze",
+            data=json.dumps({"input_path": input_vid, "pacing": "dynamic"}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        res_post = urllib.request.urlopen(req_post)
+        analysis = json.loads(res_post.read().decode("utf-8"))
+        assert "shots" in analysis and len(analysis["shots"]) == 3
+        print(f"  [✓] Web API /api/analyze returned {len(analysis['shots'])} timeline shots successfully.")
+
     print("\n" + "=" * 65)
     print(" [✓] ALL UNIT & INTEGRATION TESTS PASSED WITH 100% SUCCESS")
     print("=" * 65)

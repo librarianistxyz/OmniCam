@@ -64,6 +64,7 @@ By cropping into distinct regions of a 4K sensor (up to $1.8\times$ zoom) and re
 
 ## ✨ Features
 
+- **🌐 Localhost Mobile Web Studio (`http://localhost:8080`)**: Zero-dependency browser interface running inside Termux on your phone. Visual interactive timeline of all cuts, color grading & ducking sliders, storage video scanner, and one-tap rendering with in-browser video player.
 - **⚡ Invisible Cut Engine**: Silences and pauses are removed. Every single cut triggers an automatic angle switch so the edit feels natural and deliberate.
 - **🗣️ Filler Word & Vocal Hesitation Removal (`--remove-fillers`)**: Dual-engine lexical (Whisper token matching) and acoustic spectral stationarity filter detects prolonged vocal hesitations ("uh", "um", "ah", "like", "you know") and cuts them out cleanly, turning awkward hesitations into dynamic angle switches.
 - **🎞️ Automatic B-Roll Cutaways (`--broll ./clips/`)**: When explaining concepts for extended takes (>4s), OmniCam automatically cuts to relevant footage or still photos for 2–3s with smooth Ken Burns drift, keeping your voiceover seamless underneath.
@@ -93,10 +94,10 @@ By cropping into distinct regions of a 4K sensor (up to $1.8\times$ zoom) and re
 ### 2. Basic Usage
 
 ```bash
-# Basic edit: Cuts dead air and switches angles automatically
-python3 omnicam.py my_4k_recording.mp4
+# Option A: Visual Web Studio on your phone (Open http://localhost:8080 in Chrome)
+./omnicam.sh --web
 
-# Or use the convenience launcher
+# Option B: Automated CLI edit
 ./omnicam.sh my_4k_recording.mp4
 ```
 

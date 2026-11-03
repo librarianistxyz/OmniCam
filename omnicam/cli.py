@@ -76,8 +76,20 @@ def main():
     parser = argparse.ArgumentParser(
         description="OmniCam: Transform single-camera handheld footage into an automated multi-camera studio video."
     )
-    parser.add_argument("input", help="Path to input video file (e.g., 4K MP4/MOV recorded on Samsung S9 or phone)")
+    parser.add_argument("input", nargs="?", default=None, help="Path to input video file (e.g., 4K MP4/MOV recorded on Samsung S9 or phone)")
     parser.add_argument("-o", "--output", help="Path to output edited video. Defaults to <input>_omnicam.mp4")
+    parser.add_argument(
+        "--web",
+        "--studio",
+        action="store_true",
+        help="Launch the Localhost Mobile Web Studio (http://localhost:8080) for browser-based visual editing.",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8080,
+        help="Port number for the Localhost Mobile Web Studio (default: 8080).",
+    )
     parser.add_argument(
         "--silence-thresh",
         type=float,
@@ -229,7 +241,17 @@ def main():
 
     args = parser.parse_args()
 
+    if args.web:
+        from .web import launch_web_server
+        launch_web_server(port=args.port)
+        return
+
     print_banner()
+
+    if not args.input:
+        parser.print_help()
+        print("\n[-] Error: Please specify an input video file or run with --web to launch the Studio.")
+        sys.exit(1)
 
     if not os.path.isfile(args.input):
         print(f"[-] Error: Input video file not found: {args.input}")

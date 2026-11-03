@@ -19,6 +19,7 @@ from .filler_remover import (
     detect_acoustic_hesitations,
     remove_filler_intervals,
 )
+from .web import launch_web_server
 
 __all__ = [
     "AudioAnalyzer",
@@ -41,5 +42,6 @@ __all__ = [
     "detect_lexical_fillers",
     "detect_acoustic_hesitations",
     "remove_filler_intervals",
+    "launch_web_server",
 ]
 
