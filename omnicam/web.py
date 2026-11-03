@@ -98,841 +98,791 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>OmniCam Studio | Autonomous Multi-Camera Video Production Engine</title>
-  <meta name="description" content="OmniCam transforms single-camera handheld footage into an automated multi-camera studio production with AI angle cuts, 3D LUTs, auto-ducking BGM, and Hormozi captions.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#090D16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>OmniCam NLE | Autonomous Multi-Camera Director</title>
+  <meta name="description" content="Professional NLE multi-camera studio workstation. 100% offline, zero cloud, autonomous AI angle switching, Hormozi captions, and sidechain audio ducking.">
 
-  <!-- Google Fonts: Plus Jakarta Sans & Outfit (Mustuds Typography) -->
+  <!-- Google Fonts: Outfit & Inter for High-End NLE Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <!-- FontAwesome 6 Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
   <style>
     /* ==========================================================================
-       OmniCam Studio - Executive Light Theme (Inspired by Mustuds.com)
+       OmniCam NLE - Modern Obsidian Studio UI (VN / CapCut Professional Aesthetic)
        ========================================================================== */
     :root {
-      /* Brand Palette (Executive Corporate Blue & Pure Contrast) */
-      --primary: #0052CC;
-      --primary-hover: #0747A6;
-      --primary-deep: #091E42;
-      --primary-light: #EBF3FF;
-      --primary-subtle: #DEEBFF;
-      --accent-cyan: #00A3BF;
-      --accent-sky: #0284C7;
+      --bg-darkest: #07090E;
+      --bg-main: #0B0E17;
+      --bg-panel: #131826;
+      --bg-panel-hover: #1A2234;
+      --bg-surface: #1E273D;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(0, 240, 255, 0.5);
 
-      /* Status Palette */
-      --success: #059669;
-      --success-hover: #047857;
-      --success-bg: #ECFDF5;
-      --warning: #D97706;
-      --danger: #DC2626;
+      --accent-neon: #00F0FF;
+      --accent-blue: #2563EB;
+      --accent-purple: #8B5CF6;
+      --accent-pink: #EC4899;
+      --accent-amber: #F59E0B;
+      --accent-emerald: #10B981;
+      --playhead-red: #FF2A55;
 
-      /* Light Executive Canvas (Pure Crisp White & Soft Slate) */
-      --bg-body: #F8FAFC;
-      --bg-navbar: rgba(255, 255, 255, 0.95);
-      --bg-card: #FFFFFF;
-      --bg-card-hover: #F8FAFC;
-      --bg-input: #FFFFFF;
-      --bg-subtle: #F1F5F9;
-      --border-card: #E2E8F0;
-      --border-strong: #CBD5E1;
-
-      /* Typography Colors (ZERO GRADIENTS, CRISP HIGH-CONTRAST) */
-      --text-heading: #091E42;
-      --text-main: #0F172A;
-      --text-secondary: #475569;
-      --text-muted: #64748B;
       --text-white: #FFFFFF;
+      --text-main: #F1F5F9;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
 
-      /* Elevation & Shadows */
-      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-      --shadow-md: 0 4px 16px rgba(9, 30, 66, 0.08);
-      --shadow-lg: 0 12px 32px rgba(9, 30, 66, 0.12);
+      --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
       --radius-sm: 6px;
       --radius-md: 10px;
-      --radius-lg: 16px;
+      --radius-lg: 14px;
       --radius-full: 9999px;
-
-      /* Fonts */
-      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --font-heading: 'Outfit', 'Plus Jakarta Sans', sans-serif;
     }
 
-    *, *::before, *::after {
+    * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    html {
-      scroll-behavior: smooth;
-      font-size: 16px;
-    }
-
-    body {
-      background-color: var(--bg-body);
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-darkest);
       color: var(--text-main);
-      font-family: var(--font-sans);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      overflow-x: hidden;
-      padding-top: 72px; /* Space for fixed navbar */
+      font-family: var(--font-ui);
+      font-size: 14px;
     }
 
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 1.25rem;
-    }
-
-    /* ==========================================================================
-       TOP FIXED EXECUTIVE NAVBAR
-       ========================================================================== */
-    .navbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 72px;
-      background: var(--bg-navbar);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border-card);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      box-shadow: 0 1px 4px rgba(9, 30, 66, 0.04);
-    }
-
-    .nav-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-    }
-
-    .brand-logo {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      text-decoration: none;
-      color: var(--text-heading);
-    }
-
-    .brand-icon-box {
-      width: 40px;
-      height: 40px;
-      background: var(--primary);
-      border-radius: var(--radius-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #FFFFFF;
-      font-size: 1.2rem;
-      box-shadow: 0 3px 10px rgba(0, 82, 204, 0.3);
-    }
-
-    .brand-text {
+    /* Fullscreen Application Container */
+    .nle-app {
       display: flex;
       flex-direction: column;
-    }
-
-    .brand-name {
-      font-family: var(--font-heading);
-      font-size: 1.35rem;
-      font-weight: 800;
-      letter-spacing: -0.3px;
-      color: var(--text-heading);
-      line-height: 1.1;
-    }
-
-    .brand-tagline {
-      font-size: 0.7rem;
-      color: var(--primary);
-      font-weight: 700;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      list-style: none;
-    }
-
-    .nav-link {
-      text-decoration: none;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      transition: all 0.2s ease;
-      padding: 0.45rem 0.75rem;
-      border-radius: var(--radius-sm);
-    }
-
-    .nav-link:hover {
-      color: var(--primary);
-      background: var(--bg-subtle);
-    }
-
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.35rem 0.85rem;
-      border-radius: var(--radius-full);
-      background: var(--success-bg);
-      border: 1px solid #A7F3D0;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--success);
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #10B981;
-      box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
-    }
-
-    .btn-nav-cta {
-      text-decoration: none;
-      background: var(--primary);
-      color: #FFFFFF;
-      font-size: 0.88rem;
-      font-weight: 700;
-      padding: 0.55rem 1.15rem;
-      border-radius: var(--radius-md);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: background 0.2s ease, transform 0.1s ease;
-      box-shadow: 0 3px 10px rgba(0, 82, 204, 0.25);
-      border: none;
-      cursor: pointer;
-    }
-
-    .btn-nav-cta:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-    }
-
-    /* ==========================================================================
-       HERO BANNER SECTION (MUSTUDS CRISP WHITE ARCHITECTURE)
-       ========================================================================== */
-    .hero-section {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg-main);
       position: relative;
-      padding: 4rem 0 3rem;
-      border-bottom: 1px solid var(--border-card);
-      background: linear-gradient(180deg, #EBF3FF 0%, #F8FAFC 100%);
-      text-align: center;
     }
 
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.45rem 1.1rem;
-      border-radius: var(--radius-full);
-      background: #FFFFFF;
-      border: 1px solid #BFDBFE;
-      color: var(--primary);
-      font-size: 0.76rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin-bottom: 1.35rem;
-      box-shadow: 0 2px 8px rgba(0, 82, 204, 0.08);
-    }
-
-    .hero-title {
-      font-family: var(--font-heading);
-      font-size: clamp(2.1rem, 4.2vw, 3.4rem);
-      font-weight: 800;
-      line-height: 1.18;
-      letter-spacing: -0.8px;
-      color: var(--text-heading);
-      max-width: 920px;
-      margin: 0 auto 1.35rem;
-    }
-
-    .hero-subtitle {
-      font-size: clamp(1.02rem, 1.8vw, 1.18rem);
-      color: var(--text-secondary);
-      max-width: 820px;
-      margin: 0 auto 2.25rem;
-      line-height: 1.65;
-    }
-
-    .hero-cta-group {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      margin-bottom: 2.75rem;
-    }
-
-    /* Buttons */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.55rem;
-      font-family: var(--font-sans);
-      font-weight: 700;
-      border-radius: var(--radius-md);
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      border: 1px solid transparent;
-      padding: 0.75rem 1.45rem;
-      font-size: 0.95rem;
-    }
-
-    .btn-lg {
-      padding: 0.85rem 1.85rem;
-      font-size: 1rem;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: #FFFFFF;
-      box-shadow: 0 4px 14px rgba(0, 82, 204, 0.25);
-    }
-    .btn-primary:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(0, 82, 204, 0.35);
-    }
-
-    .btn-secondary {
-      background: #FFFFFF;
-      color: var(--text-heading);
-      border-color: var(--border-strong);
-      box-shadow: var(--shadow-sm);
-    }
-    .btn-secondary:hover {
-      background: var(--bg-subtle);
-      border-color: #94A3B8;
-      transform: translateY(-1px);
-    }
-
-    .btn-outline {
-      background: transparent;
-      color: var(--text-secondary);
-      border-color: var(--border-strong);
-    }
-    .btn-outline:hover {
-      background: #FFFFFF;
-      color: var(--text-heading);
-      border-color: var(--text-heading);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .btn-success {
-      background: var(--success);
-      color: #FFFFFF;
-      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
-    }
-    .btn-success:hover {
-      background: var(--success-hover);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
-    }
-
-    /* Trust / Spec Bar */
-    .security-trust-bar {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
-    }
-
-    .security-trust-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.65rem;
-      padding: 0.7rem 1.25rem;
-      border-radius: var(--radius-md);
-      background: #FFFFFF;
-      border: 1px solid var(--border-card);
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      text-decoration: none;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .security-trust-badge strong {
-      color: var(--text-heading);
-    }
-
-    /* ==========================================================================
-       SECTION CONTAINERS & CARDS
-       ========================================================================== */
-    .main-content {
-      padding: 3rem 0 5rem;
-    }
-
-    .studio-section {
-      margin-bottom: 2.75rem;
-    }
-
-    .section-header {
+    /* --------------------------------------------------------------------------
+       TOP BAR (VN / CapCut Style)
+       -------------------------------------------------------------------------- */
+    .nle-topbar {
+      height: 52px;
+      background: var(--bg-darkest);
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 1.15rem;
-    }
-
-    .section-title {
-      font-family: var(--font-heading);
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: var(--text-heading);
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-    }
-
-    .section-tag {
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--primary);
-      background: var(--primary-light);
-      padding: 0.3rem 0.75rem;
-      border-radius: var(--radius-sm);
-      border: 1px solid #BFDBFE;
-    }
-
-    .card {
-      background: #FFFFFF;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-lg);
-      padding: 1.75rem;
-      box-shadow: var(--shadow-md);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-      border-color: #CBD5E1;
-      box-shadow: 0 6px 20px rgba(9, 30, 66, 0.1);
-    }
-
-    .card-title {
-      font-family: var(--font-heading);
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: var(--text-heading);
-      margin-bottom: 0.4rem;
-      display: flex;
-      align-items: center;
-      gap: 0.55rem;
-    }
-
-    .card-desc {
-      font-size: 0.88rem;
-      color: var(--text-muted);
-      margin-bottom: 1.35rem;
-    }
-
-    /* Form Fields */
-    label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #334155;
-      margin-bottom: 0.45rem;
-      margin-top: 1rem;
-    }
-
-    label:first-child { margin-top: 0; }
-
-    input[type="text"], select {
-      width: 100%;
-      background: #FFFFFF;
-      border: 1px solid var(--border-strong);
-      color: var(--text-main);
-      padding: 0.8rem 1rem;
-      border-radius: var(--radius-md);
-      font-size: 0.94rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    input[type="text"]:focus, select:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.15);
-    }
-
-    /* Path Chips */
-    .chip-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.85rem;
-    }
-
-    .path-chip {
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-card);
-      color: var(--text-secondary);
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 0.4rem 0.85rem;
-      border-radius: var(--radius-full);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      transition: all 0.15s ease;
-    }
-
-    .path-chip:hover {
-      background: var(--primary-light);
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-
-    /* Grid Layouts */
-    .grid-2 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.75rem;
-    }
-
-    .grid-4 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.15rem;
-    }
-
-    /* KPI Stat Cards */
-    .stat-card {
-      background: var(--bg-body);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 1.25rem 1.35rem;
-      display: flex;
-      align-items: center;
-      gap: 1.15rem;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .stat-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: var(--radius-md);
-      background: var(--primary-light);
-      color: var(--primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.3rem;
+      padding: 0 1rem;
+      z-index: 50;
       flex-shrink: 0;
     }
 
-    .stat-meta {
+    .topbar-left {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
     }
 
-    .stat-label {
-      font-size: 0.76rem;
+    .app-brand-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-white);
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-glow-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent-neon);
+      box-shadow: 0 0 10px var(--accent-neon);
+    }
+
+    .clip-name-pill {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      padding: 0.28rem 0.7rem;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+    .clip-name-pill:hover {
+      background: var(--bg-panel-hover);
+      color: var(--text-white);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .topbar-center {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .telemetry-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
       font-weight: 600;
       color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .stat-val {
-      font-family: var(--font-heading);
-      font-size: 1.45rem;
-      font-weight: 800;
-      color: var(--text-heading);
-      line-height: 1.2;
-    }
-
-    /* Timeline Visualizer */
-    .timeline-wrapper {
-      margin-top: 1.75rem;
-    }
-
-    .timeline-track {
-      width: 100%;
-      height: 52px;
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius-md);
       display: flex;
-      overflow: hidden;
-      margin-top: 0.6rem;
-      position: relative;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .telemetry-chip strong {
+      color: var(--accent-neon);
+      font-weight: 700;
     }
 
-    .shot-block {
-      height: 100%;
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .res-select {
+      background: var(--bg-panel);
+      color: var(--text-white);
+      border: 1px solid var(--border-subtle);
+      padding: 0.35rem 0.7rem;
+      border-radius: var(--radius-md);
+      font-size: 0.78rem;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .btn-export {
+      background: linear-gradient(135deg, #00F0FF 0%, #0066FF 100%);
+      color: #07090E;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.85rem;
+      padding: 0.45rem 1.15rem;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
+      transition: all 0.2s ease;
+      letter-spacing: 0.02em;
+    }
+    .btn-export:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.55);
+    }
+    .btn-export:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* --------------------------------------------------------------------------
+       CENTER VIEWPORT / CINEMA MONITOR
+       -------------------------------------------------------------------------- */
+    .nle-monitor-area {
+      flex: 1;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 0.74rem;
-      font-weight: 700;
-      color: #FFFFFF;
-      border-right: 1px solid rgba(0, 0, 0, 0.25);
-      cursor: pointer;
-      transition: filter 0.15s, transform 0.15s;
+      padding: 0.75rem 1rem 0.25rem;
+      position: relative;
+      background: radial-gradient(circle at center, #111728 0%, #07090E 100%);
+    }
+
+    .monitor-canvas-box {
+      width: 100%;
+      max-width: 900px;
+      height: 100%;
+      max-height: calc(100% - 46px);
+      background: #000000;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+      position: relative;
       overflow: hidden;
-      white-space: nowrap;
-      padding: 0 4px;
-    }
-
-    .shot-block:hover {
-      filter: brightness(1.2);
-    }
-
-    /* Camera Angle Colors */
-    .angle-wide { background: #0052CC; }
-    .angle-closeup { background: #DC2626; }
-    .angle-third_left { background: #0891B2; }
-    .angle-third_right { background: #0D9488; }
-    .angle-slow_push { background: #D97706; }
-    .angle-broll { background: #059669; }
-
-    .timeline-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.15rem;
-      margin-top: 1rem;
-      font-size: 0.78rem;
-      color: var(--text-secondary);
-    }
-
-    .legend-item {
       display: flex;
       align-items: center;
-      gap: 0.45rem;
+      justify-content: center;
     }
 
-    .legend-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 3px;
+    /* Empty State Dropzone */
+    .empty-state-card {
+      text-align: center;
+      padding: 2rem;
+      max-width: 480px;
     }
 
-    /* Shot Inspector */
-    .shot-inspector-card {
-      margin-top: 1.15rem;
-      background: var(--bg-body);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-md);
-      padding: 1rem 1.25rem;
+    .empty-state-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1.25rem;
+      border-radius: var(--radius-lg);
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-neon);
+      font-size: 1.8rem;
+    }
+
+    .empty-state-title {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-white);
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+
+    .empty-actions-row {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-action-glow {
+      background: var(--bg-panel);
+      color: var(--text-white);
+      border: 1px solid var(--border-subtle);
+      font-family: var(--font-display);
+      font-weight: 700;
       font-size: 0.88rem;
-      color: var(--text-secondary);
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    .btn-action-glow:hover {
+      background: var(--bg-panel-hover);
+      border-color: var(--accent-neon);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.2);
+    }
+    .btn-action-primary {
+      background: var(--accent-blue);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    .btn-action-primary:hover {
+      background: #1D4ED8;
+      border-color: var(--accent-neon);
+    }
+
+    /* Video Player Element */
+    #studioVideoPlayer {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000000;
       display: none;
     }
 
-    .shot-inspector-card strong {
-      color: var(--text-heading);
+    /* Monitor HUD Overlay */
+    .monitor-hud-top {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 10;
     }
 
-    /* Toggles & Sliders */
+    .hud-badge-angle {
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--accent-neon);
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      letter-spacing: 0.05em;
+    }
+
+    .hud-badge-timecode {
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-white);
+      font-family: monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Monitor Play Overlay */
+    .monitor-play-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: var(--text-white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.2s ease;
+      z-index: 15;
+    }
+    .monitor-canvas-box:hover .monitor-play-center,
+    .monitor-play-center.visible {
+      opacity: 1;
+    }
+    .monitor-play-center:hover {
+      transform: translate(-50%, -50%) scale(1.1);
+      background: var(--accent-blue);
+      border-color: var(--accent-neon);
+    }
+
+    /* Transport Controls Row */
+    .monitor-transport-bar {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.25rem;
+      margin-top: 0.35rem;
+      width: 100%;
+    }
+
+    .transport-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      cursor: pointer;
+      padding: 0.35rem 0.65rem;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s ease;
+    }
+    .transport-btn:hover {
+      color: var(--text-white);
+      background: var(--bg-panel);
+    }
+    .transport-btn-primary {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+    .transport-btn-primary:hover {
+      background: var(--accent-blue);
+      color: var(--text-white);
+      box-shadow: 0 0 14px rgba(37, 99, 235, 0.45);
+    }
+
+    /* --------------------------------------------------------------------------
+       MULTI-TRACK TIMELINE (VN / CapCut Style)
+       -------------------------------------------------------------------------- */
+    .nle-timeline-area {
+      height: 180px;
+      background: var(--bg-darkest);
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    /* Timeline Header & Zoom */
+    .timeline-ruler-header {
+      height: 26px;
+      background: #090C12;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow-x: hidden;
+      width: 100%;
+    }
+
+    .time-ticks-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .time-tick {
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      height: 100%;
+      padding-left: 4px;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      font-family: monospace;
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Multi-Track Canvas */
+    .timeline-tracks-viewport {
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: hidden;
+      position: relative;
+      padding: 0.35rem 0;
+      background: #080A10;
+      cursor: crosshair;
+    }
+
+    /* Glowing Red Playhead */
+    .timeline-playhead {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 2px;
+      background: var(--playhead-red);
+      box-shadow: 0 0 8px var(--playhead-red);
+      z-index: 40;
+      pointer-events: none;
+      transform: translateX(0);
+      transition: left 0.05s linear;
+    }
+
+    .playhead-head {
+      width: 12px;
+      height: 12px;
+      background: var(--playhead-red);
+      transform: translateX(-5px) rotate(45deg);
+      border-radius: 2px;
+      position: absolute;
+      top: -2px;
+      box-shadow: 0 0 8px var(--playhead-red);
+    }
+
+    /* Track 1: Angles & Cuts */
+    .track-row {
+      display: flex;
+      align-items: center;
+      height: 48px;
+      margin-bottom: 0.35rem;
+      position: relative;
+      width: 100%;
+      padding: 0 0.5rem;
+    }
+
+    .shot-block-nle {
+      height: 100%;
+      border-radius: var(--radius-sm);
+      margin-right: 2px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0.35rem 0.5rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: all 0.15s ease;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .shot-block-nle:hover {
+      filter: brightness(1.2);
+      transform: scaleY(1.04);
+      z-index: 5;
+    }
+    .shot-block-nle.active {
+      border: 2px solid #FFFFFF !important;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+    }
+
+    /* Angle Color Palette */
+    .angle-wide { background: linear-gradient(180deg, #1D4ED8 0%, #1E3A8A 100%); color: #BFDBFE; }
+    .angle-closeup { background: linear-gradient(180deg, #7C3AED 0%, #5B21B6 100%); color: #E9D5FF; }
+    .angle-third_left { background: linear-gradient(180deg, #059669 0%, #064E3B 100%); color: #A7F3D0; }
+    .angle-third_right { background: linear-gradient(180deg, #0D9488 0%, #134E4A 100%); color: #99F6E4; }
+    .angle-slow_push { background: linear-gradient(180deg, #D97706 0%, #78350F 100%); color: #FDE68A; }
+    .angle-broll { background: linear-gradient(180deg, #E11D48 0%, #881337 100%); color: #FECDD3; }
+
+    .shot-tag-name {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .shot-tag-dur {
+      font-size: 0.65rem;
+      opacity: 0.8;
+      font-family: monospace;
+    }
+
+    /* Track 2: Subtitle Track */
+    .track-row-subtitles {
+      height: 28px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: var(--radius-sm);
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      padding: 0 0.5rem;
+      overflow: hidden;
+    }
+
+    .sub-pill-nle {
+      height: 20px;
+      background: rgba(255, 230, 0, 0.15);
+      border: 1px solid rgba(255, 230, 0, 0.4);
+      color: #FFE600;
+      border-radius: 4px;
+      padding: 0 0.45rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      margin-right: 4px;
+    }
+
+    /* Track 3: Audio Ducking Track */
+    .track-row-audio {
+      height: 32px;
+      background: rgba(0, 240, 255, 0.04);
+      border: 1px dashed rgba(0, 240, 255, 0.2);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      padding: 0 0.5rem;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      color: var(--accent-neon);
+      font-weight: 600;
+    }
+
+    /* --------------------------------------------------------------------------
+       BOTTOM TOOL DOCK & INSPECTOR DRAWER (VN / CapCut Layout)
+       -------------------------------------------------------------------------- */
+    .nle-bottom-section {
+      background: var(--bg-darkest);
+      position: relative;
+      flex-shrink: 0;
+      z-index: 45;
+    }
+
+    /* Sliding Tool Drawer / Sheet */
+    .nle-inspector-drawer {
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border-subtle);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), padding 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .nle-inspector-drawer.open {
+      max-height: 230px;
+      padding: 0.85rem 1.25rem;
+      overflow-y: auto;
+    }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .drawer-title {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text-white);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .drawer-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0.2rem 0.5rem;
+    }
+    .drawer-close-btn:hover { color: var(--text-white); }
+
+    .drawer-controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .control-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .nle-select, .nle-input {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-white);
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 500;
+      outline: none;
+    }
+    .nle-select:focus, .nle-input:focus {
+      border-color: var(--accent-neon);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+    }
+
+    .nle-range-slider {
+      width: 100%;
+      accent-color: var(--accent-neon);
+      cursor: pointer;
+    }
+
     .toggle-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.95rem 0;
-      border-bottom: 1px solid #F1F5F9;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-surface);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
     }
 
-    .toggle-row:last-child {
-      border-bottom: none;
+    /* Bottom Tool Dock Buttons */
+    .nle-dock-bar {
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 0.5rem;
+      border-top: 1px solid var(--border-subtle);
+      background: #080A10;
+      overflow-x: auto;
     }
 
-    .toggle-meta {
+    .dock-tool-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
       display: flex;
       flex-direction: column;
-    }
-
-    .toggle-title {
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
-    .toggle-desc {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      margin-top: 0.15rem;
-    }
-
-    input[type="checkbox"] {
-      width: 1.3rem;
-      height: 1.3rem;
-      accent-color: var(--primary);
-      cursor: pointer;
-    }
-
-    .slider-row {
-      margin-top: 1.15rem;
-    }
-
-    .slider-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #334155;
-      margin-bottom: 0.45rem;
-    }
-
-    .slider-val {
-      color: var(--primary);
-      font-weight: 800;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      height: 7px;
-      background: #E2E8F0;
-      border-radius: 4px;
-      accent-color: var(--primary);
-      cursor: pointer;
-    }
-
-    /* Render Box & Progress */
-    .progress-box {
-      margin-top: 1.75rem;
-      display: none;
-    }
-
-    .progress-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: var(--text-heading);
-      margin-bottom: 0.55rem;
-    }
-
-    .progress-bar-bg {
-      width: 100%;
-      height: 11px;
-      background: #E2E8F0;
-      border-radius: var(--radius-full);
-      overflow: hidden;
-      border: 1px solid #CBD5E1;
-    }
-
-    .progress-bar-fill {
-      height: 100%;
-      width: 0%;
-      background: var(--primary);
-      transition: width 0.3s ease;
-    }
-
-    video {
-      width: 100%;
-      border-radius: var(--radius-md);
-      margin-top: 1.35rem;
-      background: #000000;
-      border: 1px solid var(--border-card);
-      box-shadow: var(--shadow-lg);
-    }
-
-    /* ==========================================================================
-       SITE FOOTER (MUSTUDS CORPORATE ARCHITECTURE)
-       ========================================================================== */
-    .site-footer {
-      background: var(--primary-deep);
-      border-top: 1px solid #1E2D4A;
-      padding: 3.5rem 0 2.25rem;
-      margin-top: 4.5rem;
-      color: #F8FAFC;
-    }
-
-    .footer-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 2.25rem;
-      margin-bottom: 2.75rem;
-    }
-
-    .footer-col h4 {
-      font-family: var(--font-heading);
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: #FFFFFF;
-      margin-bottom: 1.15rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .footer-links {
-      list-style: none;
-    }
-
-    .footer-links li {
-      margin-bottom: 0.65rem;
-    }
-
-    .footer-links a {
-      color: #94A3B8;
-      text-decoration: none;
-      font-size: 0.88rem;
-      transition: color 0.15s;
-    }
-
-    .footer-links a:hover {
-      color: #FFFFFF;
-    }
-
-    .footer-bottom {
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      padding-top: 1.75rem;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
       align-items: center;
-      gap: 1rem;
-      font-size: 0.82rem;
-      color: #94A3B8;
+      gap: 0.25rem;
+      padding: 0.4rem 0.65rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.7rem;
+      font-weight: 600;
+      transition: all 0.15s ease;
+      min-width: 58px;
+    }
+    .dock-tool-btn i {
+      font-size: 1.15rem;
+      transition: transform 0.15s ease;
+    }
+    .dock-tool-btn:hover {
+      color: var(--text-white);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .dock-tool-btn:hover i {
+      transform: translateY(-2px);
+    }
+    .dock-tool-btn.active {
+      color: var(--accent-neon);
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.25);
     }
 
-    
-    /* ==========================================================================
-       DEVICE FILE NAVIGATOR MODAL STYLES
-       ========================================================================== */
+    /* --------------------------------------------------------------------------
+       DEVICE FILE NAVIGATOR & EXPORT MODALS
+       -------------------------------------------------------------------------- */
     .modal-backdrop {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(9, 30, 66, 0.65);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      z-index: 2000;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(4, 6, 10, 0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 1000;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -940,12 +890,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     }
 
     .modal-window {
-      background: #FFFFFF;
+      background: var(--bg-panel);
       border-radius: var(--radius-lg);
-      border: 1px solid var(--border-card);
-      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.85);
       width: 100%;
-      max-width: 780px;
+      max-width: 740px;
       max-height: 85vh;
       display: flex;
       flex-direction: column;
@@ -959,45 +909,41 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     }
 
     .modal-header {
-      padding: 1.15rem 1.35rem;
-      border-bottom: 1px solid var(--border-card);
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #F8FAFC;
+      background: var(--bg-surface);
     }
 
     .modal-close-btn {
       background: transparent;
       border: none;
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       color: var(--text-muted);
       cursor: pointer;
       line-height: 1;
-      padding: 0.2rem 0.55rem;
-      border-radius: var(--radius-sm);
+      padding: 0.2rem 0.5rem;
     }
-    .modal-close-btn:hover {
-      color: var(--text-heading);
-      background: #E2E8F0;
-    }
+    .modal-close-btn:hover { color: var(--text-white); }
 
     .modal-roots-bar {
       display: flex;
       gap: 0.5rem;
-      padding: 0.65rem 1.35rem;
-      background: #F1F5F9;
-      border-bottom: 1px solid var(--border-card);
+      padding: 0.65rem 1.25rem;
+      background: var(--bg-main);
+      border-bottom: 1px solid var(--border-subtle);
       overflow-x: auto;
       white-space: nowrap;
     }
 
     .browser-root-chip {
-      background: #FFFFFF;
-      border: 1px solid var(--border-strong);
-      color: var(--text-heading);
-      font-size: 0.78rem;
-      font-weight: 700;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      font-size: 0.75rem;
+      font-weight: 600;
       padding: 0.35rem 0.75rem;
       border-radius: var(--radius-full);
       cursor: pointer;
@@ -1007,18 +953,18 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       transition: all 0.15s ease;
     }
     .browser-root-chip:hover {
-      background: var(--primary-light);
-      border-color: var(--primary);
-      color: var(--primary);
+      background: var(--bg-surface);
+      border-color: var(--accent-neon);
+      color: var(--accent-neon);
     }
 
     .browser-nav-bar {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.65rem 1.35rem;
-      border-bottom: 1px solid var(--border-card);
-      background: #FFFFFF;
+      padding: 0.65rem 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
     }
 
     .browser-breadcrumbs {
@@ -1027,27 +973,20 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       gap: 0.35rem;
       overflow-x: auto;
       white-space: nowrap;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
     }
 
     .crumb-btn {
       background: transparent;
       border: none;
-      color: var(--primary);
+      color: var(--accent-neon);
       font-weight: 600;
       cursor: pointer;
       padding: 0.2rem 0.4rem;
       border-radius: 4px;
-      transition: background 0.15s;
     }
-    .crumb-btn:hover {
-      background: var(--primary-light);
-      text-decoration: underline;
-    }
-    .crumb-sep {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-    }
+    .crumb-btn:hover { text-decoration: underline; }
+    .crumb-sep { color: var(--text-dim); }
 
     .browser-list-container {
       flex: 1;
@@ -1060,13 +999,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.7rem 1.35rem;
-      border-bottom: 1px solid #F1F5F9;
+      padding: 0.65rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       cursor: pointer;
       transition: background 0.15s;
     }
     .browser-item:hover {
-      background: #F8FAFC;
+      background: var(--bg-panel-hover);
     }
 
     .browser-item-left {
@@ -1078,21 +1017,21 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     }
 
     .browser-item-icon {
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      font-size: 1rem;
+      font-size: 0.95rem;
     }
-    .icon-folder { background: #EBF3FF; color: var(--primary); }
-    .icon-video { background: #ECFDF5; color: var(--success); }
-    .icon-file { background: #F1F5F9; color: var(--text-muted); }
+    .icon-folder { background: rgba(37, 99, 235, 0.15); color: #60A5FA; }
+    .icon-video { background: rgba(0, 240, 255, 0.15); color: var(--accent-neon); }
+    .icon-file { background: rgba(255, 255, 255, 0.05); color: var(--text-muted); }
 
     .browser-item-name {
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       font-weight: 600;
       color: var(--text-main);
       overflow: hidden;
@@ -1100,16 +1039,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       white-space: nowrap;
     }
 
-    .browser-item-meta {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
     .badge-video {
-      background: #ECFDF5;
-      color: var(--success);
-      border: 1px solid #A7F3D0;
+      background: rgba(0, 240, 255, 0.12);
+      color: var(--accent-neon);
+      border: 1px solid rgba(0, 240, 255, 0.3);
       font-size: 0.7rem;
       font-weight: 700;
       padding: 0.2rem 0.5rem;
@@ -1117,519 +1050,407 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     }
 
     .modal-footer {
-      padding: 0.85rem 1.35rem;
-      border-top: 1px solid var(--border-card);
-      background: #F8FAFC;
+      padding: 0.85rem 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
-    /* Mobile Responsive */
+    /* Responsive Adjustments */
     @media (max-width: 768px) {
-      .nav-links { display: none; }
-      .hero-title { font-size: 1.95rem; }
-      .hero-subtitle { font-size: 0.98rem; }
-      .security-trust-bar { flex-direction: column; align-items: stretch; }
-      .card { padding: 1.25rem; }
+      .topbar-center { display: none; }
+      .clip-name-pill { max-width: 140px; }
+      .timeline-ruler-header { height: 22px; }
+      .nle-timeline-area { height: 160px; }
+      .track-row { height: 42px; }
+      .dock-tool-btn { min-width: 50px; font-size: 0.65rem; padding: 0.3rem 0.45rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- ========================================================================
-       TOP EXECUTIVE NAVBAR
-       ======================================================================== -->
-  <nav class="navbar">
-    <div class="container nav-container">
-      <a href="#" class="brand-logo">
-        <div class="brand-icon-box">
+  <div class="nle-app">
+
+    <!-- ======================================================================
+         TOP BAR: PROJECT HEADER & EXPORT
+         ====================================================================== -->
+    <header class="nle-topbar">
+      <div class="topbar-left">
+        <div class="app-brand-badge">
+          <span class="brand-glow-dot"></span>
+          <span>OmniCam</span>
+        </div>
+
+        <div class="clip-name-pill" onclick="openFileBrowser()" title="Click to change source video">
           <i class="fa-solid fa-film"></i>
+          <span id="topbarClipName">No Media Selected</span>
         </div>
-        <div class="brand-text">
-          <span class="brand-name">OmniCam</span>
-          <span class="brand-tagline">AI Multi-Camera Studio</span>
-        </div>
-      </a>
+      </div>
 
-      <ul class="nav-links">
-        <li><a href="#footage" class="nav-link"><i class="fa-solid fa-folder-open"></i> <span>Footage</span></a></li>
-        <li><a href="#timeline" class="nav-link"><i class="fa-solid fa-timeline"></i> <span>Timeline</span></a></li>
-        <li><a href="#settings" class="nav-link"><i class="fa-solid fa-sliders"></i> <span>Studio Suite</span></a></li>
-        <li><a href="#export" class="nav-link"><i class="fa-solid fa-clapperboard"></i> <span>Export</span></a></li>
-      </ul>
-
-      <div class="nav-actions">
-        <div class="status-pill">
-          <span class="status-dot"></span>
-          <span>Engine Online (Port 8080)</span>
+      <div class="topbar-center">
+        <div class="telemetry-chip" id="statDurationChip" style="display: none;">
+          <i class="fa-solid fa-clock"></i>
+          <span>Cut: <strong id="statCutDuration">00:00</strong></span>
         </div>
-        <a href="#export" class="btn-nav-cta">
+        <div class="telemetry-chip" id="statDeadAirChip" style="display: none;">
+          <i class="fa-solid fa-scissors"></i>
+          <span>Dead Air: <strong id="statDeadAirPct">-0%</strong></span>
+        </div>
+        <div class="telemetry-chip" id="statCutsChip" style="display: none;">
+          <i class="fa-solid fa-video"></i>
+          <span>Angles: <strong id="statCutsCount">0</strong></span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <select class="res-select" id="targetResolutionSelect">
+          <option value="1080p" selected>1080p FHD</option>
+          <option value="720p">720p Mobile</option>
+          <option value="4k">4K Master</option>
+        </select>
+
+        <button class="btn-export" id="exportMasterBtn" onclick="openExportModal()" type="button">
           <i class="fa-solid fa-bolt"></i>
-          <span>Render Master</span>
-        </a>
+          <span>EXPORT</span>
+        </button>
       </div>
-    </div>
-  </nav>
+    </header>
 
-  <!-- ========================================================================
-       HERO BANNER (MUSTUDS DESIGN LANGUAGE)
-       ======================================================================== -->
-  <header class="hero-section">
-    <div class="container">
-      <div class="hero-badge">
-        <i class="fa-solid fa-wand-magic-sparkles"></i> AUTONOMOUS VIRTUAL MULTI-CAMERA PRODUCTION STUDIO
-      </div>
+    <!-- Hidden native file input for gallery picker -->
+    <input type="file" id="nativeFilePicker" accept="video/*" style="display: none;" onchange="handleNativeFileSelect(this)" />
+    <input type="hidden" id="inputVideo" value="" />
 
-      <h1 class="hero-title">
-        Turn single-camera takes into studio multi-cam masterpieces.
-      </h1>
+    <!-- ======================================================================
+         CENTER CINEMA MONITOR / CANVAS
+         ====================================================================== -->
+    <main class="nle-monitor-area">
+      <div class="monitor-canvas-box" id="monitorCanvasBox">
 
-      <p class="hero-subtitle">
-        OmniCam automatically trims acoustic dead-air silences, cuts dynamic rule-of-thirds close-up angles, locks horizon stabilization, ducks background music under speech, and burns animated Hormozi word captions—running 100% offline on your device.
-      </p>
-
-      <div class="hero-cta-group">
-        <a href="#footage" class="btn btn-primary btn-lg">
-          <i class="fa-solid fa-folder-open"></i> Select Footage
-        </a>
-        <a href="#timeline" class="btn btn-secondary btn-lg">
-          <i class="fa-solid fa-chart-line"></i> View Timeline Cuts
-        </a>
-        <a href="#settings" class="btn btn-outline btn-lg">
-          <i class="fa-solid fa-sliders"></i> Studio Controls
-        </a>
-      </div>
-
-      <!-- Trust Bar -->
-      <div class="security-trust-bar">
-        <div class="security-trust-badge">
-          <i class="fa-solid fa-bolt" style="color: #38BDF8;"></i>
-          <span><strong>Hardware Accelerated:</strong> Pure Local S9+ CPU / GPU</span>
-        </div>
-        <div class="security-trust-badge">
-          <i class="fa-solid fa-shield-halved" style="color: #10B981;"></i>
-          <span><strong>100% Offline &amp; Private:</strong> Zero Cloud Uploads</span>
-        </div>
-        <div class="security-trust-badge">
-          <i class="fa-solid fa-circle-check" style="color: #F59E0B;"></i>
-          <span><strong>Samsung Native:</strong> Standard H.264 Playback</span>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- ========================================================================
-       MAIN APPLICATION WORKSPACE
-       ======================================================================== -->
-  <main class="main-content">
-    <div class="container">
-
-      <!-- STEP 1: SOURCE FOOTAGE -->
-      <section class="studio-section" id="footage">
-        <div class="section-header">
-          <h2 class="section-title">
-            <i class="fa-solid fa-folder-open" style="color: #0052CC;"></i> Step 1: Source Footage &amp; Media Hub
-          </h2>
-          <span class="section-tag">Storage Access</span>
-        </div>
-
-        <div class="card">
-          <div class="card-title">
-            <i class="fa-solid fa-video"></i> Handheld Video Source File
+        <!-- Empty State Hero (shown before selecting video) -->
+        <div class="empty-state-card" id="emptyStateCard">
+          <div class="empty-state-icon">
+            <i class="fa-solid fa-clapperboard"></i>
           </div>
-          <p class="card-desc">
-            Select any raw 4K/1080p single-camera recording from anywhere on your device or phone gallery to transform.
+          <h2 class="empty-state-title">Autonomous Multi-Camera Studio</h2>
+          <p class="empty-state-subtitle">
+            Select any single-camera phone take. OmniCam will cut silences, track subject framing, and switch between 5 virtual camera angles with zero jump cuts.
           </p>
 
-          <label for="inputVideo">Selected Video Path</label>
-          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
-            <input type="text" id="inputVideo" placeholder="/sdcard/DCIM/Camera/VID_20261103.mp4" spellcheck="false" style="flex: 1; min-width: 250px;" />
-            <button class="btn btn-primary" onclick="openFileBrowser()" type="button" title="Navigate anywhere on device">
-              <i class="fa-solid fa-folder-tree"></i> Browse Device
+          <div class="empty-actions-row">
+            <button class="btn-action-glow btn-action-primary" onclick="document.getElementById('nativeFilePicker').click()" type="button">
+              <i class="fa-solid fa-mobile-screen"></i> Pick from Gallery
             </button>
-            <button class="btn btn-secondary" onclick="document.getElementById('nativeFilePicker').click()" type="button" title="Pick from Phone Gallery or Files">
-              <i class="fa-solid fa-mobile-screen"></i> Gallery
-            </button>
-            <input type="file" id="nativeFilePicker" accept="video/*" style="display: none;" onchange="handleNativeFileSelect(this)" />
-          </div>
-
-          <div id="uploadStatusBadge" style="display: none; margin-bottom: 0.75rem; padding: 0.55rem 0.95rem; border-radius: 6px; font-size: 0.85rem; background: #EBF3FF; color: #0052CC; border: 1px solid #BFDBFE;">
-            <i class="fa-solid fa-spinner fa-spin"></i> <span id="uploadStatusMsg">Reading device video...</span>
-          </div>
-
-          <label style="margin-top: 0.5rem;">Quick Storage Shortcuts</label>
-          <div class="chip-container">
-            <span class="path-chip" onclick="openFileBrowser('/sdcard/DCIM/Camera')">
-              <i class="fa-solid fa-camera"></i> Camera (DCIM)
-            </span>
-            <span class="path-chip" onclick="openFileBrowser('/sdcard/Movies')">
-              <i class="fa-solid fa-film"></i> Movies
-            </span>
-            <span class="path-chip" onclick="openFileBrowser('/sdcard/Download')">
-              <i class="fa-solid fa-download"></i> Downloads
-            </span>
-            <span class="path-chip" onclick="openFileBrowser('/sdcard')">
-              <i class="fa-solid fa-hard-drive"></i> /sdcard (Internal)
-            </span>
-            <span class="path-chip" onclick="openFileBrowser('~')">
-              <i class="fa-solid fa-house"></i> Termux Home
-            </span>
-            <span class="path-chip" onclick="openFileBrowser('.')">
-              <i class="fa-solid fa-briefcase"></i> Workspace
-            </span>
-          </div>
-
-          <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
-            <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeFootage()" type="button">
-              <i class="fa-solid fa-bolt"></i> Analyze Footage &amp; Generate Multi-Cam Timeline
+            <button class="btn-action-glow" onclick="openFileBrowser()" type="button">
+              <i class="fa-solid fa-folder-tree"></i> Browse Device Storage
             </button>
           </div>
-        </div>
-      </section>
 
-      <!-- STEP 2: TIMELINE & METRICS -->
-      <section class="studio-section" id="timeline">
-        <div class="section-header">
-          <h2 class="section-title">
-            <i class="fa-solid fa-timeline" style="color: #0052CC;"></i> Step 2: Multi-Camera Timeline &amp; Telemetry
-          </h2>
-          <span class="section-tag">Director Analysis</span>
-        </div>
-
-        <div class="card" id="timelineCard" style="display: none;">
-          <!-- 4 KPI Stat Cards -->
-          <div class="grid-4">
-            <div class="stat-card">
-              <div class="stat-icon"><i class="fa-solid fa-stopwatch"></i></div>
-              <div class="stat-meta">
-                <span class="stat-label">Edited Duration</span>
-                <span class="stat-val" id="statEditedDur">00:00</span>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="color: #34D399; background: rgba(5,150,105,0.15);"><i class="fa-solid fa-scissors"></i></div>
-              <div class="stat-meta">
-                <span class="stat-label">Dead Air Cut</span>
-                <span class="stat-val" id="statDeadAir">0.0s</span>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="color: #F59E0B; background: rgba(217,119,6,0.15);"><i class="fa-solid fa-camera-rotate"></i></div>
-              <div class="stat-meta">
-                <span class="stat-label">Camera Cuts</span>
-                <span class="stat-val" id="statCuts">0</span>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="color: #A78BFA; background: rgba(139,92,246,0.15);"><i class="fa-solid fa-arrow-trend-up"></i></div>
-              <div class="stat-meta">
-                <span class="stat-label">Retention Boost</span>
-                <span class="stat-val" id="statSaved">+0%</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Interactive Multi-Camera Timeline Track -->
-          <div class="timeline-wrapper">
-            <label style="margin-top: 0;">Multi-Camera Cut Sequence Track</label>
-            <div class="timeline-track" id="timelineTrack"></div>
-
-            <div class="timeline-legend">
-              <div class="legend-item"><div class="legend-dot" style="background: #0052CC;"></div> Wide Establishing</div>
-              <div class="legend-item"><div class="legend-dot" style="background: #DC2626;"></div> Tight Close-Up</div>
-              <div class="legend-item"><div class="legend-dot" style="background: #0891B2;"></div> Rule of Thirds (Left)</div>
-              <div class="legend-item"><div class="legend-dot" style="background: #0D9488;"></div> Rule of Thirds (Right)</div>
-              <div class="legend-item"><div class="legend-dot" style="background: #D97706;"></div> Cinematic Slow Push</div>
-              <div class="legend-item"><div class="legend-dot" style="background: #059669;"></div> B-Roll Cutaway</div>
-            </div>
-
-            <!-- Shot Detail Inspector -->
-            <div class="shot-inspector-card" id="shotInspector">
-              Tap any shot block above to inspect angle and duration parameters.
-            </div>
+          <div id="uploadStatusBadge" style="display: none; margin-top: 1.25rem; padding: 0.55rem 0.95rem; border-radius: 6px; font-size: 0.82rem; background: rgba(0, 240, 255, 0.1); color: var(--accent-neon); border: 1px solid rgba(0, 240, 255, 0.3);">
+            <span id="uploadStatusMsg">Loading media...</span>
           </div>
         </div>
-      </section>
 
-      <!-- STEP 3: STUDIO SETTINGS (CATEGORIZED SAAS CARDS) -->
-      <section class="studio-section" id="settings">
-        <div class="section-header">
-          <h2 class="section-title">
-            <i class="fa-solid fa-sliders" style="color: #0052CC;"></i> Step 3: Studio Suite Controls &amp; Aesthetics
-          </h2>
-          <span class="section-tag">Production Engine</span>
+        <!-- Video Player Display -->
+        <video id="studioVideoPlayer" playsinline></video>
+
+        <!-- Monitor HUD Overlay -->
+        <div class="monitor-hud-top" id="monitorHudTop" style="display: none;">
+          <div class="hud-badge-angle" id="hudAngleBadge">
+            <i class="fa-solid fa-video"></i> <span id="hudAngleName">CAM 1 // MASTER WIDE</span>
+          </div>
+          <div class="hud-badge-timecode" id="hudTimecode">00:00.00 / 00:00.00</div>
         </div>
 
-        <div class="grid-2">
-          <!-- CARD 1: CAMERA & CADENCE -->
-          <div class="card">
-            <div class="card-title">
-              <i class="fa-solid fa-camera"></i> Camera Cadence &amp; Framing
-            </div>
-            <p class="card-desc">Configure director pacing rhythm and close-up punch-in magnification.</p>
-
-            <label for="pacingSelect">Director Cutting Pace</label>
-            <select id="pacingSelect">
-              <option value="dynamic" selected>Dynamic (Fast cuts, rapid zoom punch-ins for Reels/Shorts)</option>
-              <option value="podcast">Podcast (Deliberate cuts on natural topic transitions)</option>
-              <option value="documentary">Documentary (Cinematic wide pauses with slow push-ins)</option>
-              <option value="dramatic">Dramatic (Emphasizes emotional close-ups)</option>
-            </select>
-
-            <div class="slider-row">
-              <div class="slider-header">
-                <span>Close-Up Zoom Punch-In</span>
-                <span class="slider-val" id="zoomVal">1.75x</span>
-              </div>
-              <input type="range" id="zoomRange" min="120" max="220" value="175" oninput="document.getElementById('zoomVal').innerText = (this.value/100).toFixed(2) + 'x'" />
-            </div>
-
-            <label for="targetRes">Master Target Resolution</label>
-            <select id="targetRes">
-              <option value="720p" selected>720p HD (Ultra-Fast Mobile Render on S9+)</option>
-              <option value="1080p">1080p Full HD (Balanced Master)</option>
-              <option value="4k">4K UHD (Highest Fidelity Studio Master)</option>
-            </select>
-          </div>
-
-          <!-- CARD 2: COLOR SCIENCE & LETTERBOX -->
-          <div class="card">
-            <div class="card-title">
-              <i class="fa-solid fa-palette"></i> Color Science &amp; Cinema Framing
-            </div>
-            <p class="card-desc">Apply professional 3D LUT grading and anamorphic cinema bars.</p>
-
-            <label for="colorSelect">3D LUT Color Profile</label>
-            <select id="colorSelect">
-              <option value="cinematic" selected>Cinematic (Teal &amp; Orange Hollywood Contrast)</option>
-              <option value="podcast">Podcast Warm (Rich Skin Tones &amp; Subtle Shadows)</option>
-              <option value="vintage">Vintage 35mm (Analog Film Saturation &amp; Grain)</option>
-              <option value="none">Natural Flat (Preserve Original Camera Colors)</option>
-            </select>
-
-            <div class="toggle-row" style="margin-top: 1rem;">
-              <div class="toggle-meta">
-                <span class="toggle-title">Studio Loudness Normalization</span>
-                <span class="toggle-desc">Highpass filter + EBU R128 voice clarity leveling</span>
-              </div>
-              <input type="checkbox" id="normalizeAudio" checked />
-            </div>
-
-            <div class="toggle-row">
-              <div class="toggle-meta">
-                <span class="toggle-title">2.35:1 Anamorphic Cinema Bars</span>
-                <span class="toggle-desc">Ultra-widescreen letterboxing for cinematic scale</span>
-              </div>
-              <input type="checkbox" id="letterbox" />
-            </div>
-
-            <label for="titleText">Opening Lower-Third Title</label>
-            <input type="text" id="titleText" value="OMNICAM AI • MULTI-CAM PRODUCTION" />
-          </div>
-
-                    <!-- CARD 3: CAPCUT PRO TRANSITIONS & FREEZE FRAMES -->
-          <div class="card" style="border-left: 4px solid var(--primary);">
-            <div class="card-title">
-              <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i> CapCut Style Transitions &amp; Freezes
-            </div>
-            <p class="card-desc">Professional viral editing tools: white flash strobe, dynamic crash zooms, freeze frame spotlights, and whoosh sound effects.</p>
-
-            <label for="transitionSelect">Cut Transition Effect</label>
-            <select id="transitionSelect">
-              <option value="flash" selected>⚡ White Flash (CapCut Viral Strobe Impact)</option>
-              <option value="zoom">🌀 Dynamic Crash Zoom (Energetic Punch-In)</option>
-              <option value="glitch">✨ Glitch RGB Split (Modern Cyber / TikTok)</option>
-              <option value="push">🎥 Smooth Ken Burns Glide (Continuous Push)</option>
-              <option value="dissolve">🌊 Cinematic Cross Dissolve</option>
-              <option value="none">✂️ Clean Jump Cut (No Transition)</option>
-            </select>
-
-            <div class="toggle-row" style="margin-top: 1rem;">
-              <div class="toggle-meta">
-                <span class="toggle-title">❄️ Dramatic Freeze Frames</span>
-                <span class="toggle-desc">Freezes key emphatic pauses for 0.6s with spotlight &amp; camera snap</span>
-              </div>
-              <input type="checkbox" id="freezeFrame" checked />
-            </div>
-
-            <div class="toggle-row">
-              <div class="toggle-meta">
-                <span class="toggle-title">🔊 Transition Sound Effects (SFX)</span>
-                <span class="toggle-desc">Synthesized cinematic whoosh &amp; impact sweeps on every cut</span>
-              </div>
-              <input type="checkbox" id="sfxEnabled" checked />
-            </div>
-
-            <div class="toggle-row">
-              <div class="toggle-meta">
-                <span class="toggle-title">💥 Crash Zoom Punch-In</span>
-                <span class="toggle-desc">Dynamic 0.3s zoom punch on close-up angles for retention</span>
-              </div>
-              <input type="checkbox" id="crashZoom" checked />
-            </div>
-          </div>
-
-          <!-- CARD 3: SMART ENHANCEMENTS -->
-          <div class="card">
-            <div class="card-title">
-              <i class="fa-solid fa-brain"></i> AI Visual &amp; Audio Enhancements
-            </div>
-            <p class="card-desc">Autonomous algorithms to fix camera shake, hesitations, and subtitles.</p>
-
-            <div class="toggle-row">
-              <div class="toggle-meta">
-                <span class="toggle-title">Digital Gimbal Stabilization</span>
-                <span class="toggle-desc">Neutralizes walking bounce and handheld jitter</span>
-              </div>
-              <input type="checkbox" id="stabilize" checked />
-            </div>
-
-            <div class="toggle-row">
-              <div class="toggle-meta">
-                <span class="toggle-title">Hormozi / MrBeast Word Captions</span>
-                <span class="toggle-desc">High-contrast animated subtitles with active-word highlight</span>
-              </div>
-              <input type="checkbox" id="captions" checked />
-            </div>
-
-            <div class="toggle-row">
-              <div class="toggle-meta">
-                <span class="toggle-title">Vocal Filler Word Removal</span>
-                <span class="toggle-desc">Cuts "uhm", "ah", "like", and prolonged vocal drones</span>
-              </div>
-              <input type="checkbox" id="removeFillers" checked />
-            </div>
-          </div>
-
-          <!-- CARD 4: SOUNDTRACK & B-ROLL -->
-          <div class="card">
-            <div class="card-title">
-              <i class="fa-solid fa-music"></i> Soundtrack Bed &amp; B-Roll Engine
-            </div>
-            <p class="card-desc">Sidechain auto-ducking music bed and automated B-roll cutaway clips.</p>
-
-            <label for="bgmSelect">Background Music Soundtrack</label>
-            <select id="bgmSelect">
-              <option value="ambient" selected>Built-in Royalty-Free Ambient Pad (Warm &amp; Subtle)</option>
-              <option value="none">None (Dialogue Only)</option>
-            </select>
-
-            <div class="slider-row">
-              <div class="slider-header">
-                <span>Music Volume (Auto-Ducks to -22dB during speech)</span>
-                <span class="slider-val" id="bgmVolVal">22%</span>
-              </div>
-              <input type="range" id="bgmVol" min="5" max="60" value="22" oninput="document.getElementById('bgmVolVal').innerText = this.value + '%'" />
-            </div>
-
-            <label for="brollFolder">Automated B-Roll Folder Path</label>
-            <input type="text" id="brollFolder" placeholder="/sdcard/Movies/broll or empty" />
-          </div>
-        </div>
-      </section>
-
-      <!-- STEP 4: MASTER RENDER STUDIO -->
-      <section class="studio-section" id="export">
-        <div class="section-header">
-          <h2 class="section-title">
-            <i class="fa-solid fa-clapperboard" style="color: #0052CC;"></i> Step 4: Master Production Export Studio
-          </h2>
-          <span class="section-tag">Final Assembly</span>
+        <!-- Center Play Overlay Button -->
+        <div class="monitor-play-center" id="monitorPlayOverlay" onclick="toggleVideoPlay()" style="display: none;">
+          <i class="fa-solid fa-play" id="monitorPlayIcon"></i>
         </div>
 
-        <div class="card">
-          <div class="card-title">
-            <i class="fa-solid fa-bolt"></i> Render Studio Production Video
+      </div>
+
+      <!-- Monitor Transport Bar -->
+      <div class="monitor-transport-bar" id="monitorTransportBar" style="display: none;">
+        <button class="transport-btn" onclick="stepVideo(-1.0)" type="button" title="Step Back 1s">
+          <i class="fa-solid fa-backward-step"></i>
+        </button>
+        <button class="transport-btn transport-btn-primary" onclick="toggleVideoPlay()" type="button" title="Play / Pause (Space)">
+          <i class="fa-solid fa-play" id="transportPlayIcon"></i>
+        </button>
+        <button class="transport-btn" onclick="stepVideo(1.0)" type="button" title="Step Forward 1s">
+          <i class="fa-solid fa-forward-step"></i>
+        </button>
+        <button class="transport-btn" onclick="reAnalyzeFootage()" type="button" title="Re-generate Cuts with Current Settings">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </button>
+      </div>
+    </main>
+
+    <!-- ======================================================================
+         MULTI-TRACK TIMELINE (VN / CapCut Style)
+         ====================================================================== -->
+    <section class="nle-timeline-area">
+      <!-- Timecode Ruler -->
+      <div class="timeline-ruler-header">
+        <div class="time-ticks-container" id="timeTicksContainer"></div>
+      </div>
+
+      <!-- Scrollable Multi-Track Container -->
+      <div class="timeline-tracks-viewport" id="timelineViewport" onclick="handleTimelineClick(event)">
+        <!-- Glowing Red Playhead -->
+        <div class="timeline-playhead" id="timelinePlayhead">
+          <div class="playhead-head"></div>
+        </div>
+
+        <!-- Track 1: Multi-Cam Angle Cuts -->
+        <div class="track-row" id="cutsTrackRow">
+          <div style="color: var(--text-dim); font-size: 0.75rem; padding-left: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-film"></i> Select a video to generate virtual multi-camera cuts
           </div>
-          <p class="card-desc">
-            Executes single-pass FFmpeg hardware encoding with camera switching, color LUT, sidechain ducking, and burn-in captions.
-          </p>
+        </div>
 
-          <button class="btn btn-success btn-lg" id="renderBtn" onclick="renderStudioVideo()" style="width: 100%;" type="button">
-            <i class="fa-solid fa-film"></i> Render Studio Video
-          </button>
+        <!-- Track 2: Hormozi Subtitles -->
+        <div class="track-row-subtitles" id="subtitlesTrackRow">
+          <span style="font-size: 0.65rem; color: var(--text-dim); margin-right: 0.5rem;"><i class="fa-solid fa-closed-captioning"></i> CAPTIONS:</span>
+          <span id="captionTrackStatus" style="font-size: 0.65rem; color: var(--text-muted);">Synced to speech</span>
+        </div>
 
-          <!-- Real-Time Progress -->
-          <div class="progress-box" id="progressBox">
-            <div class="progress-header">
-              <span id="progressMsg">Initializing render pipeline...</span>
-              <span id="progressPct">0%</span>
+        <!-- Track 3: Voice + Ducking BGM -->
+        <div class="track-row-audio" id="audioTrackRow">
+          <span><i class="fa-solid fa-waveform-lines"></i> SOUNDTRACK &amp; VOICE</span>
+          <span style="font-size: 0.68rem; color: var(--text-dim);" id="audioTrackMeta">Sidechain Auto-Ducking (-22dB) &bull; 80Hz Rumble Filter</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         BOTTOM TOOL DOCK & INSPECTOR DRAWER
+         ====================================================================== -->
+    <footer class="nle-bottom-section">
+
+      <!-- Sliding Inspector Drawer / Sheet -->
+      <div class="nle-inspector-drawer" id="inspectorDrawer">
+        <div class="drawer-header">
+          <div class="drawer-title" id="drawerTitle">
+            <i class="fa-solid fa-sliders"></i> Tool Inspector
+          </div>
+          <button class="drawer-close-btn" onclick="closeDrawer()" type="button">&times;</button>
+        </div>
+
+        <!-- Panel 1: Media -->
+        <div class="drawer-panel" id="panelMedia" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">Select Media Source</span>
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="btn-action-glow" onclick="document.getElementById('nativeFilePicker').click()" type="button" style="flex: 1;">
+                  <i class="fa-solid fa-mobile-screen"></i> Gallery
+                </button>
+                <button class="btn-action-glow" onclick="openFileBrowser()" type="button" style="flex: 1;">
+                  <i class="fa-solid fa-folder-tree"></i> Storage
+                </button>
+              </div>
             </div>
-            <div class="progress-bar-bg">
-              <div class="progress-bar-fill" id="progressBar"></div>
+            <div class="control-item">
+              <span class="control-label">Quick Shortcuts</span>
+              <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                <span class="browser-root-chip" onclick="openFileBrowser('/sdcard/DCIM/Camera')"><i class="fa-solid fa-camera"></i> Camera</span>
+                <span class="browser-root-chip" onclick="openFileBrowser('/sdcard/Movies')"><i class="fa-solid fa-film"></i> Movies</span>
+                <span class="browser-root-chip" onclick="openFileBrowser('.')"><i class="fa-solid fa-briefcase"></i> Workspace</span>
+              </div>
             </div>
           </div>
+        </div>
 
-          <!-- Video Player Output -->
-          <div id="videoContainer" style="display: none; margin-top: 1.5rem;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-              <span style="font-weight: 700; color: #FFFFFF; font-size: 0.95rem;">
-                <i class="fa-solid fa-circle-check" style="color: #10B981;"></i> Production Video Ready
+        <!-- Panel 2: Pacing & Angles -->
+        <div class="drawer-panel" id="panelAngles" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">Director Pacing Style</span>
+              <select class="nle-select" id="pacingSelect" onchange="reAnalyzeFootage()">
+                <option value="dynamic" selected>Dynamic Hollywood (Balanced 2.5s - 4.5s)</option>
+                <option value="podcast">Podcast Studio (Longer takes 4s - 8s)</option>
+                <option value="energetic">Energetic / TikTok (Rapid cuts 1.5s - 3s)</option>
+              </select>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Close-Up Zoom Ratio</span>
+              <select class="nle-select" id="zoomSelect">
+                <option value="1.75" selected>1.75x Crop (Native 1080p from 4K)</option>
+                <option value="1.5">1.50x Crop (Subtle Punch-in)</option>
+                <option value="2.0">2.00x Crop (Intense Macro)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 3: Vocal Fillers -->
+        <div class="drawer-panel" id="panelFillers" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">Automatic Filler Excision</span>
+              <label class="toggle-row">
+                <span>Remove "uh", "um", "like", "you know"</span>
+                <input type="checkbox" id="removeFillersToggle" checked onchange="reAnalyzeFootage()" />
+              </label>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Hesitation Detection</span>
+              <span style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+                Dual lexical (Whisper token matching) and acoustic spectral drone filter cuts verbal stutters into dynamic angle switches.
               </span>
-              <a href="#" id="downloadLink" class="btn btn-secondary" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;">
-                <i class="fa-solid fa-download"></i> Download Video
-              </a>
             </div>
-            <video id="outputVideoPlayer" controls playsinline></video>
           </div>
         </div>
-      </section>
 
-    </div>
-  </main>
-
-  <!-- ========================================================================
-       CORPORATE SITE FOOTER (MUSTUDS ARCHITECTURE)
-       ======================================================================== -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-col" style="grid-column: span 2;">
-          <div class="brand-logo" style="margin-bottom: 0.75rem;">
-            <div class="brand-icon-box" style="width: 32px; height: 32px; font-size: 0.95rem;">
-              <i class="fa-solid fa-film"></i>
+        <!-- Panel 4: 3D Color LUT -->
+        <div class="drawer-panel" id="panelColor" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">Cinematic Grading Preset</span>
+              <select class="nle-select" id="colorGradeSelect">
+                <option value="cinematic" selected>Cinematic S-Curve (Warm skin, cool shadows)</option>
+                <option value="podcast">Modern Tech Podcast (High vibrance &amp; pop)</option>
+                <option value="vintage">Vintage 35mm (Muted organic tones)</option>
+                <option value="none">Clean / Neutral (Raw sensor pass-through)</option>
+              </select>
             </div>
-            <span class="brand-name" style="font-size: 1.2rem;">OmniCam Studio</span>
+            <div class="control-item">
+              <span class="control-label">Vignette &amp; Contrast</span>
+              <label class="toggle-row">
+                <span>Subtle Film Vignette &amp; S-Curve</span>
+                <input type="checkbox" id="vignetteToggle" checked />
+              </label>
+            </div>
           </div>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; max-width: 440px;">
-            Autonomous AI virtual multi-camera director engine. Transforms raw single-camera footage into high-retention multi-camera studio videos completely offline on Android and Linux devices.
-          </p>
         </div>
 
-        <div class="footer-col">
-          <h4>Studio Navigation</h4>
-          <ul class="footer-links">
-            <li><a href="#footage">Source Footage</a></li>
-            <li><a href="#timeline">Timeline Visualizer</a></li>
-            <li><a href="#settings">Color &amp; Audio Suite</a></li>
-            <li><a href="#export">Master Render</a></li>
-          </ul>
+        <!-- Panel 5: Sound & Ducking -->
+        <div class="drawer-panel" id="panelAudio" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">Background Music Track</span>
+              <select class="nle-select" id="bgmTrackSelect">
+                <option value="ambient" selected>Warm Ambient Harmonics (Royalty-Free)</option>
+                <option value="none">None (Speech Only)</option>
+              </select>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Auto-Ducking Bed Volume (<span id="bgmVolLabel">20%</span>)</span>
+              <input type="range" class="nle-range-slider" id="bgmVolSlider" min="5" max="50" value="20" oninput="document.getElementById('bgmVolLabel').innerText = this.value + '%'" />
+            </div>
+            <div class="control-item">
+              <span class="control-label">Audio Mastering</span>
+              <label class="toggle-row">
+                <span>EBU R128 Broadcast Normalization (-16 LUFS)</span>
+                <input type="checkbox" id="audioNormToggle" checked />
+              </label>
+            </div>
+          </div>
         </div>
 
-        <div class="footer-col">
-          <h4>Engine Architecture</h4>
-          <ul class="footer-links">
-            <li><span style="color: var(--text-secondary); font-size: 0.85rem;"><i class="fa-solid fa-microchip"></i> Hardware: S9+ / Exynos 9810</span></li>
-            <li><span style="color: var(--text-secondary); font-size: 0.85rem;"><i class="fa-solid fa-video"></i> Core: FFmpeg 6+ Native Filtergraph</span></li>
-            <li><span style="color: var(--text-secondary); font-size: 0.85rem;"><i class="fa-solid fa-comment-dots"></i> Subtitles: Whisper.cpp Offline</span></li>
-            <li><span style="color: var(--text-secondary); font-size: 0.85rem;"><i class="fa-solid fa-terminal"></i> Platform: Termux Linux</span></li>
-          </ul>
+        <!-- Panel 6: Hormozi Captions -->
+        <div class="drawer-panel" id="panelCaptions" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">Animated Active-Word Subtitles</span>
+              <label class="toggle-row">
+                <span>Burn Hormozi Style Captions</span>
+                <input type="checkbox" id="captionsToggle" />
+              </label>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Word Highlight Color</span>
+              <select class="nle-select" id="captionColorSelect">
+                <option value="yellow" selected>Neon Yellow (#FFE600)</option>
+                <option value="green">Electric Emerald (#00FF66)</option>
+                <option value="cyan">Cyber Cyan (#00F0FF)</option>
+                <option value="white">Pure Crisp White</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 7: Digital Gimbal -->
+        <div class="drawer-panel" id="panelGimbal" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">2-Pass Optical Horizon Stabilizer</span>
+              <label class="toggle-row">
+                <span>Enable vidstab Digital Gimbal</span>
+                <input type="checkbox" id="stabilizeToggle" />
+              </label>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Smoothing Radius (<span id="stabilizeSmoothingLabel">25</span> frames)</span>
+              <input type="range" class="nle-range-slider" id="stabilizeSmoothingSlider" min="10" max="50" value="25" oninput="document.getElementById('stabilizeSmoothingLabel').innerText = this.value" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 8: B-Roll -->
+        <div class="drawer-panel" id="panelBRoll" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">B-Roll Footage / Photos Folder</span>
+              <input type="text" class="nle-input" id="brollFolderInput" placeholder="/sdcard/Movies/Clips or ./clips/" />
+            </div>
+            <div class="control-item">
+              <span class="control-label">Cutaway Behavior</span>
+              <span style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+                Takes longer than 4.0s automatically cut away to secondary video or stills with smooth Ken Burns drift, keeping speech seamless.
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="footer-bottom">
-        <div>
-          &copy; 2026 OmniCam Studio Engine. 100% Offline &bull; Zero External Telemetry.
-        </div>
-        <div>
-          <span style="color: #34D399; font-weight: 700;">
-            <i class="fa-solid fa-circle" style="font-size: 0.6rem;"></i> Local Web Server Active (Port 8080)
-          </span>
-        </div>
+      <!-- VN-Style Horizontal Action Dock -->
+      <div class="nle-dock-bar">
+        <button class="dock-tool-btn" id="dockBtnMedia" onclick="openToolPanel('Media', 'fa-folder-open')" type="button">
+          <i class="fa-solid fa-folder-open"></i>
+          <span>Media</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnAngles" onclick="openToolPanel('Angles', 'fa-video')" type="button">
+          <i class="fa-solid fa-video"></i>
+          <span>Angles</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnFillers" onclick="openToolPanel('Fillers', 'fa-scissors')" type="button">
+          <i class="fa-solid fa-scissors"></i>
+          <span>Fillers</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnColor" onclick="openToolPanel('Color', 'fa-palette')" type="button">
+          <i class="fa-solid fa-palette"></i>
+          <span>3D LUT</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnAudio" onclick="openToolPanel('Audio', 'fa-volume-high')" type="button">
+          <i class="fa-solid fa-volume-high"></i>
+          <span>Sound</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnCaptions" onclick="openToolPanel('Captions', 'fa-closed-captioning')" type="button">
+          <i class="fa-solid fa-closed-captioning"></i>
+          <span>Captions</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnGimbal" onclick="openToolPanel('Gimbal', 'fa-compass')" type="button">
+          <i class="fa-solid fa-compass"></i>
+          <span>Gimbal</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnBRoll" onclick="openToolPanel('BRoll', 'fa-layer-group')" type="button">
+          <i class="fa-solid fa-layer-group"></i>
+          <span>B-Roll</span>
+        </button>
       </div>
-    </div>
-  </footer>
+    </footer>
+
+  </div>
 
   <!-- ========================================================================
        DEVICE FILE NAVIGATOR MODAL
@@ -1638,59 +1459,111 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <div class="modal-window">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 0.65rem;">
-          <div class="brand-icon-box" style="width: 36px; height: 36px; font-size: 1rem;">
+          <div class="browser-item-icon icon-folder">
             <i class="fa-solid fa-folder-tree"></i>
           </div>
           <div>
-            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-heading); font-weight: 800; line-height: 1.2;">
-              Device File Navigator
+            <h3 style="font-family: var(--font-display); font-size: 1.05rem; color: var(--text-white); font-weight: 800;">
+              Device Storage Explorer
             </h3>
-            <span style="font-size: 0.75rem; color: var(--text-muted);">Browse all folders and storage locations on your device</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Select video to direct</span>
           </div>
         </div>
         <button class="modal-close-btn" onclick="closeFileBrowser()" type="button">&times;</button>
       </div>
 
-      <!-- Quick Roots Bar -->
       <div class="modal-roots-bar" id="browserRootsBar"></div>
 
-      <!-- Breadcrumbs & Up Button -->
       <div class="browser-nav-bar">
-        <button class="btn btn-secondary btn-sm" id="browserUpBtn" onclick="navigateBrowserUp()" type="button" title="Go to Parent Folder">
+        <button class="btn-action-glow" id="browserUpBtn" onclick="navigateBrowserUp()" type="button" style="padding: 0.3rem 0.65rem; font-size: 0.75rem;">
           <i class="fa-solid fa-arrow-up"></i> Up
         </button>
         <div class="browser-breadcrumbs" id="browserBreadcrumbs"></div>
       </div>
 
-      <!-- Search / Filter in Directory -->
-      <div style="padding: 0.65rem 1.35rem 0.35rem; background: #FFFFFF;">
-        <input type="text" id="browserSearchInput" placeholder="Quick filter files in this folder..." oninput="filterBrowserList(this.value)" style="padding: 0.55rem 0.85rem; font-size: 0.85rem;" />
+      <div style="padding: 0.5rem 1.25rem; background: var(--bg-main);">
+        <input type="text" class="nle-input" id="browserSearchInput" placeholder="Search / filter files..." oninput="filterBrowserList(this.value)" style="width: 100%;" />
       </div>
 
-      <!-- Directory Contents List -->
       <div class="browser-list-container" id="browserListContainer">
         <div style="padding: 2.5rem; text-align: center; color: var(--text-muted);">
-          <i class="fa-solid fa-spinner fa-spin"></i> Loading device storage...
+          <i class="fa-solid fa-spinner fa-spin"></i> Reading storage...
         </div>
       </div>
 
       <div class="modal-footer">
-        <span style="font-size: 0.78rem; color: var(--text-muted);" id="browserStatusText">0 items found</span>
-        <button class="btn btn-secondary btn-sm" onclick="closeFileBrowser()" type="button">Close</button>
+        <span style="font-size: 0.75rem; color: var(--text-muted);" id="browserStatusText">0 items found</span>
+        <button class="btn-action-glow" onclick="closeFileBrowser()" type="button" style="padding: 0.35rem 0.85rem; font-size: 0.8rem;">Close</button>
       </div>
     </div>
   </div>
 
+  <!-- ========================================================================
+       RENDER & EXPORT MODAL
+       ======================================================================== -->
+  <div id="exportProgressModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-window" style="max-width: 580px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <div class="browser-item-icon icon-video">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <div>
+            <h3 style="font-family: var(--font-display); font-size: 1.05rem; color: var(--text-white); font-weight: 800;">
+              OmniCam Studio Render
+            </h3>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Multi-Camera Studio Master</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeExportModal()" type="button">&times;</button>
+      </div>
+
+      <div style="padding: 1.5rem 1.25rem;">
+        <!-- Render Progress -->
+        <div id="exportActiveState">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.82rem;">
+            <span style="color: var(--text-muted);" id="exportStatusMsg"><i class="fa-solid fa-spinner fa-spin"></i> Rendering multi-camera cuts...</span>
+            <span style="font-weight: 800; color: var(--accent-neon);" id="exportProgressPct">0%</span>
+          </div>
+          <div style="height: 8px; background: var(--bg-surface); border-radius: var(--radius-full); overflow: hidden; margin-bottom: 1.25rem;">
+            <div id="exportProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #00F0FF, #2563EB); transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+
+        <!-- Render Complete -->
+        <div id="exportCompleteState" style="display: none; text-align: center;">
+          <div style="width: 54px; height: 54px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 1rem;">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <h4 style="font-family: var(--font-display); font-size: 1.15rem; color: var(--text-white); margin-bottom: 0.35rem;">
+            Master Cut Complete!
+          </h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+            Zero jump cuts, studio loudness normalized, and color graded.
+          </p>
+
+          <div style="display: flex; gap: 0.75rem; justify-content: center;">
+            <a id="downloadVideoLink" class="btn-action-glow btn-action-primary" href="#" download style="text-decoration: none;">
+              <i class="fa-solid fa-download"></i> Download MP4
+            </a>
+            <button class="btn-action-glow" onclick="playRenderedInMonitor()" type="button">
+              <i class="fa-solid fa-play"></i> Preview Master
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ========================================================================
-       CLIENT APPLICATION JAVASCRIPT
+       NLE CLIENT JAVASCRIPT
        ======================================================================== -->
   <script>
     let currentShots = [];
+    let currentTotalDur = 0;
+    let activeDrawerPanel = null;
+    let renderedOutputPath = null;
 
-    // ========================================================================
-    // HTML UTILITIES & GALLERY PICKER
-    // ========================================================================
     function escapeHtml(str) {
       if (!str) return '';
       return String(str)
@@ -1701,6 +1574,46 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         .replace(/'/g, '&#039;');
     }
 
+    // ------------------------------------------------------------------------
+    // TOOL DRAWER CONTROLLER
+    // ------------------------------------------------------------------------
+    function openToolPanel(panelId, iconClass) {
+      const drawer = document.getElementById('inspectorDrawer');
+      const title = document.getElementById('drawerTitle');
+
+      // Reset active dock states
+      document.querySelectorAll('.dock-tool-btn').forEach(b => b.classList.remove('active'));
+
+      if (activeDrawerPanel === panelId && drawer.classList.contains('open')) {
+        closeDrawer();
+        return;
+      }
+
+      // Hide all panels
+      document.querySelectorAll('.drawer-panel').forEach(p => p.style.display = 'none');
+
+      const targetPanel = document.getElementById('panel' + panelId);
+      if (targetPanel) targetPanel.style.display = 'block';
+
+      title.innerHTML = '<i class="fa-solid ' + iconClass + '"></i> ' + panelId + ' Settings';
+      drawer.classList.add('open');
+
+      const dockBtn = document.getElementById('dockBtn' + panelId);
+      if (dockBtn) dockBtn.classList.add('active');
+
+      activeDrawerPanel = panelId;
+    }
+
+    function closeDrawer() {
+      const drawer = document.getElementById('inspectorDrawer');
+      drawer.classList.remove('open');
+      document.querySelectorAll('.dock-tool-btn').forEach(b => b.classList.remove('active'));
+      activeDrawerPanel = null;
+    }
+
+    // ------------------------------------------------------------------------
+    // GALLERY & NATIVE FILE PICKER
+    // ------------------------------------------------------------------------
     async function handleNativeFileSelect(input) {
       const file = input.files && input.files[0];
       if (!file) return;
@@ -1708,30 +1621,22 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const badge = document.getElementById('uploadStatusBadge');
       const msg = document.getElementById('uploadStatusMsg');
       badge.style.display = 'block';
-      badge.style.background = '#EBF3FF';
-      badge.style.color = '#0052CC';
-      badge.style.borderColor = '#BFDBFE';
-      msg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking video: <strong>' + escapeHtml(file.name) + '</strong>...';
+      msg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Fast-linking: <strong>' + escapeHtml(file.name) + '</strong>...';
 
-      // 1. Fast path: see if video already exists on device storage
+      // 1. Fast path match
       try {
         const findRes = await fetch('/api/find_local?name=' + encodeURIComponent(file.name) + '&size=' + file.size);
         const findData = await findRes.json();
         if (findData.found && findData.path) {
-          document.getElementById('inputVideo').value = findData.path;
-          badge.style.background = '#ECFDF5';
-          badge.style.color = '#059669';
-          badge.style.borderColor = '#A7F3D0';
-          msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Gallery video linked: <strong>' + escapeHtml(file.name) + '</strong> (' + (file.size / (1024 * 1024)).toFixed(1) + ' MB)';
+          selectVideoSource(findData.path, file.name);
+          badge.style.display = 'none';
           input.value = '';
           return;
         }
-      } catch (err) {
-        // Fall back to upload
-      }
+      } catch (e) {}
 
-      // 2. Stream into workspace uploads folder
-      msg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading from Gallery (0%)...';
+      // 2. Fallback stream upload
+      msg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading from gallery (0%)...';
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/api/upload', true);
       xhr.setRequestHeader('X-Filename', encodeURIComponent(file.name));
@@ -1740,7 +1645,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       xhr.upload.onprogress = function(e) {
         if (e.lengthComputable) {
           const pct = Math.round((e.loaded / e.total) * 100);
-          msg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading from Gallery (' + pct + '%)...';
+          msg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading from gallery (' + pct + '%)...';
         }
       };
 
@@ -1749,54 +1654,234 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           try {
             const resp = JSON.parse(xhr.responseText);
             if (resp.path) {
-              document.getElementById('inputVideo').value = resp.path;
-              badge.style.background = '#ECFDF5';
-              badge.style.color = '#059669';
-              badge.style.borderColor = '#A7F3D0';
-              msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Ready to edit: <strong>' + escapeHtml(file.name) + '</strong> (' + (file.size / (1024 * 1024)).toFixed(1) + ' MB)';
+              selectVideoSource(resp.path, file.name);
+              badge.style.display = 'none';
               input.value = '';
               return;
             }
-          } catch (e) {}
+          } catch (err) {}
         }
-        badge.style.background = '#FEF2F2';
-        badge.style.color = '#DC2626';
-        badge.style.borderColor = '#FECACA';
-        msg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Upload failed. Try "Browse Device" or typing path directly.';
+        msg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Failed to load video from gallery.';
       };
 
       xhr.onerror = function() {
-        badge.style.background = '#FEF2F2';
-        badge.style.color = '#DC2626';
-        badge.style.borderColor = '#FECACA';
-        msg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Connection failed while loading video.';
+        msg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Connection error during upload.';
       };
 
       xhr.send(file);
     }
 
-    // ========================================================================
-    // DEVICE FILE NAVIGATOR MODAL HANDLERS
-    // ========================================================================
+    // ------------------------------------------------------------------------
+    // VIDEO SOURCE SELECTION & PLAYBACK
+    // ------------------------------------------------------------------------
+    function selectVideoSource(filePath, displayName) {
+      document.getElementById('inputVideo').value = filePath;
+      const fn = displayName || filePath.split('/').pop();
+      document.getElementById('topbarClipName').innerText = fn;
+
+      // Switch Viewport to Player
+      document.getElementById('emptyStateCard').style.display = 'none';
+      const player = document.getElementById('studioVideoPlayer');
+      player.style.display = 'block';
+      player.src = '/video?path=' + encodeURIComponent(filePath);
+
+      document.getElementById('monitorHudTop').style.display = 'flex';
+      document.getElementById('monitorPlayOverlay').style.display = 'flex';
+      document.getElementById('monitorTransportBar').style.display = 'flex';
+
+      // Setup Timecode & Playhead updates
+      player.ontimeupdate = updatePlayerTimecode;
+      player.onplay = () => {
+        document.getElementById('transportPlayIcon').className = 'fa-solid fa-pause';
+        document.getElementById('monitorPlayIcon').className = 'fa-solid fa-pause';
+      };
+      player.onpause = () => {
+        document.getElementById('transportPlayIcon').className = 'fa-solid fa-play';
+        document.getElementById('monitorPlayIcon').className = 'fa-solid fa-play';
+      };
+
+      // Automatically analyze & generate timeline cuts
+      analyzeFootage(filePath);
+    }
+
+    function toggleVideoPlay() {
+      const player = document.getElementById('studioVideoPlayer');
+      if (player.paused) {
+        player.play().catch(() => {});
+      } else {
+        player.pause();
+      }
+    }
+
+    function stepVideo(deltaSec) {
+      const player = document.getElementById('studioVideoPlayer');
+      player.currentTime = Math.max(0, player.currentTime + deltaSec);
+    }
+
+    function updatePlayerTimecode() {
+      const player = document.getElementById('studioVideoPlayer');
+      const cur = player.currentTime || 0;
+      const dur = player.duration || currentTotalDur || 1;
+
+      document.getElementById('hudTimecode').innerText = `${formatTime(cur)} / ${formatTime(dur)}`;
+
+      // Update Playhead position
+      const pct = Math.min((cur / dur) * 100, 100);
+      const playhead = document.getElementById('timelinePlayhead');
+      if (playhead) {
+        playhead.style.left = pct + '%';
+      }
+
+      // Update Active Cut in HUD
+      if (currentShots.length > 0) {
+        for (let i = 0; i < currentShots.length; i++) {
+          const s = currentShots[i];
+          if (cur >= s.start && cur <= s.end) {
+            document.getElementById('hudAngleName').innerText = `CAM ${i+1} // ${(s.angle || 'WIDE').replace('_', ' ')}`;
+            // Highlight active cut block
+            document.querySelectorAll('.shot-block-nle').forEach((el, idx) => {
+              if (idx === i) el.classList.add('active');
+              else el.classList.remove('active');
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    function handleTimelineClick(e) {
+      const viewport = document.getElementById('timelineViewport');
+      const rect = viewport.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const pct = Math.max(0, Math.min(clickX / rect.width, 1));
+
+      const player = document.getElementById('studioVideoPlayer');
+      const dur = player.duration || currentTotalDur;
+      if (dur > 0) {
+        player.currentTime = pct * dur;
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // ANALYSIS & TIMELINE GENERATION
+    // ------------------------------------------------------------------------
+    async function analyzeFootage(customPath) {
+      const inputPath = customPath || document.getElementById('inputVideo').value.trim();
+      if (!inputPath) return;
+
+      const track = document.getElementById('cutsTrackRow');
+      track.innerHTML = '<div style="color: var(--accent-neon); font-size: 0.75rem; padding-left: 0.5rem;"><i class="fa-solid fa-spinner fa-spin"></i> Analyzing acoustics &amp; framing virtual angles...</div>';
+
+      try {
+        const res = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input_path: inputPath,
+            pacing: document.getElementById('pacingSelect').value,
+            remove_fillers: document.getElementById('removeFillersToggle').checked,
+            broll_dir: document.getElementById('brollFolderInput').value.trim() || null
+          })
+        });
+
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        renderTimeline(data);
+      } catch (err) {
+        track.innerHTML = '<div style="color: #EF4444; font-size: 0.75rem; padding-left: 0.5rem;"><i class="fa-solid fa-triangle-exclamation"></i> ' + escapeHtml(err.message) + '</div>';
+      }
+    }
+
+    function reAnalyzeFootage() {
+      analyzeFootage();
+    }
+
+    function renderTimeline(data) {
+      currentShots = data.shots || [];
+      currentTotalDur = data.edited_duration || data.total_duration || 1.0;
+
+      // Update Topbar Stats
+      document.getElementById('statCutDuration').innerText = formatTime(currentTotalDur);
+      document.getElementById('statDeadAirPct').innerText = '-' + (data.saved_pct || 0).toFixed(0) + '%';
+      document.getElementById('statCutsCount').innerText = currentShots.length;
+      document.getElementById('statDurationChip').style.display = 'flex';
+      document.getElementById('statDeadAirChip').style.display = 'flex';
+      document.getElementById('statCutsChip').style.display = 'flex';
+
+      // Render Time Ticks
+      const ticks = document.getElementById('timeTicksContainer');
+      ticks.innerHTML = '';
+      const totalSec = Math.ceil(currentTotalDur);
+      const step = totalSec > 30 ? 5 : (totalSec > 15 ? 2 : 1);
+      for (let s = 0; s <= totalSec; s += step) {
+        const tick = document.createElement('div');
+        tick.className = 'time-tick';
+        tick.innerText = formatTime(s);
+        ticks.appendChild(tick);
+      }
+
+      // Render Cut Blocks
+      const track = document.getElementById('cutsTrackRow');
+      track.innerHTML = '';
+
+      currentShots.forEach((shot, idx) => {
+        const dur = shot.duration;
+        const pct = Math.max((dur / currentTotalDur) * 100, 1.2);
+
+        const block = document.createElement('div');
+        const angleClass = 'angle-' + (shot.angle || 'wide').toLowerCase();
+        block.className = `shot-block-nle ${angleClass}`;
+        block.style.width = pct + '%';
+        block.title = `Shot #${idx+1}: ${(shot.angle||'wide').toUpperCase()} (${dur.toFixed(1)}s)`;
+
+        const tag = document.createElement('div');
+        tag.className = 'shot-tag-name';
+        tag.innerHTML = `<i class="fa-solid fa-camera"></i> ${shot.angle || 'WIDE'}`;
+
+        const durTag = document.createElement('div');
+        durTag.className = 'shot-tag-dur';
+        durTag.innerText = dur.toFixed(1) + 's';
+
+        block.appendChild(tag);
+        block.appendChild(durTag);
+
+        block.onclick = (e) => {
+          e.stopPropagation();
+          const player = document.getElementById('studioVideoPlayer');
+          player.currentTime = shot.start;
+          player.play().catch(() => {});
+        };
+
+        track.appendChild(block);
+      });
+    }
+
+    function formatTime(sec) {
+      sec = Math.max(0, sec);
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // ------------------------------------------------------------------------
+    // DEVICE FILE NAVIGATOR MODAL
+    // ------------------------------------------------------------------------
     let browserCurrentDir = '';
     let browserParentDir = null;
     let browserAllEntries = [];
 
     function openFileBrowser(dir) {
-      const modal = document.getElementById('deviceBrowserModal');
-      modal.style.display = 'flex';
+      document.getElementById('deviceBrowserModal').style.display = 'flex';
       loadBrowserDir(dir || 'default');
     }
 
     function closeFileBrowser() {
-      const modal = document.getElementById('deviceBrowserModal');
-      modal.style.display = 'none';
+      document.getElementById('deviceBrowserModal').style.display = 'none';
     }
 
     function navigateBrowserUp() {
-      if (browserParentDir) {
-        loadBrowserDir(browserParentDir);
-      }
+      if (browserParentDir) loadBrowserDir(browserParentDir);
     }
 
     async function loadBrowserDir(dir) {
@@ -1808,7 +1893,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const searchInput = document.getElementById('browserSearchInput');
       if (searchInput) searchInput.value = '';
 
-      listContainer.innerHTML = '<div style="padding: 2.5rem; text-align: center; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Reading device storage...</div>';
+      listContainer.innerHTML = '<div style="padding: 2.5rem; text-align: center; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Reading storage...</div>';
 
       try {
         const res = await fetch('/api/browse?dir=' + encodeURIComponent(dir || 'default'));
@@ -1819,7 +1904,6 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         browserParentDir = data.parent_dir;
         browserAllEntries = data.entries || [];
 
-        // Up button state
         upBtn.disabled = !browserParentDir;
         upBtn.style.opacity = browserParentDir ? '1' : '0.4';
 
@@ -1828,7 +1912,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         (data.quick_roots || []).forEach(r => {
           const chip = document.createElement('span');
           chip.className = 'browser-root-chip';
-          chip.innerHTML = '<i class="fa-solid ' + r.icon + '"></i> ' + escapeHtml(r.label);
+          chip.innerHTML = `<i class="fa-solid ${r.icon}"></i> ${escapeHtml(r.label)}`;
           chip.onclick = () => loadBrowserDir(r.path);
           rootsBar.appendChild(chip);
         });
@@ -1852,8 +1936,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
         renderBrowserList(browserAllEntries);
       } catch (err) {
-        listContainer.innerHTML = '<div style="padding: 2.5rem; text-align: center; color: #DC2626;"><i class="fa-solid fa-triangle-exclamation"></i> ' + escapeHtml(err.message) + '</div>';
-        statusText.innerText = 'Error reading storage folder';
+        listContainer.innerHTML = '<div style="padding: 2.5rem; text-align: center; color: #EF4444;"><i class="fa-solid fa-triangle-exclamation"></i> ' + escapeHtml(err.message) + '</div>';
+        statusText.innerText = 'Error reading directory';
       }
     }
 
@@ -1863,16 +1947,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       listContainer.innerHTML = '';
 
       if (!entries || entries.length === 0) {
-        listContainer.innerHTML = '<div style="padding: 2.5rem; text-align: center; color: var(--text-muted);"><i class="fa-regular fa-folder-open"></i> This folder contains no files.</div>';
+        listContainer.innerHTML = '<div style="padding: 2.5rem; text-align: center; color: var(--text-muted);">No files in this folder.</div>';
         statusText.innerText = '0 items found';
         return;
       }
 
-      let videoCount = 0;
+      let vidCount = 0;
       let dirCount = 0;
 
       entries.forEach(item => {
-        if (item.is_video) videoCount++;
+        if (item.is_video) vidCount++;
         if (item.is_dir) dirCount++;
 
         const div = document.createElement('div');
@@ -1893,34 +1977,23 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         left.appendChild(nameSpan);
 
         const meta = document.createElement('div');
-        meta.className = 'browser-item-meta';
-
         if (item.is_video) {
           const badge = document.createElement('span');
           badge.className = 'badge-video';
           badge.innerText = item.size || 'VIDEO';
-          meta.appendChild(badge);
-        } else if (item.is_dir) {
-          const badge = document.createElement('span');
-          badge.style.fontSize = '0.75rem';
-          badge.style.color = 'var(--text-muted)';
-          badge.innerText = 'Folder';
           meta.appendChild(badge);
         }
 
         div.appendChild(left);
         div.appendChild(meta);
 
-        if (item.is_dir) {
-          div.onclick = () => loadBrowserDir(item.path);
-        } else if (item.is_video) {
-          div.onclick = () => selectBrowserFile(item.path);
-        }
+        if (item.is_dir) div.onclick = () => loadBrowserDir(item.path);
+        else if (item.is_video) div.onclick = () => selectBrowserFile(item.path);
 
         listContainer.appendChild(div);
       });
 
-      statusText.innerText = `${videoCount} video(s), ${dirCount} folder(s)`;
+      statusText.innerText = `${vidCount} video(s), ${dirCount} folder(s)`;
     }
 
     function filterBrowserList(query) {
@@ -1929,213 +2002,111 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         return;
       }
       const q = query.toLowerCase().trim();
-      const filtered = browserAllEntries.filter(e => e.name.toLowerCase().includes(q));
-      renderBrowserList(filtered);
+      renderBrowserList(browserAllEntries.filter(e => e.name.toLowerCase().includes(q)));
     }
 
     function selectBrowserFile(filePath) {
-      document.getElementById('inputVideo').value = filePath;
       closeFileBrowser();
-      const badge = document.getElementById('uploadStatusBadge');
-      const msg = document.getElementById('uploadStatusMsg');
-      badge.style.display = 'block';
-      badge.style.background = '#ECFDF5';
-      badge.style.color = '#059669';
-      badge.style.borderColor = '#A7F3D0';
-      msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Selected: <strong>' + escapeHtml(filePath.split('/').pop()) + '</strong>';
+      selectVideoSource(filePath);
     }
 
-    function setFolderPath(folder) {
-      document.getElementById('inputVideo').value = folder + '/';
-      document.getElementById('inputVideo').focus();
-    }
-
-    async function scanDevice() {
-      const select = document.getElementById('scanSelect');
-      select.innerHTML = '<option value="">Scanning device storage for videos...</option>';
-      try {
-        const res = await fetch('/api/scan');
-        const files = await res.json();
-        select.innerHTML = '<option value="">-- Pick a discovered video (' + files.length + ' found) --</option>';
-        files.forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f.path;
-          opt.innerText = f.name + ' (' + f.size + ')';
-          select.appendChild(opt);
-        });
-      } catch (err) {
-        select.innerHTML = '<option value="">Scan failed. Type path manually.</option>';
-      }
-    }
-
-    function onScanSelectChange(selectElem) {
-      if (selectElem.value) {
-        document.getElementById('inputVideo').value = selectElem.value;
-      }
-    }
-
-    async function analyzeFootage() {
+    // ------------------------------------------------------------------------
+    // EXPORT & RENDER MODAL
+    // ------------------------------------------------------------------------
+    function openExportModal() {
       const inputPath = document.getElementById('inputVideo').value.trim();
-      if (!inputPath) return alert('Please enter or select a video file path first.');
-
-      const btn = document.getElementById('analyzeBtn');
-      const originalText = btn.innerHTML;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing Acoustics & Angles...';
-      btn.disabled = true;
-
-      try {
-        const res = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            input_path: inputPath,
-            pacing: document.getElementById('pacingSelect').value,
-            remove_fillers: document.getElementById('removeFillers').checked,
-            broll_dir: document.getElementById('brollFolder').value.trim() || null
-          })
-        });
-
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        renderTimeline(data);
-      } catch (err) {
-        alert('Footage Analysis Failed: ' + err.message);
-      } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+      if (!inputPath) {
+        alert('Please select or load a source video first.');
+        return;
       }
+
+      document.getElementById('exportProgressModal').style.display = 'flex';
+      document.getElementById('exportActiveState').style.display = 'block';
+      document.getElementById('exportCompleteState').style.display = 'none';
+
+      startRenderExecution();
     }
 
-    function renderTimeline(data) {
-      currentShots = data.shots || [];
-      const track = document.getElementById('timelineTrack');
-      track.innerHTML = '';
-
-      const totalDur = data.edited_duration || 1.0;
-
-      currentShots.forEach((shot, idx) => {
-        const dur = shot.duration;
-        const pct = Math.max((dur / totalDur) * 100, 0.7);
-        const block = document.createElement('div');
-        block.className = 'shot-block angle-' + (shot.angle || 'wide');
-        block.style.width = pct + '%';
-        block.title = 'Shot #' + (idx + 1) + ': ' + (shot.angle || 'wide').toUpperCase() + ' (' + dur.toFixed(1) + 's)';
-        block.innerText = dur >= 2.0 ? (shot.angle || 'wide') : '';
-
-        if (shot.is_freeze) {
-          block.style.boxShadow = 'inset 0 0 0 2px #F59E0B';
-          block.title += ' [❄️ FREEZE FRAME]';
-        }
-
-        block.onclick = () => {
-          const inspector = document.getElementById('shotInspector');
-          inspector.style.display = 'block';
-          let freezeNote = shot.is_freeze ? ' &bull; <span style=\"color: #F59E0B; font-weight: 700;\">❄️ Dramatic Freeze Frame (' + (shot.freeze_duration || 0.6) + 's)</span>' : '';
-          let transNote = ' &bull; Transition: <strong style=\"text-transform: uppercase;\">' + (shot.transition || 'flash') + '</strong>';
-          inspector.innerHTML = '<strong>Shot #' + (idx + 1) + '</strong> &bull; Angle: <strong style=\"text-transform: uppercase;\">' + shot.angle + '</strong>' + transNote + freezeNote + ' &bull; Cut Range: <strong>' + shot.start.toFixed(2) + 's &rarr; ' + shot.end.toFixed(2) + 's</strong> (' + shot.duration.toFixed(2) + 's)';
-        };
-
-        track.appendChild(block);
-      });
-
-      document.getElementById('statEditedDur').innerText = formatTime(data.edited_duration);
-      document.getElementById('statDeadAir').innerText = data.dead_air_cut.toFixed(1) + 's';
-      document.getElementById('statCuts').innerText = currentShots.length;
-      const boostPct = Math.round((data.dead_air_cut / (data.total_duration || 1.0)) * 100);
-      document.getElementById('statSaved').innerText = '+' + boostPct + '%';
-
-      document.getElementById('timelineCard').style.display = 'block';
-      // Smooth scroll to timeline
-      document.getElementById('timeline').scrollIntoView({ behavior: 'smooth' });
+    function closeExportModal() {
+      document.getElementById('exportProgressModal').style.display = 'none';
     }
 
-    function formatTime(sec) {
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
-      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-
-    async function renderStudioVideo() {
+    async function startRenderExecution() {
       const inputPath = document.getElementById('inputVideo').value.trim();
-      if (!inputPath) return alert('Please enter a video file path.');
+      const resVal = document.getElementById('targetResolutionSelect').value;
 
-      const btn = document.getElementById('renderBtn');
-      btn.disabled = true;
-      document.getElementById('progressBox').style.display = 'block';
-      document.getElementById('videoContainer').style.display = 'none';
+      let targetW = 1920;
+      let targetH = 1080;
+      if (resVal === '720p') { targetW = 1280; targetH = 720; }
+      else if (resVal === '4k') { targetW = 3840; targetH = 2160; }
+
+      const payload = {
+        input_path: inputPath,
+        output_path: null,
+        target_width: targetW,
+        target_height: targetH,
+        color_grade: document.getElementById('colorGradeSelect').value,
+        bgm_path: document.getElementById('bgmTrackSelect').value === 'ambient' ? 'ambient' : null,
+        bgm_volume: parseFloat(document.getElementById('bgmVolSlider').value) / 100.0,
+        enable_captions: document.getElementById('captionsToggle').checked,
+        caption_color: document.getElementById('captionColorSelect').value,
+        stabilize: document.getElementById('stabilizeToggle').checked,
+        stabilize_smoothing: parseInt(document.getElementById('stabilizeSmoothingSlider').value),
+        remove_fillers: document.getElementById('removeFillersToggle').checked,
+        broll_dir: document.getElementById('brollFolderInput').value.trim() || null
+      };
 
       try {
         const res = await fetch('/api/render', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            input_path: inputPath,
-            pacing: document.getElementById('pacingSelect').value,
-            zoom: parseFloat(document.getElementById('zoomRange').value) / 100.0,
-            color: document.getElementById('colorSelect').value,
-            bgm: document.getElementById('bgmSelect').value === 'ambient' ? 'ambient' : null,
-            bgm_volume: parseFloat(document.getElementById('bgmVol').value) / 100.0,
-            captions: document.getElementById('captions').checked,
-            stabilize: document.getElementById('stabilize').checked,
-            letterbox: document.getElementById('letterbox').checked,
-            remove_fillers: document.getElementById('removeFillers').checked,
-            broll_dir: document.getElementById('brollFolder').value.trim() || null,
-            resolution: document.getElementById('targetRes').value,
-            title: document.getElementById('titleText').value,
-          })
+          body: JSON.stringify(payload)
         });
-
         const data = await res.json();
         if (data.error) throw new Error(data.error);
 
-        pollProgress();
+        pollRenderProgress();
       } catch (err) {
-        alert('Render initialization failed: ' + err.message);
-        btn.disabled = false;
-        document.getElementById('progressBox').style.display = 'none';
+        alert('Render failed to start: ' + err.message);
+        closeExportModal();
       }
     }
 
-    function pollProgress() {
+    function pollRenderProgress() {
       const timer = setInterval(async () => {
         try {
           const res = await fetch('/api/progress');
           const data = await res.json();
 
           const pct = Math.round(data.progress * 100);
-          document.getElementById('progressBar').style.width = pct + '%';
-          document.getElementById('progressPct').innerText = pct + '%';
-          document.getElementById('progressMsg').innerText = data.status || 'Rendering...';
+          document.getElementById('exportProgressBar').style.width = pct + '%';
+          document.getElementById('exportProgressPct').innerText = pct + '%';
+          document.getElementById('exportStatusMsg').innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${data.status || 'Rendering multi-cam cuts...'}`;
 
           if (!data.is_rendering) {
             clearInterval(timer);
-            document.getElementById('renderBtn').disabled = false;
-
             if (data.error) {
               alert('Render encountered an error: ' + data.error);
+              closeExportModal();
             } else if (data.output_file) {
-              showCompletedVideo(data.output_file);
+              renderedOutputPath = data.output_file;
+              document.getElementById('exportActiveState').style.display = 'none';
+              document.getElementById('exportCompleteState').style.display = 'block';
+
+              const dl = document.getElementById('downloadVideoLink');
+              const vidUrl = '/video?path=' + encodeURIComponent(data.output_file);
+              dl.href = vidUrl;
+              dl.download = data.output_file.split('/').pop();
             }
           }
-        } catch (e) {
-          // Retry next poll
-        }
+        } catch (e) {}
       }, 1000);
     }
 
-    function showCompletedVideo(filePath) {
-      const container = document.getElementById('videoContainer');
-      const player = document.getElementById('outputVideoPlayer');
-      const download = document.getElementById('downloadLink');
-
-      const videoUrl = '/video?path=' + encodeURIComponent(filePath);
-      player.src = videoUrl;
-      download.href = videoUrl;
-      download.download = filePath.split('/').pop();
-      container.style.display = 'block';
-      player.play().catch(() => {});
-      container.scrollIntoView({ behavior: 'smooth' });
+    function playRenderedInMonitor() {
+      if (!renderedOutputPath) return;
+      closeExportModal();
+      selectVideoSource(renderedOutputPath, 'Master_Cut.mp4');
     }
   </script>
 

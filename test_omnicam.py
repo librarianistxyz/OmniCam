@@ -320,7 +320,7 @@ def run_tests():
         # Verify UI endpoint
         req_ui = urllib.request.urlopen("http://localhost:8899/")
         ui_html = req_ui.read().decode("utf-8")
-        assert "OMNICAM" in ui_html
+        assert "OMNICAM" in ui_html.upper()
         assert "handleNativeFileSelect" in ui_html
         assert "openFileBrowser" in ui_html
         print(f"  [✓] Web Studio UI verified at http://localhost:8899/ ({len(ui_html)} bytes HTML)")
