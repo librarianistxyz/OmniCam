@@ -220,6 +220,52 @@ def main():
         help="Target duration in seconds for each B-roll cutaway (default: 2.5s).",
     )
     parser.add_argument(
+        "--transition",
+        choices=["flash", "zoom", "push", "glitch", "dissolve", "none"],
+        default="flash",
+        help="CapCut transition style between camera angle cuts (default: flash).",
+    )
+    parser.add_argument(
+        "--freeze-frame",
+        action="store_true",
+        default=True,
+        help="Enable dramatic CapCut freeze frames on speech pauses (holds keyframe for 0.6s with spotlight).",
+    )
+    parser.add_argument(
+        "--no-freeze-frame",
+        dest="freeze_frame",
+        action="store_false",
+        help="Disable dramatic freeze frames.",
+    )
+    parser.add_argument(
+        "--freeze-dur",
+        type=float,
+        default=0.6,
+        help="Duration of dramatic freeze frames in seconds (default: 0.6s).",
+    )
+    parser.add_argument(
+        "--sfx",
+        action="store_true",
+        default=True,
+        help="Enable cinematic whoosh and impact sound effects on cut transitions (default: enabled).",
+    )
+    parser.add_argument(
+        "--no-sfx",
+        dest="sfx",
+        action="store_false",
+        help="Disable transition whoosh sound effects.",
+    )
+    parser.add_argument(
+        "--sfx-volume",
+        type=float,
+        default=0.35,
+        help="Volume of transition whoosh sound effects (default: 0.35).",
+    )
+    parser.add_argument(
+        "--join",
+        help="Comma-separated list of multiple video files to cut, edit, and join into one master video.",
+    )
+    parser.add_argument(
         "--remove-fillers",
         "--filler-removal",
         action="store_true",
@@ -349,6 +395,9 @@ def main():
         broll_manager=broll_mgr,
         min_broll_speech_dur=args.broll_min_dur,
         broll_cutaway_dur=args.broll_length,
+        enable_freeze_frames=args.freeze_frame,
+        freeze_duration=args.freeze_dur,
+        transition_style=args.transition,
     )
     shot_plans = director.plan_production(segments)
 
@@ -394,6 +443,11 @@ def main():
         broll_dir=args.broll,
         broll_min_dur=args.broll_min_dur,
         broll_length=args.broll_length,
+        transition_style=args.transition,
+        enable_freeze_frames=args.freeze_frame,
+        freeze_duration=args.freeze_dur,
+        enable_sfx=args.sfx,
+        sfx_volume=args.sfx_volume,
         show_hud=not args.no_hud,
         show_title=bool(args.title),
         title_text=args.title,

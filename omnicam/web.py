@@ -1411,6 +1411,48 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             <input type="text" id="titleText" value="OMNICAM AI • MULTI-CAM PRODUCTION" />
           </div>
 
+                    <!-- CARD 3: CAPCUT PRO TRANSITIONS & FREEZE FRAMES -->
+          <div class="card" style="border-left: 4px solid var(--primary);">
+            <div class="card-title">
+              <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--primary);"></i> CapCut Style Transitions &amp; Freezes
+            </div>
+            <p class="card-desc">Professional viral editing tools: white flash strobe, dynamic crash zooms, freeze frame spotlights, and whoosh sound effects.</p>
+
+            <label for="transitionSelect">Cut Transition Effect</label>
+            <select id="transitionSelect">
+              <option value="flash" selected>⚡ White Flash (CapCut Viral Strobe Impact)</option>
+              <option value="zoom">🌀 Dynamic Crash Zoom (Energetic Punch-In)</option>
+              <option value="glitch">✨ Glitch RGB Split (Modern Cyber / TikTok)</option>
+              <option value="push">🎥 Smooth Ken Burns Glide (Continuous Push)</option>
+              <option value="dissolve">🌊 Cinematic Cross Dissolve</option>
+              <option value="none">✂️ Clean Jump Cut (No Transition)</option>
+            </select>
+
+            <div class="toggle-row" style="margin-top: 1rem;">
+              <div class="toggle-meta">
+                <span class="toggle-title">❄️ Dramatic Freeze Frames</span>
+                <span class="toggle-desc">Freezes key emphatic pauses for 0.6s with spotlight &amp; camera snap</span>
+              </div>
+              <input type="checkbox" id="freezeFrame" checked />
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-meta">
+                <span class="toggle-title">🔊 Transition Sound Effects (SFX)</span>
+                <span class="toggle-desc">Synthesized cinematic whoosh &amp; impact sweeps on every cut</span>
+              </div>
+              <input type="checkbox" id="sfxEnabled" checked />
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-meta">
+                <span class="toggle-title">💥 Crash Zoom Punch-In</span>
+                <span class="toggle-desc">Dynamic 0.3s zoom punch on close-up angles for retention</span>
+              </div>
+              <input type="checkbox" id="crashZoom" checked />
+            </div>
+          </div>
+
           <!-- CARD 3: SMART ENHANCEMENTS -->
           <div class="card">
             <div class="card-title">
@@ -1707,10 +1749,17 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         block.title = 'Shot #' + (idx + 1) + ': ' + (shot.angle || 'wide').toUpperCase() + ' (' + dur.toFixed(1) + 's)';
         block.innerText = dur >= 2.0 ? (shot.angle || 'wide') : '';
 
+        if (shot.is_freeze) {
+          block.style.boxShadow = 'inset 0 0 0 2px #F59E0B';
+          block.title += ' [❄️ FREEZE FRAME]';
+        }
+
         block.onclick = () => {
           const inspector = document.getElementById('shotInspector');
           inspector.style.display = 'block';
-          inspector.innerHTML = '<strong>Shot #' + (idx + 1) + '</strong> &bull; Angle: <strong style=\"text-transform: uppercase;\">' + shot.angle + '</strong> &bull; Cut Range: <strong>' + shot.start.toFixed(2) + 's &rarr; ' + shot.end.toFixed(2) + 's</strong> (' + shot.duration.toFixed(2) + 's duration)';
+          let freezeNote = shot.is_freeze ? ' &bull; <span style=\"color: #F59E0B; font-weight: 700;\">❄️ Dramatic Freeze Frame (' + (shot.freeze_duration || 0.6) + 's)</span>' : '';
+          let transNote = ' &bull; Transition: <strong style=\"text-transform: uppercase;\">' + (shot.transition || 'flash') + '</strong>';
+          inspector.innerHTML = '<strong>Shot #' + (idx + 1) + '</strong> &bull; Angle: <strong style=\"text-transform: uppercase;\">' + shot.angle + '</strong>' + transNote + freezeNote + ' &bull; Cut Range: <strong>' + shot.start.toFixed(2) + 's &rarr; ' + shot.end.toFixed(2) + 's</strong> (' + shot.duration.toFixed(2) + 's)';
         };
 
         track.appendChild(block);
@@ -2048,6 +2097,9 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                         "duration": sp.segment.duration,
                         "description": sp.description,
                         "broll_name": sp.broll_name,
+                        "is_freeze": getattr(sp, "is_freeze_frame", False),
+                        "freeze_duration": getattr(sp, "freeze_duration", 0.0),
+                        "transition": getattr(sp, "transition", "flash"),
                     }
                     for sp in shot_plans
                 ]
@@ -2099,11 +2151,13 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                         pacing_style=params.get("pacing", "dynamic"),
                         zoom_factor=float(params.get("zoom", 1.75)),
                         broll_manager=broll_mgr,
+                        enable_freeze_frames=bool(params.get("freeze_frame", True)),
+                        transition_style=params.get("transition", "flash"),
                     )
                     shot_plans = director.plan_production(segments)
 
                     stem, _ = os.path.splitext(input_path)
-                    out_path = f"{stem}_studio_cut.mp4"
+                    out_path = f"{stem}_capcut_master.mp4"
 
                     res_choice = params.get("resolution", "720p")
                     res_map = {"720p": (1280, 720), "1080p": (1920, 1080), "4k": (3840, 2160)}
@@ -2125,6 +2179,9 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                         letterbox=bool(params.get("letterbox", False)),
                         broll_dir=broll_dir,
                         title_text=params.get("title", "OMNICAM AI • MULTI-CAM PRODUCTION"),
+                        transition_style=params.get("transition", "flash"),
+                        enable_freeze_frames=bool(params.get("freeze_frame", True)),
+                        enable_sfx=bool(params.get("sfx", True)),
                     )
 
                     engine = RenderEngine(input_path, config=config)

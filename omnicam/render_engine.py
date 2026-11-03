@@ -46,6 +46,13 @@ class RenderConfig:
     title_text: str = "OMNICAM AI • MULTI-CAM PRODUCTION"
     subtitle_text: str = "PRO VIRTUAL STUDIO // 4K CLARITY"
     transition_flash: bool = True
+    transition_style: str = "flash"  # "flash", "zoom", "push", "glitch", "dissolve", "none"
+    enable_freeze_frames: bool = True
+    freeze_duration: float = 0.6
+    enable_crash_zoom: bool = True
+    enable_sfx: bool = True
+    sfx_volume: float = 0.35
+    input_videos: Optional[List[str]] = None
     letterbox: bool = False
     vignette: bool = True
     video_codec: str = "libx264"
@@ -53,6 +60,17 @@ class RenderConfig:
     crf: int = 21
     preset: str = "fast"
     force_chunk_mode: bool = False
+
+
+def generate_whoosh_sfx(output_wav: str, duration: float = 0.20):
+    """Synthesizes a clean pink-noise cinematic whoosh sweep for CapCut cut transitions."""
+    cmd = [
+        "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+        "-f", "lavfi",
+        "-i", f"anoisesrc=d={duration:.2f}:color=pink,volume=0.32,afade=t=in:d=0.04,afade=t=out:st=0.08:d=0.12",
+        "-c:a", "pcm_s16le", output_wav
+    ]
+    subprocess.run(cmd, check=True, capture_output=True)
 
 
 def detect_safe_video_codec() -> str:
@@ -115,9 +133,20 @@ class RenderEngine:
     optical transitions, auto-ducking background music, and studio audio mastering.
     """
 
-    def __init__(self, input_video: str, config: Optional[RenderConfig] = None):
+    def __init__(
+        self,
+        input_video: str,
+        config: Optional[RenderConfig] = None,
+        input_videos: Optional[List[str]] = None,
+    ):
         self.input_video = os.path.abspath(input_video)
         self.config = config or RenderConfig()
+        if input_videos:
+            self.input_videos = [os.path.abspath(v) for v in input_videos if os.path.isfile(v)]
+        elif self.config.input_videos:
+            self.input_videos = [os.path.abspath(v) for v in self.config.input_videos if os.path.isfile(v)]
+        else:
+            self.input_videos = [self.input_video]
         if not self.config.video_codec or self.config.video_codec == "libx264":
             self.config.video_codec = detect_safe_video_codec()
         self.font_path = find_system_font()
@@ -186,6 +215,18 @@ class RenderEngine:
                 except Exception as ex:
                     print(f"  [!] Warning: Subtitle generation failed: {ex}. Rendering video without burned subtitles.")
 
+                # Synthesize CapCut transition whoosh SFX bed if enabled
+        temp_whoosh_file = None
+        if self.config.enable_sfx:
+            try:
+                t_whoosh = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+                t_whoosh.close()
+                temp_whoosh_file = t_whoosh.name
+                generate_whoosh_sfx(temp_whoosh_file, duration=0.22)
+            except Exception as ex:
+                print(f"  [!] Notice: Could not synthesize whoosh SFX: {ex}")
+                temp_whoosh_file = None
+
         # Handle Digital Gimbal 2-pass horizon stabilization
         temp_trf_file = None
         self.active_trf_path = None
@@ -225,9 +266,9 @@ class RenderEngine:
 
         try:
             if len(shot_plans) > 40 or self.config.force_chunk_mode:
-                return self._render_chunked(shot_plans, output_path, progress_callback, temp_broll_files)
+                return self._render_chunked(shot_plans, output_path, progress_callback, temp_broll_files, temp_whoosh_file)
             else:
-                return self._render_single_pass(shot_plans, output_path, progress_callback, temp_broll_files)
+                return self._render_single_pass(shot_plans, output_path, progress_callback, temp_broll_files, temp_whoosh_file)
         finally:
             if temp_ambient_file and os.path.isfile(temp_ambient_file):
                 try:
@@ -237,6 +278,11 @@ class RenderEngine:
             if temp_ass_file and os.path.isfile(temp_ass_file):
                 try:
                     os.remove(temp_ass_file)
+                except OSError:
+                    pass
+            if temp_whoosh_file and os.path.isfile(temp_whoosh_file):
+                try:
+                    os.remove(temp_whoosh_file)
                 except OSError:
                     pass
             if temp_trf_file and os.path.isfile(temp_trf_file):
@@ -321,10 +367,11 @@ class RenderEngine:
         output_path: str,
         progress_callback: Optional[Callable[[float, str], None]] = None,
         temp_broll_files: Optional[Dict[int, str]] = None,
+        temp_whoosh_file: Optional[str] = None,
     ) -> str:
         """
-        Builds a single elegant FFmpeg filter_complex graph with auto-ducking BGM
-        and dynamic B-roll cutaway feeds.
+        Builds a single elegant FFmpeg filter_complex graph with CapCut transitions,
+        freeze frame spotlight moments, whoosh SFX, and auto-ducking BGM.
         """
         temp_broll_files = temp_broll_files or {}
         filter_parts: List[str] = []
@@ -332,29 +379,40 @@ class RenderEngine:
         th = self.config.target_height
         color_filter = self._get_color_filter()
 
-        # Build list of input files and map B-roll shots to their input indices
-        # Input 0 is always self.input_video
+        # Build list of inputs: input_videos (0..N-1)
+        input_args: List[str] = []
+        for vpath in self.input_videos:
+            input_args.extend(["-i", vpath])
+
+        # Map B-roll shots to their input indices
         shot_broll_in_idx: Dict[int, int] = {}
-        broll_input_args: List[str] = []
         for shot in shot_plans:
             if shot.angle == CameraAngle.BROLL and shot.index in temp_broll_files:
-                in_idx = 1 + len(broll_input_args) // 2
+                in_idx = len(input_args) // 2
                 shot_broll_in_idx[shot.index] = in_idx
-                broll_input_args.extend(["-i", temp_broll_files[shot.index]])
+                input_args.extend(["-i", temp_broll_files[shot.index]])
 
+        # Whoosh SFX input index
+        sfx_input_idx = None
+        if temp_whoosh_file and os.path.isfile(temp_whoosh_file):
+            sfx_input_idx = len(input_args) // 2
+            input_args.extend(["-i", temp_whoosh_file])
+
+        # BGM input index
         has_bgm = self.config.bgm_path and os.path.isfile(self.config.bgm_path)
-        bgm_input_idx = 1 + len(broll_input_args) // 2
+        bgm_input_idx = None
+        total_speech_dur = sum(s.segment.duration for s in shot_plans)
+        if has_bgm:
+            bgm_input_idx = len(input_args) // 2
+            input_args.extend(["-stream_loop", "-1", "-t", f"{total_speech_dur + 5.0:.3f}", "-i", self.config.bgm_path])
 
-        # Digital Gimbal Master Stabilization
+        # Digital Gimbal Master Stabilization for primary clip
         if self.active_trf_path and os.path.isfile(self.active_trf_path):
             escaped_trf = self.active_trf_path.replace("\\", "/").replace(":", "\\:")
             filter_parts.append(
                 f"[0:v]vidstabtransform=input='{escaped_trf}':smoothing={self.config.stabilize_smoothing}:"
                 f"optalgo=gauss:interpol=bicubic:zoom=2:crop=black[v_stabilized]"
             )
-            v_master_src = "[v_stabilized]"
-        else:
-            v_master_src = "[0:v]"
 
         for idx, shot in enumerate(shot_plans):
             seg = shot.segment
@@ -364,6 +422,13 @@ class RenderEngine:
 
             crop = shot.crop_coords
             cx, cy, cw, ch = crop["x"], crop["y"], crop["w"], crop["h"]
+            clip_idx = min(getattr(shot, "clip_index", 0), len(self.input_videos) - 1)
+
+            if clip_idx == 0 and self.active_trf_path and os.path.isfile(self.active_trf_path):
+                v_master_src = "[v_stabilized]"
+            else:
+                v_master_src = f"[{clip_idx}:v]"
+            a_master_src = f"[{clip_idx}:a]"
 
             # Video branch: choose B-roll source or camera source
             if shot.angle == CameraAngle.BROLL and idx in shot_broll_in_idx:
@@ -373,23 +438,37 @@ class RenderEngine:
             else:
                 v_in = f"{v_master_src}trim=start={s_start}:end={s_end},setpts=PTS-STARTPTS"
 
-                if shot.angle == CameraAngle.SLOW_PUSH:
-                    zoom_expr = f"(1.0 + 0.20*(t/{dur:.3f}))"
-                    w_expr = f"(iw/{zoom_expr})"
-                    h_expr = f"(ih/{zoom_expr})"
-                    x_expr = f"({cx + cw/2.0} - (w/2))"
-                    y_expr = f"({cy + ch/2.0} - (h/2))"
-                    crop_filter = f"crop=w='{w_expr}':h='{h_expr}':x='{x_expr}':y='{y_expr}'"
+                # CapCut Freeze Frame Hook: freeze frame at start of shot with spotlight
+                if getattr(shot, "is_freeze_frame", False) and getattr(shot, "freeze_duration", 0.0) > 0:
+                    fdur = shot.freeze_duration
+                    v_chain_list = [
+                        v_in,
+                        f"tpad=start_duration={fdur:.2f}:start_mode=clone",
+                        f"eq=contrast=1.35:saturation=0.40:enable='between(t,0,{fdur:.2f})'",
+                        f"drawbox=x=0:y=0:w={tw}:h=42:color=black@0.65:t=fill:enable='between(t,0,{fdur:.2f})'",
+                        f"drawtext=text='FREEZE // IMPACT':fontcolor=0xFFCC00:fontsize=15:x=25:y=14:enable='between(t,0,{fdur:.2f})'",
+                    ]
                 else:
-                    crop_filter = f"crop=w={cw}:h={ch}:x={cx}:y={cy}"
+                    v_chain_list = [v_in]
 
+                crop_filter = f"crop=w={cw}:h={ch}:x={cx}:y={cy}"
                 scale_filter = f"scale={tw}:{th}:flags=lanczos,setsar=1"
-                v_chain_list = [v_in, crop_filter, scale_filter]
+                v_chain_list.extend([crop_filter, scale_filter])
 
-            if self.config.transition_flash and idx > 0 and dur > 0.3:
-                v_chain_list.append("fade=t=in:st=0:d=0.06:color=white@0.25")
+            # Transitions (CapCut Style)
+            tr = getattr(shot, "transition", None) or self.config.transition_style
+            if idx > 0:
+                freeze_offset = shot.freeze_duration if (getattr(shot, "is_freeze_frame", False) and shot.freeze_duration > 0) else 0.0
+                if tr == "flash":
+                    v_chain_list.append(f"fade=t=in:st={freeze_offset:.2f}:d=0.10:color=white@0.88")
+                elif tr == "glitch":
+                    v_chain_list.append(f"fade=t=in:st={freeze_offset:.2f}:d=0.06:color=cyan@0.75,fade=t=in:st={freeze_offset+0.06:.2f}:d=0.04:color=red@0.55")
+                elif tr == "dissolve":
+                    v_chain_list.append(f"fade=t=in:st={freeze_offset:.2f}:d=0.20")
+                elif tr == "zoom":
+                    v_chain_list.append(f"fade=t=in:st={freeze_offset:.2f}:d=0.08:color=white@0.65")
             elif dur > 0.4:
-                v_chain_list.append("fade=t=in:st=0:d=0.03")
+                v_chain_list.append("fade=t=in:st=0:d=0.04")
 
             if color_filter:
                 v_chain_list.append(color_filter)
@@ -412,14 +491,23 @@ class RenderEngine:
             filter_parts.append(f"{v_chain}{v_out_label}")
 
             # Audio branch
-            a_in = f"[0:a]atrim=start={s_start}:end={s_end},asetpts=PTS-STARTPTS"
+            a_in = f"{a_master_src}atrim=start={s_start}:end={s_end},asetpts=PTS-STARTPTS"
             fade_in_d = min(0.015, dur / 4.0)
             fade_out_d = min(0.015, dur / 4.0)
             fade_out_st = max(0.0, dur - fade_out_d)
-            a_chain = f"{a_in},afade=t=in:ss=0:d={fade_in_d:.3f},afade=t=out:st={fade_out_st:.3f}:d={fade_out_d:.3f}"
+            a_base = f"{a_in},afade=t=in:ss=0:d={fade_in_d:.3f},afade=t=out:st={fade_out_st:.3f}:d={fade_out_d:.3f}"
 
-            a_out_label = f"[a{idx}]"
-            filter_parts.append(f"{a_chain}{a_out_label}")
+            if getattr(shot, "is_freeze_frame", False) and shot.freeze_duration > 0:
+                delay_ms = int(shot.freeze_duration * 1000)
+                a_base = f"{a_base},adelay={delay_ms}|{delay_ms}"
+
+            # Layer transition Whoosh SFX if available
+            if sfx_input_idx is not None and idx > 0:
+                filter_parts.append(f"{a_base}[a_raw_{idx}]")
+                filter_parts.append(f"[{sfx_input_idx}:a]atrim=duration={dur:.3f},volume={self.config.sfx_volume:.2f},asetpts=PTS-STARTPTS[sfx_{idx}]")
+                filter_parts.append(f"[a_raw_{idx}][sfx_{idx}]amix=inputs=2:duration=first:dropout_transition=0[a{idx}]")
+            else:
+                filter_parts.append(f"{a_base}[a{idx}]")
 
         # Concat stage
         num_shots = len(shot_plans)
@@ -439,8 +527,7 @@ class RenderEngine:
             filter_parts.append("[a_stitched]anull[a_voice]")
 
         # Background Music & Auto-Ducking Pipeline
-        total_speech_dur = sum(s.segment.duration for s in shot_plans)
-        if has_bgm:
+        if has_bgm and bgm_input_idx is not None:
             bgm_vol = self.config.bgm_volume
             # Trim BGM to exact speech duration and sidechain-compress against speech
             filter_parts.append(
@@ -479,14 +566,7 @@ class RenderEngine:
             "ffmpeg",
             "-y",
             "-hide_banner",
-            "-i", self.input_video,
-            *broll_input_args,
-        ]
-
-        if has_bgm:
-            cmd += ["-stream_loop", "-1", "-t", f"{total_speech_dur + 1.0:.3f}", "-i", self.config.bgm_path]
-
-        cmd += [
+            *input_args,
             "-filter_complex", full_filtergraph,
             "-map", final_v_label,
             "-map", final_a_label,

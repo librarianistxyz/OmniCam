@@ -30,6 +30,11 @@ class ShotPlan:
     crop_coords: Dict[str, int]
     zoom_factor: float
     description: str
+    clip_index: int = 0
+    clip_path: Optional[str] = None
+    is_freeze_frame: bool = False
+    freeze_duration: float = 0.0
+    transition: str = "flash"
     broll_path: Optional[str] = None
     broll_name: Optional[str] = None
 
@@ -49,6 +54,11 @@ class CameraDirector:
         broll_manager: Optional[BRollManager] = None,
         min_broll_speech_dur: float = 4.0,
         broll_cutaway_dur: float = 2.5,
+        enable_freeze_frames: bool = True,
+        freeze_duration: float = 0.6,
+        transition_style: str = "flash",
+        clip_index: int = 0,
+        clip_path: Optional[str] = None,
     ):
         self.tracker = tracker
         self.pacing_style = pacing_style.lower()
@@ -57,6 +67,11 @@ class CameraDirector:
         self.broll_manager = broll_manager
         self.min_broll_speech_dur = min_broll_speech_dur
         self.broll_cutaway_dur = broll_cutaway_dur
+        self.enable_freeze_frames = enable_freeze_frames
+        self.freeze_duration = freeze_duration
+        self.transition_style = transition_style
+        self.clip_index = clip_index
+        self.clip_path = clip_path
 
     def plan_production(self, segments: List[SpeechSegment]) -> List[ShotPlan]:
         """
@@ -174,8 +189,19 @@ class CameraDirector:
                     zoom_factor=self.zoom_factor,
                 )
 
+                # Determine CapCut dramatic freeze frame hook
+                is_freeze = (
+                    self.enable_freeze_frames
+                    and seg.silence_before >= 0.70
+                    and seg.duration >= 1.2
+                    and (shot_counter > 0)
+                )
+                freeze_dur = self.freeze_duration if is_freeze else 0.0
+
                 # Generate director note
                 desc = self._generate_description(angle, seg.duration)
+                if is_freeze:
+                    desc += f" [FREEZE {freeze_dur:.1f}s]"
 
                 plans.append(
                     ShotPlan(
@@ -185,6 +211,11 @@ class CameraDirector:
                         crop_coords=crop,
                         zoom_factor=self.zoom_factor,
                         description=desc,
+                        clip_index=self.clip_index,
+                        clip_path=self.clip_path,
+                        is_freeze_frame=is_freeze,
+                        freeze_duration=freeze_dur,
+                        transition=self.transition_style,
                     )
                 )
                 last_angle = angle
