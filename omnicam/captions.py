@@ -287,3 +287,4 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         f.write("\n".join(dialogues) + "\n")
 
     return output_ass_path
+

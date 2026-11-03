@@ -90,3 +90,4 @@ class VideoStabilizer:
             f"vidstabtransform=input='{escaped_trf}':smoothing={self.smoothing}:"
             f"optalgo=gauss:interpol=bicubic:zoom=2:crop=black"
         )
+

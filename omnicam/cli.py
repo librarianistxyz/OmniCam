@@ -20,6 +20,14 @@ from .filler_remover import (
     detect_acoustic_hesitations,
     remove_filler_intervals,
 )
+from .broll import BRollManager
+from .captions import Transcriber
+from .filler_remover import (
+    DEFAULT_FILLER_WORDS,
+    detect_lexical_fillers,
+    detect_acoustic_hesitations,
+    remove_filler_intervals,
+)
 
 
 def format_duration(seconds: float) -> str:
@@ -228,6 +236,50 @@ def main():
         help="Force spectral acoustic hesitation analysis to catch non-transcribed monotone vowel drones.",
     )
     parser.add_argument(
+        "--stabilize",
+        "--gimbal",
+        action="store_true",
+        help="Enable 2-pass Digital Gimbal Horizon Stabilization (neutralizes walking bounce & handheld shake).",
+    )
+    parser.add_argument(
+        "--stabilize-smoothing",
+        type=int,
+        default=25,
+        help="Horizon stabilization smoothing radius in frames (default: 25). Higher numbers = smoother gimbal drift.",
+    )
+    parser.add_argument(
+        "--broll",
+        help="Directory of B-roll footage and photos to automatically insert during extended speech takes (>4s).",
+    )
+    parser.add_argument(
+        "--broll-min-dur",
+        type=float,
+        default=4.0,
+        help="Minimum speech take duration in seconds to trigger a B-roll cutaway (default: 4.0s).",
+    )
+    parser.add_argument(
+        "--broll-length",
+        type=float,
+        default=2.5,
+        help="Target duration in seconds for each B-roll cutaway (default: 2.5s).",
+    )
+    parser.add_argument(
+        "--remove-fillers",
+        "--filler-removal",
+        action="store_true",
+        help="Detect and cut vocal hesitations ('uh', 'um', 'ah', 'like', 'you know') and acoustic vowel drones.",
+    )
+    parser.add_argument(
+        "--fillers",
+        default="uh,um,uhm,ah,er,err,hmm,mm,like,you know",
+        help="Comma-separated list of target filler words to remove (default: 'uh,um,uhm,ah,er,err,hmm,mm,like,you know').",
+    )
+    parser.add_argument(
+        "--acoustic-fillers",
+        action="store_true",
+        help="Force spectral acoustic hesitation analysis to catch non-transcribed monotone vowel drones.",
+    )
+    parser.add_argument(
         "--dry-run",
         "--preview",
         action="store_true",
@@ -381,6 +433,11 @@ def main():
         caption_color=args.caption_color,
         whisper_model=args.whisper_model,
         captions_file=args.captions_file,
+        stabilize=args.stabilize,
+        stabilize_smoothing=args.stabilize_smoothing,
+        broll_dir=args.broll,
+        broll_min_dur=args.broll_min_dur,
+        broll_length=args.broll_length,
         stabilize=args.stabilize,
         stabilize_smoothing=args.stabilize_smoothing,
         broll_dir=args.broll,

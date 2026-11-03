@@ -136,3 +136,4 @@ class BRollManager:
             raise RuntimeError(f"Failed to prepare B-roll clip '{asset.name}': {res.stderr[-400:]}")
 
         return output_path
+
