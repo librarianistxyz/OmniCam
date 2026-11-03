@@ -902,6 +902,212 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       color: #94A3B8;
     }
 
+    
+    /* ==========================================================================
+       DEVICE FILE NAVIGATOR MODAL STYLES
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(9, 30, 66, 0.65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-window {
+      background: #FFFFFF;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-card);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 780px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-header {
+      padding: 1.15rem 1.35rem;
+      border-bottom: 1px solid var(--border-card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #F8FAFC;
+    }
+
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.6rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      line-height: 1;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-sm);
+    }
+    .modal-close-btn:hover {
+      color: var(--text-heading);
+      background: #E2E8F0;
+    }
+
+    .modal-roots-bar {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.65rem 1.35rem;
+      background: #F1F5F9;
+      border-bottom: 1px solid var(--border-card);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .browser-root-chip {
+      background: #FFFFFF;
+      border: 1px solid var(--border-strong);
+      color: var(--text-heading);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s ease;
+    }
+    .browser-root-chip:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .browser-nav-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 1.35rem;
+      border-bottom: 1px solid var(--border-card);
+      background: #FFFFFF;
+    }
+
+    .browser-breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      overflow-x: auto;
+      white-space: nowrap;
+      font-size: 0.82rem;
+    }
+
+    .crumb-btn {
+      background: transparent;
+      border: none;
+      color: var(--primary);
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+    .crumb-btn:hover {
+      background: var(--primary-light);
+      text-decoration: underline;
+    }
+    .crumb-sep {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    .browser-list-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.25rem 0;
+      min-height: 280px;
+    }
+
+    .browser-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 1.35rem;
+      border-bottom: 1px solid #F1F5F9;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .browser-item:hover {
+      background: #F8FAFC;
+    }
+
+    .browser-item-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .browser-item-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1rem;
+    }
+    .icon-folder { background: #EBF3FF; color: var(--primary); }
+    .icon-video { background: #ECFDF5; color: var(--success); }
+    .icon-file { background: #F1F5F9; color: var(--text-muted); }
+
+    .browser-item-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-main);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .browser-item-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .badge-video {
+      background: #ECFDF5;
+      color: var(--success);
+      border: 1px solid #A7F3D0;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .modal-footer {
+      padding: 0.85rem 1.35rem;
+      border-top: 1px solid var(--border-card);
+      background: #F8FAFC;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
     /* Mobile Responsive */
     @media (max-width: 768px) {
       .nav-links { display: none; }
@@ -1016,35 +1222,48 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             <i class="fa-solid fa-video"></i> Handheld Video Source File
           </div>
           <p class="card-desc">
-            Select a raw 4K/1080p single-camera recording from your device storage or type the exact file path below.
+            Select any raw 4K/1080p single-camera recording from anywhere on your device or phone gallery to transform.
           </p>
 
-          <label for="scanSelect">Discovered Media on Device</label>
-          <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
-            <select id="scanSelect" onchange="onScanSelectChange(this)">
-              <option value="">-- Tap 'Scan Device' or pick from common folders --</option>
-            </select>
-            <button class="btn btn-secondary" onclick="scanDevice()" type="button" title="Scan Android Storage">
-              <i class="fa-solid fa-arrows-rotate"></i> Scan Device
+          <label for="inputVideo">Selected Video Path</label>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+            <input type="text" id="inputVideo" placeholder="/sdcard/DCIM/Camera/VID_20261103.mp4" spellcheck="false" style="flex: 1; min-width: 250px;" />
+            <button class="btn btn-primary" onclick="openFileBrowser()" type="button" title="Navigate anywhere on device">
+              <i class="fa-solid fa-folder-tree"></i> Browse Device
             </button>
+            <button class="btn btn-secondary" onclick="document.getElementById('nativeFilePicker').click()" type="button" title="Pick from Phone Gallery or Files">
+              <i class="fa-solid fa-mobile-screen"></i> Gallery
+            </button>
+            <input type="file" id="nativeFilePicker" accept="video/*" style="display: none;" onchange="handleNativeFileSelect(this)" />
           </div>
 
+          <div id="uploadStatusBadge" style="display: none; margin-bottom: 0.75rem; padding: 0.55rem 0.95rem; border-radius: 6px; font-size: 0.85rem; background: #EBF3FF; color: #0052CC; border: 1px solid #BFDBFE;">
+            <i class="fa-solid fa-spinner fa-spin"></i> <span id="uploadStatusMsg">Reading device video...</span>
+          </div>
+
+          <label style="margin-top: 0.5rem;">Quick Storage Shortcuts</label>
           <div class="chip-container">
-            <span class="path-chip" onclick="setFolderPath('/sdcard/DCIM/Camera')">
-              <i class="fa-solid fa-camera"></i> /sdcard/DCIM/Camera
+            <span class="path-chip" onclick="openFileBrowser('/sdcard/DCIM/Camera')">
+              <i class="fa-solid fa-camera"></i> Camera (DCIM)
             </span>
-            <span class="path-chip" onclick="setFolderPath('/sdcard/Movies')">
-              <i class="fa-solid fa-film"></i> /sdcard/Movies
+            <span class="path-chip" onclick="openFileBrowser('/sdcard/Movies')">
+              <i class="fa-solid fa-film"></i> Movies
             </span>
-            <span class="path-chip" onclick="setFolderPath('/sdcard/Download')">
-              <i class="fa-solid fa-download"></i> /sdcard/Download
+            <span class="path-chip" onclick="openFileBrowser('/sdcard/Download')">
+              <i class="fa-solid fa-download"></i> Downloads
+            </span>
+            <span class="path-chip" onclick="openFileBrowser('/sdcard')">
+              <i class="fa-solid fa-hard-drive"></i> /sdcard (Internal)
+            </span>
+            <span class="path-chip" onclick="openFileBrowser('~')">
+              <i class="fa-solid fa-house"></i> Termux Home
+            </span>
+            <span class="path-chip" onclick="openFileBrowser('.')">
+              <i class="fa-solid fa-briefcase"></i> Workspace
             </span>
           </div>
 
-          <label for="inputVideo" style="margin-top: 1.25rem;">File Path</label>
-          <input type="text" id="inputVideo" placeholder="/sdcard/DCIM/Camera/VID_20261103.mp4" spellcheck="false" />
-
-          <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
+          <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
             <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeFootage()" type="button">
               <i class="fa-solid fa-bolt"></i> Analyze Footage &amp; Generate Multi-Cam Timeline
             </button>
@@ -1354,6 +1573,57 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   </footer>
 
   <!-- ========================================================================
+       DEVICE FILE NAVIGATOR MODAL
+       ======================================================================== -->
+  <div id="deviceBrowserModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-window">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <div class="brand-icon-box" style="width: 36px; height: 36px; font-size: 1rem;">
+            <i class="fa-solid fa-folder-tree"></i>
+          </div>
+          <div>
+            <h3 style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-heading); font-weight: 800; line-height: 1.2;">
+              Device File Navigator
+            </h3>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Browse all folders and storage locations on your device</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeFileBrowser()" type="button">&times;</button>
+      </div>
+
+      <!-- Quick Roots Bar -->
+      <div class="modal-roots-bar" id="browserRootsBar"></div>
+
+      <!-- Breadcrumbs & Up Button -->
+      <div class="browser-nav-bar">
+        <button class="btn btn-secondary btn-sm" id="browserUpBtn" onclick="navigateBrowserUp()" type="button" title="Go to Parent Folder">
+          <i class="fa-solid fa-arrow-up"></i> Up
+        </button>
+        <div class="browser-breadcrumbs" id="browserBreadcrumbs"></div>
+      </div>
+
+      <!-- Search / Filter in Directory -->
+      <div style="padding: 0.65rem 1.35rem 0.35rem; background: #FFFFFF;">
+        <input type="text" id="browserSearchInput" placeholder="Quick filter files in this folder..." oninput="filterBrowserList(this.value)" style="padding: 0.55rem 0.85rem; font-size: 0.85rem;" />
+      </div>
+
+      <!-- Directory Contents List -->
+      <div class="browser-list-container" id="browserListContainer">
+        <div style="padding: 2.5rem; text-align: center; color: var(--text-muted);">
+          <i class="fa-solid fa-spinner fa-spin"></i> Loading device storage...
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span style="font-size: 0.78rem; color: var(--text-muted);" id="browserStatusText">0 items found</span>
+        <button class="btn btn-secondary btn-sm" onclick="closeFileBrowser()" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================================
        CLIENT APPLICATION JAVASCRIPT
        ======================================================================== -->
   <script>
@@ -1567,6 +1837,97 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(HTML_TEMPLATE.encode("utf-8"))
             return
 
+        if path == "/api/browse":
+            qs = urllib.parse.parse_qs(parsed.query)
+            target_dir = qs.get("dir", [None])[0]
+            if not target_dir or target_dir == "~":
+                target_dir = os.path.expanduser("~")
+            elif target_dir in ("default", ""):
+                if os.path.isdir("/sdcard/DCIM/Camera"):
+                    target_dir = "/sdcard/DCIM/Camera"
+                elif os.path.isdir("/sdcard"):
+                    target_dir = "/sdcard"
+                else:
+                    target_dir = os.getcwd()
+
+            target_dir = os.path.abspath(os.path.expanduser(target_dir))
+            if not os.path.isdir(target_dir):
+                self.send_json({"error": f"Folder not found: {target_dir}"}, status=404)
+                return
+
+            try:
+                parent_dir = os.path.dirname(target_dir) if target_dir != "/" else None
+
+                # Compute breadcrumbs
+                parts = []
+                curr = target_dir
+                while curr and curr != "/":
+                    parts.append({"name": os.path.basename(curr) or curr, "path": curr})
+                    curr = os.path.dirname(curr)
+                parts.append({"name": "root (/)", "path": "/"})
+                parts.reverse()
+
+                entries = []
+                with os.scandir(target_dir) as it:
+                    for entry in it:
+                        if entry.name.startswith("."):
+                            continue
+                        try:
+                            is_dir = entry.is_dir(follow_symlinks=False)
+                            is_file = entry.is_file(follow_symlinks=False)
+                            lower = entry.name.lower()
+                            is_video = is_file and lower.endswith((".mp4", ".mov", ".mkv", ".webm", ".avi", ".3gp", ".m4v"))
+
+                            size_str = ""
+                            if is_file:
+                                sz = entry.stat().st_size
+                                if sz >= 1024 * 1024 * 1024:
+                                    size_str = f"{sz / (1024**3):.2f} GB"
+                                elif sz >= 1024 * 1024:
+                                    size_str = f"{sz / (1024**2):.1f} MB"
+                                elif sz >= 1024:
+                                    size_str = f"{sz / 1024:.0f} KB"
+                                else:
+                                    size_str = f"{sz} B"
+
+                            entries.append({
+                                "name": entry.name,
+                                "path": entry.path,
+                                "is_dir": is_dir,
+                                "is_video": is_video,
+                                "size": size_str,
+                            })
+                        except (PermissionError, OSError):
+                            continue
+
+                entries.sort(key=lambda x: (not x["is_dir"], not x["is_video"], x["name"].lower()))
+
+                # Quick device root shortcuts
+                roots = []
+                for label, icon, rpath in [
+                    ("Camera", "fa-camera", "/sdcard/DCIM/Camera"),
+                    ("Movies", "fa-film", "/sdcard/Movies"),
+                    ("Downloads", "fa-download", "/sdcard/Download"),
+                    ("Storage", "fa-hard-drive", "/sdcard"),
+                    ("Termux Home", "fa-house", os.path.expanduser("~")),
+                    ("Workspace", "fa-briefcase", os.getcwd()),
+                ]:
+                    if os.path.isdir(rpath):
+                        roots.append({"label": label, "icon": icon, "path": rpath})
+
+                self.send_json({
+                    "current_dir": target_dir,
+                    "parent_dir": parent_dir,
+                    "breadcrumbs": parts,
+                    "quick_roots": roots,
+                    "entries": entries,
+                })
+            except PermissionError:
+                self.send_json({"error": f"Permission denied to access {target_dir}"}, status=403)
+            except Exception as e:
+                self.send_json({"error": str(e)}, status=500)
+            return
+
         if path == "/api/scan":
             files = scan_media_files()
             self.send_response(200)
@@ -1624,6 +1985,27 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
             params = json.loads(body) if body else {}
         except Exception:
             params = {}
+
+        if path == "/api/upload":
+            raw_fn = self.headers.get("X-Filename", "device_video.mp4")
+            filename = urllib.parse.unquote(raw_fn)
+            filename = os.path.basename(filename)
+            upload_dir = os.path.abspath("uploads")
+            os.makedirs(upload_dir, exist_ok=True)
+            dest_path = os.path.join(upload_dir, filename)
+
+            content_len = int(self.headers.get("Content-Length", 0))
+            bytes_read = 0
+            with open(dest_path, "wb") as f:
+                while bytes_read < content_len:
+                    chunk = self.rfile.read(min(65536, content_len - bytes_read))
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    bytes_read += len(chunk)
+
+            self.send_json({"status": "uploaded", "path": dest_path})
+            return
 
         if path == "/api/analyze":
             input_path = params.get("input_path")
