@@ -82,146 +82,253 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>OmniCam AI Studio</title>
+  <title>OmniCam Studio</title>
   <style>
     :root {
-      --bg: #090d16;
-      --card-bg: #111827;
-      --card-border: #1f293d;
-      --primary: #00D2FF;
-      --primary-glow: rgba(0, 210, 255, 0.35);
-      --accent: #FF3366;
-      --text: #F3F4F6;
-      --text-muted: #9CA3AF;
-      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --bg: #0F172A;
+      --card-bg: #1E293B;
+      --card-border: #334155;
+      --input-bg: #0B1120;
+      --primary: #2563EB;
+      --primary-hover: #1D4ED8;
+      --primary-focus: rgba(37, 99, 235, 0.35);
+      --success: #10B981;
+      --danger: #EF4444;
+      --text-main: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --radius: 8px;
+      --radius-lg: 12px;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Helvetica, Arial, sans-serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background-color: var(--bg);
-      color: var(--text);
+      color: var(--text-main);
       font-family: var(--font-stack);
       line-height: 1.5;
-      padding: 1rem;
-      padding-bottom: 5rem;
+      padding: 1.5rem 1rem 5rem;
       color-scheme: dark;
       accent-color: var(--primary);
+      -webkit-font-smoothing: antialiased;
     }
 
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Header */
     header {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--card-border);
-      margin-bottom: 1.5rem;
+      gap: 1rem;
     }
 
-    .brand-title {
-      font-size: 1.25rem;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: #FFF;
+    .brand-group h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: #FFFFFF;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    .brand-title span { color: var(--primary); }
+    .brand-group p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.2rem;
+    }
 
     .status-badge {
       font-size: 0.75rem;
-      padding: 0.25rem 0.6rem;
+      padding: 0.35rem 0.75rem;
       border-radius: 9999px;
-      background: rgba(0, 210, 255, 0.15);
-      color: var(--primary);
-      border: 1px solid rgba(0, 210, 255, 0.3);
+      background: #0284C7;
+      color: #FFFFFF;
       font-weight: 600;
+      letter-spacing: 0.3px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #38BDF8;
+    }
+
+    /* Section & Cards */
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 1.25rem;
-      margin-bottom: 1.25rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
     }
 
-    .card-title {
-      font-size: 0.95rem;
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .card-heading {
+      font-size: 1.05rem;
       font-weight: 700;
-      color: #E5E7EB;
-      margin-bottom: 0.75rem;
+      color: #FFFFFF;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
+    /* Form Inputs */
     label {
       display: block;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 600;
-      color: var(--text-muted);
+      color: var(--text-secondary);
       margin-bottom: 0.4rem;
-      margin-top: 0.8rem;
+      margin-top: 0.9rem;
     }
+
+    label:first-child { margin-top: 0; }
 
     input[type="text"], select {
       width: 100%;
-      background: #0B0F19;
+      background: var(--input-bg);
       border: 1px solid var(--card-border);
-      color: #FFF;
-      padding: 0.65rem 0.85rem;
-      border-radius: 8px;
-      font-size: 0.9rem;
+      color: #FFFFFF;
+      padding: 0.7rem 0.9rem;
+      border-radius: var(--radius);
+      font-size: 0.92rem;
+      font-family: inherit;
       outline: none;
-      transition: border 0.2s;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
 
     input[type="text"]:focus, select:focus {
       border-color: var(--primary);
-      box-shadow: 0 0 0 2px var(--primary-glow);
+      box-shadow: 0 0 0 3px var(--primary-focus);
     }
 
+    /* Buttons */
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      width: 100%;
-      padding: 0.8rem 1.25rem;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 700;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.92rem;
+      font-weight: 600;
+      font-family: inherit;
       cursor: pointer;
       border: none;
-      transition: all 0.2s;
-      margin-top: 0.8rem;
+      transition: background-color 0.15s, opacity 0.15s;
+      text-decoration: none;
     }
+
+    .btn-block { width: 100%; margin-top: 0.9rem; }
 
     .btn-primary {
-      background: linear-gradient(135deg, #00D2FF 0%, #0077FF 100%);
-      color: #FFF;
-      box-shadow: 0 4px 15px var(--primary-glow);
+      background: var(--primary);
+      color: #FFFFFF;
     }
+
+    .btn-primary:hover { background: var(--primary-hover); }
 
     .btn-secondary {
-      background: #1F293D;
-      color: #E5E7EB;
+      background: #334155;
+      color: #F8FAFC;
     }
 
-    .btn-secondary:hover { background: #2D3748; }
+    .btn-secondary:hover { background: #475569; }
+
+    .btn-success {
+      background: var(--success);
+      color: #FFFFFF;
+    }
+
+    .btn-success:hover { background: #059669; }
 
     .btn:disabled {
-      opacity: 0.5;
+      opacity: 0.6;
       cursor: not-allowed;
     }
 
-    /* Timeline visualizer */
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    @media (min-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+    }
+
+    .grid-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 640px) {
+      .grid-stats { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .stat-card {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      padding: 0.9rem;
+      border-radius: var(--radius);
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-top: 0.2rem;
+    }
+
+    /* Timeline Visualizer */
     .timeline-container {
       margin-top: 1rem;
       overflow-x: auto;
@@ -229,10 +336,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
     .timeline-bar {
       display: flex;
-      height: 48px;
-      border-radius: 8px;
+      height: 44px;
+      border-radius: var(--radius);
       overflow: hidden;
-      background: #0B0F19;
+      background: var(--input-bg);
       border: 1px solid var(--card-border);
       min-width: 100%;
     }
@@ -243,53 +350,45 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 0.65rem;
+      font-size: 0.7rem;
       font-weight: 700;
-      color: #FFF;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-      border-right: 1px solid rgba(0,0,0,0.4);
+      color: #FFFFFF;
+      border-right: 1px solid rgba(0,0,0,0.3);
       cursor: pointer;
-      transition: opacity 0.2s;
+      transition: filter 0.15s;
       overflow: hidden;
       white-space: nowrap;
       padding: 0 4px;
     }
 
-    .shot-block:hover { opacity: 0.85; }
+    .shot-block:hover { filter: brightness(1.2); }
 
     .angle-wide { background: #2563EB; }
     .angle-closeup { background: #DC2626; }
-    .angle-third_left { background: #0D9488; }
-    .angle-third_right { background: #0891B2; }
+    .angle-third_left { background: #0891B2; }
+    .angle-third_right { background: #0D9488; }
     .angle-slow_push { background: #D97706; }
     .angle-broll { background: #16A34A; }
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
+    .timeline-legend {
+      display: flex;
+      flex-wrap: wrap;
       gap: 0.75rem;
       margin-top: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
     }
 
-    .stat-box {
-      background: #0B0F19;
-      border: 1px solid var(--card-border);
-      padding: 0.75rem;
-      border-radius: 8px;
-      text-align: center;
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
     }
 
-    .stat-val {
-      font-size: 1.2rem;
-      font-weight: 800;
-      color: var(--primary);
-    }
-
-    .stat-lbl {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      font-weight: 600;
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
     }
 
     /* Toggles & Sliders */
@@ -297,190 +396,304 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.65rem 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
 
-    .toggle-label {
-      font-size: 0.85rem;
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toggle-title {
+      font-size: 0.9rem;
       font-weight: 600;
-      color: #E5E7EB;
+      color: #FFFFFF;
+    }
+
+    .toggle-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.1rem;
+    }
+
+    input[type="checkbox"] {
+      width: 1.25rem;
+      height: 1.25rem;
+      cursor: pointer;
     }
 
     .slider-row {
-      margin-top: 0.75rem;
+      margin-top: 0.9rem;
     }
 
     .slider-header {
       display: flex;
       justify-content: space-between;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 0.25rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.35rem;
+    }
+
+    .slider-val {
+      color: #FFFFFF;
+      font-weight: 700;
     }
 
     input[type="range"] {
       width: 100%;
       height: 6px;
-      background: #1F293D;
+      background: var(--input-bg);
       border-radius: 3px;
     }
 
+    /* Progress & Video */
     .progress-box {
-      margin-top: 1rem;
+      margin-top: 1.25rem;
       display: none;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #FFFFFF;
+      margin-bottom: 0.4rem;
     }
 
     .progress-bar-bg {
       width: 100%;
-      height: 10px;
-      background: #0B0F19;
-      border-radius: 5px;
+      height: 8px;
+      background: var(--input-bg);
+      border-radius: 4px;
       overflow: hidden;
-      margin-top: 0.5rem;
     }
 
     .progress-bar-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #00D2FF, #FF3366);
+      background: var(--primary);
       transition: width 0.3s ease;
     }
 
     video {
       width: 100%;
-      border-radius: 8px;
+      border-radius: var(--radius);
       margin-top: 1rem;
-      background: #000;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      background: #000000;
+      border: 1px solid var(--card-border);
     }
   </style>
 </head>
 <body>
 
+<div class="container">
+
+  <!-- Header -->
   <header>
-    <div class="brand-title">🎬 <span>OMNICAM</span> STUDIO</div>
-    <div class="status-badge" id="serverStatus">PORT 8080 ONLINE</div>
+    <div class="brand-group">
+      <h1>🎬 OmniCam Studio</h1>
+      <p>Automated Virtual Multi-Camera Video Production</p>
+    </div>
+    <div class="status-badge">
+      <span class="status-dot"></span>
+      Local Engine Online (Port 8080)
+    </div>
   </header>
 
-  <!-- Video Source Section -->
+  <!-- Step 1: Source Footage -->
   <div class="card">
-    <div class="card-title">📹 Video Input Source</div>
-    <label for="inputVideo">File Path or Storage Location</label>
-    <input type="text" id="inputVideo" value="/sdcard/Movies/Vid.mp4" placeholder="/sdcard/Movies/my_clip.mp4">
-    
-    <button class="btn btn-secondary" onclick="scanStorage()">🔍 Scan Device For Videos</button>
+    <div class="card-header">
+      <div class="card-heading">1. Source Footage</div>
+    </div>
+    <label for="inputVideo">Video File Path</label>
+    <input type="text" id="inputVideo" value="/sdcard/Movies/Vid.mp4" placeholder="/sdcard/Movies/Vid.mp4">
+
+    <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+      <button class="btn btn-secondary" style="flex:1;" onclick="scanStorage()">
+        🔍 Scan Device for Videos
+      </button>
+    </div>
+
     <div id="scanResults" style="display:none; margin-top:0.75rem;">
       <label for="scanSelect">Discovered Recordings</label>
       <select id="scanSelect" onchange="selectScannedFile(this.value)">
-        <option value="">-- Choose a video --</option>
+        <option value="">-- Choose a recording --</option>
       </select>
     </div>
 
-    <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeVideo()">🧠 Analyze Acoustics & Cuts</button>
+    <button class="btn btn-primary btn-block" id="analyzeBtn" onclick="analyzeVideo()">
+      🧠 Analyze Audio & Plan Cuts
+    </button>
   </div>
 
-  <!-- Interactive Timeline Section -->
+  <!-- Step 2: Virtual Multi-Camera Timeline -->
   <div class="card" id="timelineCard" style="display:none;">
-    <div class="card-title">🎞️ Virtual Multi-Camera Timeline</div>
+    <div class="card-header">
+      <div class="card-heading">2. Multi-Camera Cut Timeline</div>
+      <span style="font-size:0.8rem; color:var(--text-secondary);" id="timelineOverview"></span>
+    </div>
+
     <div class="timeline-container">
       <div class="timeline-bar" id="timelineBar"></div>
     </div>
 
-    <div class="stats-grid">
-      <div class="stat-box">
-        <div class="stat-val" id="statEditedDur">00:00</div>
-        <div class="stat-lbl">Edited Duration</div>
+    <div class="timeline-legend">
+      <div class="legend-item"><span class="legend-dot" style="background:#2563EB;"></span> Wide Context</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#DC2626;"></span> Tight Close-Up</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#0891B2;"></span> Rule-of-Thirds L/R</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#D97706;"></span> Ken Burns Push</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#16A34A;"></span> B-Roll Cutaway</div>
+    </div>
+
+    <div class="grid-stats">
+      <div class="stat-card">
+        <div class="stat-number" id="statEditedDur">00:00</div>
+        <div class="stat-label">Edited Duration</div>
       </div>
-      <div class="stat-box">
-        <div class="stat-val" id="statDeadAir">0.0s</div>
-        <div class="stat-lbl">Dead Air Cut</div>
+      <div class="stat-card">
+        <div class="stat-number" id="statDeadAir">0.0s</div>
+        <div class="stat-label">Dead Air Cut</div>
       </div>
-      <div class="stat-box">
-        <div class="stat-val" id="statCuts">0</div>
-        <div class="stat-lbl">Camera Switches</div>
+      <div class="stat-card">
+        <div class="stat-number" id="statCuts">0</div>
+        <div class="stat-label">Camera Cuts</div>
       </div>
-      <div class="stat-box">
-        <div class="stat-val" id="statSaved">0%</div>
-        <div class="stat-lbl">Retention Boost</div>
+      <div class="stat-card">
+        <div class="stat-number" id="statSaved">0%</div>
+        <div class="stat-label">Retention Boost</div>
       </div>
     </div>
-    <div id="shotDetail" style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted); text-align: center;"></div>
+
+    <div id="shotDetail" style="margin-top:0.75rem; font-size:0.82rem; color:var(--text-secondary); padding:0.5rem; background:var(--input-bg); border-radius:var(--radius); border:1px solid var(--card-border); text-align:center;">
+      Tap any timeline segment to inspect shot details.
+    </div>
   </div>
 
-  <!-- Production Studio Settings -->
+  <!-- Step 3: Production Settings -->
   <div class="card">
-    <div class="card-title">🎛️ Director & Style Controls</div>
-
-    <div class="toggle-row">
-      <span class="toggle-label">🗣️ Filler Word Removal ("uh", "um", "like")</span>
-      <input type="checkbox" id="removeFillers" checked>
+    <div class="card-header">
+      <div class="card-heading">3. Studio Production Settings</div>
     </div>
 
-    <div class="toggle-row">
-      <span class="toggle-label">🎥 Digital Gimbal Stabilization</span>
-      <input type="checkbox" id="stabilize" checked>
+    <div class="grid-2">
+      <!-- Group A: Camera & Cadence -->
+      <div>
+        <label for="pacingSelect">Director Pacing</label>
+        <select id="pacingSelect">
+          <option value="dynamic" selected>Dynamic (Fast-Paced YouTube / Reels)</option>
+          <option value="podcast">Podcast (Wide Context + Alternating Thirds)</option>
+          <option value="documentary">Documentary (Wide Context + Push-Ins)</option>
+          <option value="dramatic">Dramatic (Punch-In Emotional Hook)</option>
+        </select>
+
+        <label for="targetRes">Output Resolution</label>
+        <select id="targetRes">
+          <option value="720p" selected>720p (Recommended: 3x Faster, Mobile Safe)</option>
+          <option value="1080p">1080p Full HD</option>
+          <option value="4k">4K UHD Master</option>
+        </select>
+      </div>
+
+      <!-- Group B: Color & Audio -->
+      <div>
+        <label for="colorSelect">Color Grade Profile</label>
+        <select id="colorSelect">
+          <option value="cinematic" selected>Hollywood Cinematic (Teal & Orange)</option>
+          <option value="podcast">Podcast Vibrant</option>
+          <option value="vintage">Vintage Warm</option>
+          <option value="none">Raw Camera Pass-through</option>
+        </select>
+
+        <label for="bgmSelect">Background Music Bed</label>
+        <select id="bgmSelect">
+          <option value="ambient" selected>Synthesized Ambient Bed (Built-in)</option>
+          <option value="none">Voice Only (No Music)</option>
+        </select>
+      </div>
     </div>
 
-    <div class="toggle-row">
-      <span class="toggle-label">🔤 Hormozi Active-Word Subtitles</span>
-      <input type="checkbox" id="captions" checked>
-    </div>
-
-    <label for="pacingSelect">Director Pacing Cadence</label>
-    <select id="pacingSelect">
-      <option value="dynamic" selected>Dynamic Studio (Fast-Paced YouTube / Reels)</option>
-      <option value="podcast">Podcast (Wide Context + Alternating Thirds)</option>
-      <option value="documentary">Documentary (Wide Context + Push-Ins)</option>
-      <option value="dramatic">Dramatic (Punch-In Intimacy)</option>
-    </select>
-
-    <label for="colorSelect">Color Grade Preset</label>
-    <select id="colorSelect">
-      <option value="cinematic" selected>Cinematic (Hollywood Teal & Orange)</option>
-      <option value="podcast">Podcast (Vibrant Modern Tech)</option>
-      <option value="vintage">Vintage (Warm Muted Documentary)</option>
-      <option value="none">Raw Camera Pass-through</option>
-    </select>
-
-    <label for="bgmSelect">Auto-Ducking Background Music</label>
-    <select id="bgmSelect">
-      <option value="ambient" selected>Synthesized Ambient Bed (Built-in)</option>
-      <option value="none">No Background Music (Voice Only)</option>
-    </select>
-
+    <!-- Sliders -->
     <div class="slider-row">
       <div class="slider-header">
         <span>BGM Ducking Level</span>
-        <span id="bgmVolVal">22%</span>
+        <span class="slider-val" id="bgmVolVal">22%</span>
       </div>
       <input type="range" id="bgmVol" min="5" max="50" value="22" oninput="document.getElementById('bgmVolVal').innerText = this.value + '%'">
     </div>
 
-    <label for="brollFolder">Automatic B-Roll Clips Folder (Optional)</label>
-    <input type="text" id="brollFolder" placeholder="/sdcard/Movies/Broll/">
+    <div class="slider-row">
+      <div class="slider-header">
+        <span>Punch-In Zoom Factor</span>
+        <span class="slider-val" id="zoomVal">1.75x</span>
+      </div>
+      <input type="range" id="zoomRange" min="120" max="220" value="175" oninput="document.getElementById('zoomVal').innerText = (this.value / 100).toFixed(2) + 'x'">
+    </div>
 
-    <label for="targetRes">Target Output Resolution</label>
-    <select id="targetRes">
-      <option value="720p" selected>720p (Recommended: 3x Faster, Mobile Safe)</option>
-      <option value="1080p">1080p Full HD</option>
-      <option value="4k">4K UHD Master</option>
-    </select>
+    <!-- Smart Enhancements Toggles -->
+    <div style="margin-top:1.25rem; border-top:1px solid var(--card-border); padding-top:0.75rem;">
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">Filler Word Removal</span>
+          <span class="toggle-desc">Automatically cuts hesitations ("uh", "um", "ah", "like", "you know")</span>
+        </div>
+        <input type="checkbox" id="removeFillers" checked>
+      </div>
 
-    <label for="titleText">Opening Title Card</label>
-    <input type="text" id="titleText" value="OMNICAM AI • MULTI-CAM PRODUCTION">
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">Digital Gimbal Horizon Stabilization</span>
+          <span class="toggle-desc">2-pass optical motion smoothing to eliminate walking bounce</span>
+        </div>
+        <input type="checkbox" id="stabilize" checked>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">Hormozi Active-Word Subtitles</span>
+          <span class="toggle-desc">High-contrast animated captions with neon word-tracking</span>
+        </div>
+        <input type="checkbox" id="captions" checked>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title">2.35:1 Anamorphic Cinema Letterbox</span>
+          <span class="toggle-desc">Adds cinematic top and bottom matte bars for landscape video</span>
+        </div>
+        <input type="checkbox" id="letterbox">
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:0.5rem;">
+      <div>
+        <label for="titleText">Opening Title</label>
+        <input type="text" id="titleText" value="OMNICAM AI • MULTI-CAM PRODUCTION">
+      </div>
+      <div>
+        <label for="brollFolder">B-Roll Footage Folder (Optional)</label>
+        <input type="text" id="brollFolder" placeholder="/sdcard/Movies/Broll/">
+      </div>
+    </div>
   </div>
 
-  <!-- Render Studio Action -->
+  <!-- Step 4: Render Studio Video -->
   <div class="card">
-    <button class="btn btn-primary" id="renderBtn" onclick="renderStudioVideo()">
-      🎬 RENDER STUDIO VIDEO
+    <div class="card-header">
+      <div class="card-heading">4. Export & Delivery</div>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="renderBtn" onclick="renderStudioVideo()">
+      🎬 Render Studio Video
     </button>
 
     <div class="progress-box" id="progressBox">
-      <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:700;">
-        <span id="progressMsg">Preparing cinematic pipeline...</span>
+      <div class="progress-header">
+        <span id="progressMsg">Initializing cinematic pipeline...</span>
         <span id="progressPct">0%</span>
       </div>
       <div class="progress-bar-bg">
@@ -489,189 +702,198 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     </div>
 
     <div id="videoContainer" style="display:none; margin-top:1.5rem;">
-      <div class="card-title" style="color:var(--primary);">✨ Master Render Complete!</div>
+      <div class="card-heading" style="color:var(--success); margin-bottom:0.5rem;">
+        ✓ Master Video Ready
+      </div>
       <video id="outputVideoPlayer" controls></video>
-      <a id="downloadLink" class="btn btn-secondary" style="margin-top:0.5rem; text-decoration:none;" download>
-        ⬇️ Download Video
+      <a id="downloadLink" class="btn btn-secondary btn-block" download>
+        ⬇️ Download Video File
       </a>
     </div>
   </div>
 
-  <script>
-    let currentShots = [];
+</div>
 
-    async function scanStorage() {
-      try {
-        const res = await fetch('/api/scan');
-        const data = await res.json();
-        const select = document.getElementById('scanSelect');
-        select.innerHTML = '<option value="">-- Choose a video --</option>';
-        if (data.length > 0) {
-          data.forEach(item => {
-            const opt = document.createElement('option');
-            opt.value = item.path;
-            opt.innerText = `${item.name} (${item.size})`;
-            select.appendChild(opt);
-          });
-          document.getElementById('scanResults').style.display = 'block';
-        } else {
-          alert('No video files found in common folders. Type path manually.');
-        }
-      } catch (err) {
-        alert('Scan failed: ' + err);
-      }
-    }
+<script>
+  let currentShots = [];
 
-    function selectScannedFile(val) {
-      if (val) document.getElementById('inputVideo').value = val;
-    }
-
-    async function analyzeVideo() {
-      const inputPath = document.getElementById('inputVideo').value.trim();
-      if (!inputPath) return alert('Please enter video path');
-
-      const btn = document.getElementById('analyzeBtn');
-      btn.disabled = true;
-      btn.innerText = '⏳ Analyzing Acoustics & Cuts...';
-
-      try {
-        const res = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            input_path: inputPath,
-            pacing: document.getElementById('pacingSelect').value,
-            remove_fillers: document.getElementById('removeFillers').checked,
-            broll_dir: document.getElementById('brollFolder').value.trim() || null,
-          })
+  async function scanStorage() {
+    try {
+      const res = await fetch('/api/scan');
+      const data = await res.json();
+      const select = document.getElementById('scanSelect');
+      select.innerHTML = '<option value="">-- Choose a recording --</option>';
+      if (data.length > 0) {
+        data.forEach(item => {
+          const opt = document.createElement('option');
+          opt.value = item.path;
+          opt.innerText = `${item.name} (${item.size})`;
+          select.appendChild(opt);
         });
-
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        renderTimeline(data);
-      } catch (err) {
-        alert('Analysis failed: ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = '🧠 Analyze Acoustics & Cuts';
+        document.getElementById('scanResults').style.display = 'block';
+      } else {
+        alert('No video files found in common storage directories.');
       }
+    } catch (err) {
+      alert('Storage scan failed: ' + err);
     }
+  }
 
-    function renderTimeline(data) {
-      currentShots = data.shots || [];
-      const bar = document.getElementById('timelineBar');
-      bar.innerHTML = '';
+  function selectScannedFile(val) {
+    if (val) document.getElementById('inputVideo').value = val;
+  }
 
-      const totalDur = data.edited_duration || 1.0;
+  async function analyzeVideo() {
+    const inputPath = document.getElementById('inputVideo').value.trim();
+    if (!inputPath) return alert('Please enter a video file path.');
 
-      currentShots.forEach((shot, idx) => {
-        const pct = ((shot.duration / totalDur) * 100).toFixed(2);
-        const div = document.createElement('div');
-        div.className = `shot-block angle-${shot.angle.toLowerCase()}`;
-        div.style.width = pct + '%';
-        div.innerText = shot.angle;
-        div.title = `#${shot.index + 1} ${shot.angle}: ${shot.duration}s`;
-        div.onclick = () => {
-          document.getElementById('shotDetail').innerText = 
-            `Shot #${shot.index + 1}: ${shot.angle} (${shot.duration}s) - ${shot.description}`;
-        };
-        bar.appendChild(div);
+    const btn = document.getElementById('analyzeBtn');
+    btn.disabled = true;
+    btn.innerText = '⏳ Analyzing Acoustics & Framing...';
+
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input_path: inputPath,
+          pacing: document.getElementById('pacingSelect').value,
+          zoom: parseFloat(document.getElementById('zoomRange').value) / 100.0,
+          remove_fillers: document.getElementById('removeFillers').checked,
+          broll_dir: document.getElementById('brollFolder').value.trim() || null,
+        })
       });
 
-      document.getElementById('statEditedDur').innerText = formatTime(data.edited_duration);
-      document.getElementById('statDeadAir').innerText = data.dead_air_cut.toFixed(1) + 's';
-      document.getElementById('statCuts').innerText = currentShots.length;
-      document.getElementById('statSaved').innerText = '+' + Math.round((data.dead_air_cut / data.total_duration) * 100) + '%';
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
 
-      document.getElementById('timelineCard').style.display = 'block';
+      renderTimeline(data);
+    } catch (err) {
+      alert('Analysis failed: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerText = '🧠 Analyze Audio & Plan Cuts';
     }
+  }
 
-    function formatTime(sec) {
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
-      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  function renderTimeline(data) {
+    currentShots = data.shots || [];
+    const bar = document.getElementById('timelineBar');
+    bar.innerHTML = '';
+
+    const totalDur = data.edited_duration || 1.0;
+
+    currentShots.forEach((shot) => {
+      const pct = ((shot.duration / totalDur) * 100).toFixed(2);
+      const div = document.createElement('div');
+      div.className = `shot-block angle-${shot.angle.toLowerCase()}`;
+      div.style.width = pct + '%';
+      div.innerText = shot.angle;
+      div.title = `#${shot.index + 1} ${shot.angle}: ${shot.duration}s`;
+      div.onclick = () => {
+        document.getElementById('shotDetail').innerText = 
+          `Shot #${shot.index + 1}: ${shot.angle} (${shot.duration}s) - ${shot.description}`;
+      };
+      bar.appendChild(div);
+    });
+
+    document.getElementById('statEditedDur').innerText = formatTime(data.edited_duration);
+    document.getElementById('statDeadAir').innerText = data.dead_air_cut.toFixed(1) + 's';
+    document.getElementById('statCuts').innerText = currentShots.length;
+    const boostPct = Math.round((data.dead_air_cut / (data.total_duration || 1.0)) * 100);
+    document.getElementById('statSaved').innerText = '+' + boostPct + '%';
+
+    document.getElementById('timelineCard').style.display = 'block';
+  }
+
+  function formatTime(sec) {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
+  async function renderStudioVideo() {
+    const inputPath = document.getElementById('inputVideo').value.trim();
+    if (!inputPath) return alert('Please enter a video file path.');
+
+    const btn = document.getElementById('renderBtn');
+    btn.disabled = true;
+    document.getElementById('progressBox').style.display = 'block';
+    document.getElementById('videoContainer').style.display = 'none';
+
+    try {
+      const res = await fetch('/api/render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input_path: inputPath,
+          pacing: document.getElementById('pacingSelect').value,
+          zoom: parseFloat(document.getElementById('zoomRange').value) / 100.0,
+          color: document.getElementById('colorSelect').value,
+          bgm: document.getElementById('bgmSelect').value === 'ambient' ? 'ambient' : null,
+          bgm_volume: parseFloat(document.getElementById('bgmVol').value) / 100.0,
+          captions: document.getElementById('captions').checked,
+          stabilize: document.getElementById('stabilize').checked,
+          letterbox: document.getElementById('letterbox').checked,
+          remove_fillers: document.getElementById('removeFillers').checked,
+          broll_dir: document.getElementById('brollFolder').value.trim() || null,
+          resolution: document.getElementById('targetRes').value,
+          title: document.getElementById('titleText').value,
+        })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      pollProgress();
+    } catch (err) {
+      alert('Render initialization failed: ' + err.message);
+      btn.disabled = false;
+      document.getElementById('progressBox').style.display = 'none';
     }
+  }
 
-    async function renderStudioVideo() {
-      const inputPath = document.getElementById('inputVideo').value.trim();
-      if (!inputPath) return alert('Please enter video path');
-
-      const btn = document.getElementById('renderBtn');
-      btn.disabled = true;
-      document.getElementById('progressBox').style.display = 'block';
-      document.getElementById('videoContainer').style.display = 'none';
-
+  function pollProgress() {
+    const timer = setInterval(async () => {
       try {
-        const res = await fetch('/api/render', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            input_path: inputPath,
-            pacing: document.getElementById('pacingSelect').value,
-            color: document.getElementById('colorSelect').value,
-            bgm: document.getElementById('bgmSelect').value === 'ambient' ? 'ambient' : null,
-            bgm_volume: parseFloat(document.getElementById('bgmVol').value) / 100.0,
-            captions: document.getElementById('captions').checked,
-            stabilize: document.getElementById('stabilize').checked,
-            remove_fillers: document.getElementById('removeFillers').checked,
-            broll_dir: document.getElementById('brollFolder').value.trim() || null,
-            resolution: document.getElementById('targetRes').value,
-            title: document.getElementById('titleText').value,
-          })
-        });
-
+        const res = await fetch('/api/progress');
         const data = await res.json();
-        if (data.error) throw new Error(data.error);
 
-        pollProgress();
-      } catch (err) {
-        alert('Render failed to start: ' + err.message);
-        btn.disabled = false;
-        document.getElementById('progressBox').style.display = 'none';
-      }
-    }
+        const pct = Math.round(data.progress * 100);
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressPct').innerText = pct + '%';
+        document.getElementById('progressMsg').innerText = data.status || 'Rendering...';
 
-    function pollProgress() {
-      const timer = setInterval(async () => {
-        try {
-          const res = await fetch('/api/progress');
-          const data = await res.json();
+        if (!data.is_rendering) {
+          clearInterval(timer);
+          document.getElementById('renderBtn').disabled = false;
 
-          const pct = Math.round(data.progress * 100);
-          document.getElementById('progressBar').style.width = pct + '%';
-          document.getElementById('progressPct').innerText = pct + '%';
-          document.getElementById('progressMsg').innerText = data.status || 'Rendering...';
-
-          if (!data.is_rendering) {
-            clearInterval(timer);
-            document.getElementById('renderBtn').disabled = false;
-
-            if (data.error) {
-              alert('Render encountered error: ' + data.error);
-            } else if (data.output_file) {
-              showCompletedVideo(data.output_file);
-            }
+          if (data.error) {
+            alert('Render encountered an error: ' + data.error);
+          } else if (data.output_file) {
+            showCompletedVideo(data.output_file);
           }
-        } catch (e) {
-          // Retry next poll
         }
-      }, 1000);
-    }
+      } catch (e) {
+        // Retry next poll
+      }
+    }, 1000);
+  }
 
-    function showCompletedVideo(filePath) {
-      const container = document.getElementById('videoContainer');
-      const player = document.getElementById('outputVideoPlayer');
-      const download = document.getElementById('downloadLink');
+  function showCompletedVideo(filePath) {
+    const container = document.getElementById('videoContainer');
+    const player = document.getElementById('outputVideoPlayer');
+    const download = document.getElementById('downloadLink');
 
-      const videoUrl = '/video?path=' + encodeURIComponent(filePath);
-      player.src = videoUrl;
-      download.href = videoUrl;
-      download.download = filePath.split('/').pop();
-      container.style.display = 'block';
-      player.play().catch(() => {});
-    }
-  </script>
+    const videoUrl = '/video?path=' + encodeURIComponent(filePath);
+    player.src = videoUrl;
+    download.href = videoUrl;
+    download.download = filePath.split('/').pop();
+    container.style.display = 'block';
+    player.play().catch(() => {});
+  }
+</script>
+
 </body>
 </html>
 """
@@ -841,6 +1063,7 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                     director = CameraDirector(
                         tracker=tracker,
                         pacing_style=params.get("pacing", "dynamic"),
+                        zoom_factor=float(params.get("zoom", 1.75)),
                         broll_manager=broll_mgr,
                     )
                     shot_plans = director.plan_production(segments)
@@ -865,6 +1088,7 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                         bgm_volume=float(params.get("bgm_volume", 0.22)),
                         enable_captions=bool(params.get("captions")),
                         stabilize=bool(params.get("stabilize")),
+                        letterbox=bool(params.get("letterbox", False)),
                         broll_dir=broll_dir,
                         title_text=params.get("title", "OMNICAM AI • MULTI-CAM PRODUCTION"),
                     )
