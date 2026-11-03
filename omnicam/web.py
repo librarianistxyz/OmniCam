@@ -1126,16 +1126,44 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(data).encode("utf-8"))
 
 
+class ReusableTCPServer(socketserver.TCPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
+
 def launch_web_server(port: int = 8080):
-    """Starts the zero-dependency OmniCam Localhost Mobile Web Studio."""
-    server_address = ("", port)
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(server_address, StudioHTTPHandler) as httpd:
+    """Starts the zero-dependency OmniCam Localhost Mobile Web Studio with automatic port fallback."""
+    target_port = port
+    httpd = None
+    max_attempts = 10
+
+    for offset in range(max_attempts):
+        candidate_port = target_port + offset
+        try:
+            httpd = ReusableTCPServer(("", candidate_port), StudioHTTPHandler)
+            target_port = candidate_port
+            break
+        except OSError as e:
+            # 98 on Linux/Android Termux, 48 on macOS / BSD
+            if getattr(e, "errno", None) in (98, 48) or "address already in use" in str(e).lower():
+                if offset == 0:
+                    print(f"⚠️  Notice: Port {target_port} is currently in use (another OmniCam or server process is active).")
+                continue
+            raise e
+
+    if httpd is None:
+        print(f"[-] Error: Could not bind to any port between {port} and {port + max_attempts - 1}.")
+        print("    To terminate existing instances in Termux, run: pkill -f omnicam.py")
+        sys.exit(1)
+
+    with httpd:
         print("\n" + "=" * 65)
         print(" 🎬 OMNICAM LOCALHOST MOBILE WEB STUDIO")
         print("=" * 65)
-        print(f" [*] Server Live: http://localhost:{port}")
-        print(f" [*] Open your phone or desktop browser to: http://localhost:{port}")
+        print(f" [*] Server Live: http://localhost:{target_port}")
+        print(f" [*] Open your phone or desktop browser to: http://localhost:{target_port}")
+        if target_port != port:
+            print(f" [*] Note: Switched automatically from busy port {port} -> http://localhost:{target_port}")
         print(" [*] Zero dependencies required. Press Ctrl+C to terminate.")
         print("=" * 65 + "\n")
         try:
