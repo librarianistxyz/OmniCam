@@ -169,6 +169,80 @@ def run_tests():
         print(f"  [✓] Rendered cut duration: {out_dur:.2f}s (Dead air removed: {duration - out_dur:.2f}s)")
         assert 5.0 <= out_dur <= 7.0, f"Output duration unexpected: {out_dur}s"
 
+        # 5. Test Automatic B-Roll Cutaway Pipeline
+        print("\n[Test 4] Testing Automatic B-Roll Cutaways (--broll ./clips/)...")
+        from omnicam.broll import BRollManager, BRollAsset
+
+        broll_dir = os.path.join(tmp_dir, "test_broll_clips")
+        os.makedirs(broll_dir, exist_ok=True)
+
+        # Generate synthetic B-roll video clip
+        broll_vid = os.path.join(broll_dir, "broll_footage.mp4")
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                "-f", "lavfi", "-i", "testsrc=size=1280x720:rate=30",
+                "-t", "4.0", "-c:v", "libx264", "-preset", "ultrafast",
+                "-pix_fmt", "yuv420p", "-an", broll_vid,
+            ],
+            check=True,
+        )
+
+        # Generate synthetic B-roll photo
+        broll_img = os.path.join(broll_dir, "broll_photo.png")
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                "-f", "lavfi", "-i", "color=c=navy:s=1280x720:d=1",
+                "-vframes", "1", broll_img,
+            ],
+            check=True,
+        )
+
+        broll_mgr = BRollManager(broll_dir)
+        discovered = broll_mgr.discover_assets()
+        assert len(discovered) == 2, f"Expected 2 B-roll assets, found {len(discovered)}"
+        print(f"  [✓] BRollManager discovered {len(discovered)} assets (video + photo).")
+
+        # Test B-roll planning on an extended 6-second take
+        extended_segs = [
+            SpeechSegment(index=0, start=0.0, end=6.0, duration=6.0, silence_before=1.0),
+        ]
+        broll_director = CameraDirector(
+            tracker=tracker,
+            pacing_style="dynamic",
+            broll_manager=broll_mgr,
+            min_broll_speech_dur=4.0,
+            broll_cutaway_dur=2.5,
+        )
+        broll_plans = broll_director.plan_production(extended_segs)
+
+        # Should split 1 long take into 3 sub-shots: [Speaker Lead-in, B-Roll Cutaway, Speaker Return]
+        assert len(broll_plans) == 3, f"Expected 3 shots for B-roll cutaway, got {len(broll_plans)}"
+        assert broll_plans[1].angle == CameraAngle.BROLL, "Middle shot must be BROLL"
+        assert broll_plans[0].angle != CameraAngle.BROLL, "Lead-in must be speaker camera angle"
+        assert broll_plans[2].angle != CameraAngle.BROLL, "Return must be speaker camera angle"
+        assert broll_plans[0].angle != broll_plans[2].angle, "Lead-in and return angles must differ (zero jump cuts)"
+        print(f"  [✓] Director split extended take into: {[s.angle.value for s in broll_plans]}")
+        print(f"  [✓] B-Roll cutaway planned: {broll_plans[1].broll_name} ({broll_plans[1].segment.duration:.2f}s)")
+
+        # Test rendering with B-roll cutaway
+        broll_out = os.path.join(tmp_dir, "broll_master_output.mp4")
+        broll_engine = RenderEngine(
+            input_vid,
+            config=RenderConfig(
+                target_width=1280,
+                target_height=720,
+                broll_dir=broll_dir,
+                preset="ultrafast",
+            ),
+        )
+        broll_render_file = broll_engine.render(broll_plans, broll_out)
+        assert os.path.isfile(broll_render_file)
+        broll_dur = AudioAnalyzer.get_media_duration(broll_render_file)
+        assert 5.5 <= broll_dur <= 6.5, f"B-roll cut duration unexpected: {broll_dur}s"
+        print(f"  [✓] B-Roll cutaway rendered successfully: {broll_dur:.2f}s with voiceover intact.")
+
     print("\n" + "=" * 65)
     print(" [✓] ALL UNIT & INTEGRATION TESTS PASSED WITH 100% SUCCESS")
     print("=" * 65)

@@ -19,6 +19,7 @@ from .captions import (
     remap_words_to_edited_timeline,
 )
 from .stabilizer import VideoStabilizer, is_vidstab_supported
+from .broll import BRollManager, BRollAsset, SUPPORTED_VIDEO_EXTS
 
 
 @dataclass
@@ -37,6 +38,9 @@ class RenderConfig:
     captions_file: Optional[str] = None
     stabilize: bool = False
     stabilize_smoothing: int = 25
+    broll_dir: Optional[str] = None
+    broll_min_dur: float = 4.0
+    broll_length: float = 2.5
     show_hud: bool = True
     show_title: bool = True
     title_text: str = "OMNICAM AI • MULTI-CAM PRODUCTION"
@@ -200,11 +204,30 @@ class RenderEngine:
             else:
                 print("  [!] Notice: libvidstab not detected in local FFmpeg. Proceeding without optical stabilization.")
 
+        # Prepare normalized B-roll clips for any B-roll cutaway shots
+        temp_broll_files: Dict[int, str] = {}
+        for shot in shot_plans:
+            if shot.angle == CameraAngle.BROLL and shot.broll_path and os.path.isfile(shot.broll_path):
+                tmp_broll = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
+                tmp_broll.close()
+                temp_broll_files[shot.index] = tmp_broll.name
+                if progress_callback:
+                    progress_callback(0.20, f"Normalizing B-roll cutaway '{shot.broll_name or 'clip'}'...")
+                is_vid = any(shot.broll_path.lower().endswith(ext) for ext in SUPPORTED_VIDEO_EXTS)
+                asset = BRollAsset(path=shot.broll_path, is_video=is_vid, name=shot.broll_name or os.path.basename(shot.broll_path))
+                BRollManager.prepare_clip(
+                    asset=asset,
+                    duration=shot.segment.duration,
+                    target_width=self.config.target_width,
+                    target_height=self.config.target_height,
+                    output_path=tmp_broll.name,
+                )
+
         try:
             if len(shot_plans) > 40 or self.config.force_chunk_mode:
-                return self._render_chunked(shot_plans, output_path, progress_callback)
+                return self._render_chunked(shot_plans, output_path, progress_callback, temp_broll_files)
             else:
-                return self._render_single_pass(shot_plans, output_path, progress_callback)
+                return self._render_single_pass(shot_plans, output_path, progress_callback, temp_broll_files)
         finally:
             if temp_ambient_file and os.path.isfile(temp_ambient_file):
                 try:
@@ -221,6 +244,12 @@ class RenderEngine:
                     os.remove(temp_trf_file)
                 except OSError:
                     pass
+            for b_file in temp_broll_files.values():
+                if os.path.isfile(b_file):
+                    try:
+                        os.remove(b_file)
+                    except OSError:
+                        pass
 
     def _get_color_filter(self) -> str:
         filters = []
@@ -251,12 +280,14 @@ class RenderEngine:
             CameraAngle.THIRD_LEFT: "CAM 3 // ISO-LEFT",
             CameraAngle.THIRD_RIGHT: "CAM 4 // ISO-RIGHT",
             CameraAngle.SLOW_PUSH: "CAM 5 // DYNAMIC PUSH",
+            CameraAngle.BROLL: "B-ROLL // CUTAWAY",
         }
         badge_text = badge_map.get(angle, f"CAM // {angle.value}")
 
         font_arg = f":fontfile='{self.font_path}'"
         bg_box = "drawbox=x=25:y=25:w=225:h=32:color=black@0.65:t=fill:enable='between(t,0,2.5)'"
-        rec_dot = "drawbox=x=35:y=36:w=10:h=10:color=red@0.9:t=fill:enable='between(t,0,2.5)'"
+        dot_color = "0x00D2FF@0.9" if angle == CameraAngle.BROLL else "red@0.9"
+        rec_dot = f"drawbox=x=35:y=36:w=10:h=10:color={dot_color}:t=fill:enable='between(t,0,2.5)'"
         txt = (
             f"drawtext={font_arg}:text='{badge_text}':fontcolor=white:fontsize=14:x=54:y=33:enable='between(t,0,2.5)'"
         )
@@ -289,14 +320,30 @@ class RenderEngine:
         shot_plans: List[ShotPlan],
         output_path: str,
         progress_callback: Optional[Callable[[float, str], None]] = None,
+        temp_broll_files: Optional[Dict[int, str]] = None,
     ) -> str:
         """
-        Builds a single elegant FFmpeg filter_complex graph with auto-ducking BGM.
+        Builds a single elegant FFmpeg filter_complex graph with auto-ducking BGM
+        and dynamic B-roll cutaway feeds.
         """
+        temp_broll_files = temp_broll_files or {}
         filter_parts: List[str] = []
         tw = self.config.target_width
         th = self.config.target_height
         color_filter = self._get_color_filter()
+
+        # Build list of input files and map B-roll shots to their input indices
+        # Input 0 is always self.input_video
+        shot_broll_in_idx: Dict[int, int] = {}
+        broll_input_args: List[str] = []
+        for shot in shot_plans:
+            if shot.angle == CameraAngle.BROLL and shot.index in temp_broll_files:
+                in_idx = 1 + len(broll_input_args) // 2
+                shot_broll_in_idx[shot.index] = in_idx
+                broll_input_args.extend(["-i", temp_broll_files[shot.index]])
+
+        has_bgm = self.config.bgm_path and os.path.isfile(self.config.bgm_path)
+        bgm_input_idx = 1 + len(broll_input_args) // 2
 
         # Digital Gimbal Master Stabilization
         if self.active_trf_path and os.path.isfile(self.active_trf_path):
@@ -318,21 +365,26 @@ class RenderEngine:
             crop = shot.crop_coords
             cx, cy, cw, ch = crop["x"], crop["y"], crop["w"], crop["h"]
 
-            # Video branch
-            v_in = f"{v_master_src}trim=start={s_start}:end={s_end},setpts=PTS-STARTPTS"
-
-            if shot.angle == CameraAngle.SLOW_PUSH:
-                zoom_expr = f"(1.0 + 0.20*(t/{dur:.3f}))"
-                w_expr = f"(iw/{zoom_expr})"
-                h_expr = f"(ih/{zoom_expr})"
-                x_expr = f"({cx + cw/2.0} - (w/2))"
-                y_expr = f"({cy + ch/2.0} - (h/2))"
-                crop_filter = f"crop=w='{w_expr}':h='{h_expr}':x='{x_expr}':y='{y_expr}'"
+            # Video branch: choose B-roll source or camera source
+            if shot.angle == CameraAngle.BROLL and idx in shot_broll_in_idx:
+                broll_in_idx = shot_broll_in_idx[idx]
+                v_in = f"[{broll_in_idx}:v]setpts=PTS-STARTPTS"
+                v_chain_list = [v_in]
             else:
-                crop_filter = f"crop=w={cw}:h={ch}:x={cx}:y={cy}"
+                v_in = f"{v_master_src}trim=start={s_start}:end={s_end},setpts=PTS-STARTPTS"
 
-            scale_filter = f"scale={tw}:{th}:flags=lanczos,setsar=1"
-            v_chain_list = [v_in, crop_filter, scale_filter]
+                if shot.angle == CameraAngle.SLOW_PUSH:
+                    zoom_expr = f"(1.0 + 0.20*(t/{dur:.3f}))"
+                    w_expr = f"(iw/{zoom_expr})"
+                    h_expr = f"(ih/{zoom_expr})"
+                    x_expr = f"({cx + cw/2.0} - (w/2))"
+                    y_expr = f"({cy + ch/2.0} - (h/2))"
+                    crop_filter = f"crop=w='{w_expr}':h='{h_expr}':x='{x_expr}':y='{y_expr}'"
+                else:
+                    crop_filter = f"crop=w={cw}:h={ch}:x={cx}:y={cy}"
+
+                scale_filter = f"scale={tw}:{th}:flags=lanczos,setsar=1"
+                v_chain_list = [v_in, crop_filter, scale_filter]
 
             if self.config.transition_flash and idx > 0 and dur > 0.3:
                 v_chain_list.append("fade=t=in:st=0:d=0.06:color=white@0.25")
@@ -387,13 +439,12 @@ class RenderEngine:
             filter_parts.append("[a_stitched]anull[a_voice]")
 
         # Background Music & Auto-Ducking Pipeline
-        has_bgm = self.config.bgm_path and os.path.isfile(self.config.bgm_path)
         total_speech_dur = sum(s.segment.duration for s in shot_plans)
         if has_bgm:
             bgm_vol = self.config.bgm_volume
             # Trim BGM to exact speech duration and sidechain-compress against speech
             filter_parts.append(
-                f"[1:a]atrim=duration={total_speech_dur:.3f},volume={bgm_vol:.3f},asetpts=PTS-STARTPTS[bgm_raw]"
+                f"[{bgm_input_idx}:a]atrim=duration={total_speech_dur:.3f},volume={bgm_vol:.3f},asetpts=PTS-STARTPTS[bgm_raw]"
             )
             # Sidechain Ducking: ducks BGM by ~20-22dB when speech is present, swells smoothly during pauses
             filter_parts.append(
@@ -429,6 +480,7 @@ class RenderEngine:
             "-y",
             "-hide_banner",
             "-i", self.input_video,
+            *broll_input_args,
         ]
 
         if has_bgm:
@@ -473,10 +525,12 @@ class RenderEngine:
         shot_plans: List[ShotPlan],
         output_path: str,
         progress_callback: Optional[Callable[[float, str], None]] = None,
+        temp_broll_files: Optional[Dict[int, str]] = None,
     ) -> str:
         """
         Chunk-based rendering for very large videos with dozens/hundreds of cuts.
         """
+        temp_broll_files = temp_broll_files or {}
         temp_dir = tempfile.mkdtemp(prefix="omnicam_chunks_")
         chunk_files: List[str] = []
 
@@ -484,6 +538,7 @@ class RenderEngine:
         th = self.config.target_height
         color_filter = self._get_color_filter()
         total_shots = len(shot_plans)
+        total_speech_dur = sum(s.segment.duration for s in shot_plans)
 
         try:
             for idx, shot in enumerate(shot_plans):
@@ -494,66 +549,111 @@ class RenderEngine:
 
                 chunk_file = os.path.join(temp_dir, f"chunk_{idx:04d}.mp4")
 
-                if shot.angle == CameraAngle.SLOW_PUSH:
-                    zoom_expr = f"(1.0 + 0.20*(t/{dur:.3f}))"
-                    crop_f = f"crop=w='(iw/{zoom_expr})':h='(ih/{zoom_expr})':x='{cx + cw/2.0}-(w/2)':y='{cy + ch/2.0}-(h/2)'"
-                else:
-                    crop_f = f"crop=w={cw}:h={ch}:x={cx}:y={cy}"
-
-                scale_f = f"scale={tw}:{th}:flags=lanczos,setsar=1"
-                v_chain_list = [crop_f, scale_f]
-
-                if self.active_trf_path and os.path.isfile(self.active_trf_path):
-                    escaped_trf = self.active_trf_path.replace("\\", "/").replace(":", "\\:")
-                    v_chain_list.insert(0, f"vidstabtransform=input='{escaped_trf}':smoothing={self.config.stabilize_smoothing}:optalgo=gauss:interpol=bicubic:zoom=2:crop=black")
-
-                if self.config.transition_flash and idx > 0 and dur > 0.3:
-                    v_chain_list.append("fade=t=in:st=0:d=0.06:color=white@0.25")
-                elif dur > 0.4:
-                    v_chain_list.append("fade=t=in:st=0:d=0.03")
-
-                if color_filter:
-                    v_chain_list.append(color_filter)
-
-                hud_f = self._get_hud_filter(shot.angle, tw, th)
-                if hud_f:
-                    v_chain_list.append(hud_f)
-
-                title_f = self._get_title_overlay(idx, dur, tw, th)
-                if title_f:
-                    v_chain_list.append(title_f)
-
-                if self.config.letterbox and not self.config.is_portrait:
-                    bar_h = int(th * 0.08)
-                    v_chain_list.append(f"drawbox=x=0:y=0:w={tw}:h={bar_h}:color=black:t=fill")
-                    v_chain_list.append(f"drawbox=x=0:y={th-bar_h}:w={tw}:h={bar_h}:color=black:t=fill")
-
-                v_chain = ",".join(v_chain_list)
-
                 fade_in_d = min(0.015, dur / 4.0)
                 fade_out_d = min(0.015, dur / 4.0)
                 fade_out_st = max(0.0, dur - fade_out_d)
                 a_chain = f"afade=t=in:ss=0:d={fade_in_d:.3f},afade=t=out:st={fade_out_st:.3f}:d={fade_out_d:.3f}"
 
-                cmd = [
-                    "ffmpeg",
-                    "-y",
-                    "-ss", str(seg.start),
-                    "-to", str(seg.end),
-                    "-i", self.input_video,
-                    "-vf", v_chain,
-                    "-af", a_chain,
-                    "-c:v", self.config.video_codec,
-                    "-pix_fmt", "yuv420p",
-                    "-profile:v", "main",
-                    "-level:v", "3.1",
-                    "-crf", str(self.config.crf),
-                    "-preset", self.config.preset,
-                    "-c:a", self.config.audio_codec,
-                    "-ar", "44100",
-                    "-b:a", "192k",
-                    chunk_file,
-                ]
+                if shot.angle == CameraAngle.BROLL and idx in temp_broll_files:
+                    v_chain_list = ["setpts=PTS-STARTPTS"]
+                    if self.config.transition_flash and idx > 0 and dur > 0.3:
+                        v_chain_list.append("fade=t=in:st=0:d=0.06:color=white@0.25")
+                    elif dur > 0.4:
+                        v_chain_list.append("fade=t=in:st=0:d=0.03")
+
+                    if color_filter:
+                        v_chain_list.append(color_filter)
+
+                    hud_f = self._get_hud_filter(shot.angle, tw, th)
+                    if hud_f:
+                        v_chain_list.append(hud_f)
+
+                    if self.config.letterbox and not self.config.is_portrait:
+                        bar_h = int(th * 0.08)
+                        v_chain_list.append(f"drawbox=x=0:y=0:w={tw}:h={bar_h}:color=black:t=fill")
+                        v_chain_list.append(f"drawbox=x=0:y={th-bar_h}:w={tw}:h={bar_h}:color=black:t=fill")
+
+                    v_chain = ",".join(v_chain_list)
+                    cmd = [
+                        "ffmpeg",
+                        "-y",
+                        "-i", temp_broll_files[idx],
+                        "-ss", str(seg.start),
+                        "-to", str(seg.end),
+                        "-i", self.input_video,
+                        "-filter_complex", f"[0:v]{v_chain}[v_out];[1:a]{a_chain}[a_out]",
+                        "-map", "[v_out]",
+                        "-map", "[a_out]",
+                        "-c:v", self.config.video_codec,
+                        "-pix_fmt", "yuv420p",
+                        "-profile:v", "main",
+                        "-level:v", "3.1",
+                        "-crf", str(self.config.crf),
+                        "-preset", self.config.preset,
+                        "-c:a", self.config.audio_codec,
+                        "-ar", "44100",
+                        "-b:a", "192k",
+                        "-t", f"{dur:.3f}",
+                        chunk_file,
+                    ]
+
+                else:
+                    if shot.angle == CameraAngle.SLOW_PUSH:
+                        zoom_expr = f"(1.0 + 0.20*(t/{dur:.3f}))"
+                        crop_f = f"crop=w='(iw/{zoom_expr})':h='(ih/{zoom_expr})':x='{cx + cw/2.0}-(w/2)':y='{cy + ch/2.0}-(h/2)'"
+                    else:
+                        crop_f = f"crop=w={cw}:h={ch}:x={cx}:y={cy}"
+
+                    scale_f = f"scale={tw}:{th}:flags=lanczos,setsar=1"
+                    v_chain_list = [crop_f, scale_f]
+
+                    if self.active_trf_path and os.path.isfile(self.active_trf_path):
+                        escaped_trf = self.active_trf_path.replace("\\", "/").replace(":", "\\:")
+                        v_chain_list.insert(0, f"vidstabtransform=input='{escaped_trf}':smoothing={self.config.stabilize_smoothing}:optalgo=gauss:interpol=bicubic:zoom=2:crop=black")
+
+                    if self.config.transition_flash and idx > 0 and dur > 0.3:
+                        v_chain_list.append("fade=t=in:st=0:d=0.06:color=white@0.25")
+                    elif dur > 0.4:
+                        v_chain_list.append("fade=t=in:st=0:d=0.03")
+
+                    if color_filter:
+                        v_chain_list.append(color_filter)
+
+                    hud_f = self._get_hud_filter(shot.angle, tw, th)
+                    if hud_f:
+                        v_chain_list.append(hud_f)
+
+                    title_f = self._get_title_overlay(idx, dur, tw, th)
+                    if title_f:
+                        v_chain_list.append(title_f)
+
+                    if self.config.letterbox and not self.config.is_portrait:
+                        bar_h = int(th * 0.08)
+                        v_chain_list.append(f"drawbox=x=0:y=0:w={tw}:h={bar_h}:color=black:t=fill")
+                        v_chain_list.append(f"drawbox=x=0:y={th-bar_h}:w={tw}:h={bar_h}:color=black:t=fill")
+
+                    v_chain = ",".join(v_chain_list)
+
+                    cmd = [
+                        "ffmpeg",
+                        "-y",
+                        "-ss", str(seg.start),
+                        "-to", str(seg.end),
+                        "-i", self.input_video,
+                        "-vf", v_chain,
+                        "-af", a_chain,
+                        "-c:v", self.config.video_codec,
+                        "-pix_fmt", "yuv420p",
+                        "-profile:v", "main",
+                        "-level:v", "3.1",
+                        "-crf", str(self.config.crf),
+                        "-preset", self.config.preset,
+                        "-c:a", self.config.audio_codec,
+                        "-ar", "44100",
+                        "-b:a", "192k",
+                        "-t", f"{dur:.3f}",
+                        chunk_file,
+                    ]
 
                 res = subprocess.run(cmd, capture_output=True, text=True)
                 if res.returncode != 0:

@@ -12,6 +12,7 @@ from .director import CameraDirector, ShotPlan, CameraAngle
 from .render_engine import RenderEngine
 from .captions import Transcriber, WordTiming, remap_words_to_edited_timeline, generate_hormozi_ass
 from .stabilizer import VideoStabilizer, is_vidstab_supported
+from .broll import BRollManager, BRollAsset
 
 __all__ = [
     "AudioAnalyzer",
@@ -28,5 +29,7 @@ __all__ = [
     "generate_hormozi_ass",
     "VideoStabilizer",
     "is_vidstab_supported",
+    "BRollManager",
+    "BRollAsset",
 ]
 

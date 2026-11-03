@@ -12,6 +12,7 @@ from .audio_analyzer import AudioAnalyzer
 from .director import CameraDirector
 from .render_engine import RenderConfig, RenderEngine
 from .vision_tracker import VisionTracker
+from .broll import BRollManager
 
 
 def format_duration(seconds: float) -> str:
@@ -176,6 +177,22 @@ def main():
         help="Horizon stabilization smoothing radius in frames (default: 25). Higher numbers = smoother gimbal drift.",
     )
     parser.add_argument(
+        "--broll",
+        help="Directory of B-roll footage and photos to automatically insert during extended speech takes (>4s).",
+    )
+    parser.add_argument(
+        "--broll-min-dur",
+        type=float,
+        default=4.0,
+        help="Minimum speech take duration in seconds to trigger a B-roll cutaway (default: 4.0s).",
+    )
+    parser.add_argument(
+        "--broll-length",
+        type=float,
+        default=2.5,
+        help="Target duration in seconds for each B-roll cutaway (default: 2.5s).",
+    )
+    parser.add_argument(
         "--dry-run",
         "--preview",
         action="store_true",
@@ -233,11 +250,22 @@ def main():
     tracker = VisionTracker(input_path)
     print(f"  -> Source Resolution: {tracker.metadata.width}x{tracker.metadata.height} @ {tracker.metadata.fps:.1f} fps")
 
+    broll_mgr = None
+    if args.broll:
+        if os.path.isdir(args.broll):
+            broll_mgr = BRollManager(args.broll)
+            print(f"  -> B-Roll Media: Loaded {len(broll_mgr.assets)} assets from '{args.broll}'")
+        else:
+            print(f"  [!] Warning: B-Roll directory not found: '{args.broll}'. Proceeding without B-roll.")
+
     director = CameraDirector(
         tracker=tracker,
         pacing_style=args.pacing,
         zoom_factor=args.zoom,
         target_resolution=args.resolution,
+        broll_manager=broll_mgr,
+        min_broll_speech_dur=args.broll_min_dur,
+        broll_cutaway_dur=args.broll_length,
     )
     shot_plans = director.plan_production(segments)
 
@@ -280,6 +308,9 @@ def main():
         captions_file=args.captions_file,
         stabilize=args.stabilize,
         stabilize_smoothing=args.stabilize_smoothing,
+        broll_dir=args.broll,
+        broll_min_dur=args.broll_min_dur,
+        broll_length=args.broll_length,
         show_hud=not args.no_hud,
         show_title=bool(args.title),
         title_text=args.title,
