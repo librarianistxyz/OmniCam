@@ -111,8 +111,34 @@ def run_tests():
             assert 0 <= c["y"] <= 2160 - c["h"]
         print("  [✓] Crop coordinates geometry verified strictly within 4K bounds.")
 
-        # 4. Test Render Engine with Auto-Ducking BGM
-        print("\n[Test 3] Testing Multi-Angle Render Engine with Auto-Ducking BGM...")
+        # 4. Test Render Engine with Auto-Ducking BGM and Animated Captions
+        print("\n[Test 3] Testing Hormozi Animated Captions & Auto-Ducking BGM...")
+        from omnicam.captions import WordTiming, remap_words_to_edited_timeline, generate_hormozi_ass
+
+        sample_words = [
+            WordTiming(word="WELCOME", start=0.2, end=0.8),
+            WordTiming(word="TO", start=0.8, end=1.2),
+            WordTiming(word="OMNICAM", start=1.2, end=2.0),
+            WordTiming(word="VIRTUAL", start=4.2, end=5.0),
+            WordTiming(word="MULTI-CAM", start=5.0, end=5.8),
+            WordTiming(word="PRODUCTION", start=7.1, end=7.9),
+        ]
+        remapped_words = remap_words_to_edited_timeline(sample_words, segments)
+        assert len(remapped_words) == 6
+        print(f"  [✓] Remapped {len(remapped_words)} words frame-accurately across speech takes.")
+
+        ass_path = os.path.join(tmp_dir, "test_hormozi.ass")
+        generate_hormozi_ass(
+            words=remapped_words,
+            output_ass_path=ass_path,
+            highlight_color="yellow",
+        )
+        assert os.path.isfile(ass_path)
+        with open(ass_path) as f:
+            ass_text = f.read()
+        assert r"\c&H0000E5FF&" in ass_text
+        print("  [✓] Generated Hormozi .ass subtitle script with active-word illumination.")
+
         config = RenderConfig(
             target_width=1280,
             target_height=720,
@@ -120,6 +146,7 @@ def run_tests():
             normalize_audio=True,
             bgm_path="ambient",
             bgm_volume=0.20,
+            captions_file=ass_path,
             preset="ultrafast",
         )
         engine = RenderEngine(input_vid, config=config)

@@ -142,6 +142,28 @@ def main():
         help="BGM volume level before ducking (default: 0.22). Automatically ducks to -22dB during speech.",
     )
     parser.add_argument(
+        "--captions",
+        "--hormozi",
+        "--subtitles",
+        action="store_true",
+        help="Burn dynamic 'Hormozi / MrBeast' animated word captions with neon active-word tracking.",
+    )
+    parser.add_argument(
+        "--caption-color",
+        choices=["yellow", "green", "cyan", "red", "white"],
+        default="yellow",
+        help="Active word highlight color for animated subtitles (default: yellow)",
+    )
+    parser.add_argument(
+        "--whisper-model",
+        default="tiny.en",
+        help="Whisper model size for transcription (default: tiny.en for fast mobile CPU transcription)",
+    )
+    parser.add_argument(
+        "--captions-file",
+        help="Optional path to existing .ass or .srt subtitle file to burn onto video.",
+    )
+    parser.add_argument(
         "--dry-run",
         "--preview",
         action="store_true",
@@ -240,6 +262,10 @@ def main():
         highpass_audio=not args.no_normalize_audio,
         bgm_path=args.bgm,
         bgm_volume=args.bgm_volume,
+        enable_captions=args.captions,
+        caption_color=args.caption_color,
+        whisper_model=args.whisper_model,
+        captions_file=args.captions_file,
         show_hud=not args.no_hud,
         show_title=bool(args.title),
         title_text=args.title,

@@ -13,6 +13,11 @@ import time
 from typing import Callable, Dict, List, Optional
 
 from .director import CameraAngle, ShotPlan
+from .captions import (
+    Transcriber,
+    generate_hormozi_ass,
+    remap_words_to_edited_timeline,
+)
 
 
 @dataclass
@@ -25,6 +30,10 @@ class RenderConfig:
     highpass_audio: bool = True
     bgm_path: Optional[str] = None
     bgm_volume: float = 0.22
+    enable_captions: bool = False
+    caption_color: str = "yellow"  # "yellow", "green", "cyan", "red", "white"
+    whisper_model: str = "tiny.en"
+    captions_file: Optional[str] = None
     show_hud: bool = True
     show_title: bool = True
     title_text: str = "OMNICAM AI • MULTI-CAM PRODUCTION"
@@ -136,6 +145,40 @@ class RenderEngine:
             generate_ambient_track(temp_ambient_file, duration=90.0)
             self.config.bgm_path = temp_ambient_file
 
+        # Handle animated Hormozi / MrBeast subtitles
+        temp_ass_file = None
+        self.active_ass_path = None
+        if self.config.enable_captions or self.config.captions_file:
+            if self.config.captions_file and os.path.isfile(self.config.captions_file):
+                self.active_ass_path = self.config.captions_file
+            else:
+                try:
+                    if progress_callback:
+                        progress_callback(0.12, f"Transcribing speech with Whisper ({self.config.whisper_model})...")
+                    transcriber = Transcriber(model_size=self.config.whisper_model)
+                    if transcriber.is_available():
+                        raw_words = transcriber.transcribe(self.input_video)
+                        speech_segs = [s.segment for s in shot_plans]
+                        remapped = remap_words_to_edited_timeline(raw_words, speech_segs)
+                        t_ass = tempfile.NamedTemporaryFile(suffix=".ass", delete=False)
+                        t_ass.close()
+                        temp_ass_file = t_ass.name
+                        generate_hormozi_ass(
+                            words=remapped,
+                            output_ass_path=temp_ass_file,
+                            play_res_x=self.config.target_width,
+                            play_res_y=self.config.target_height,
+                            highlight_color=self.config.caption_color,
+                            is_portrait=self.config.is_portrait,
+                        )
+                        self.active_ass_path = temp_ass_file
+                        if progress_callback:
+                            progress_callback(0.18, f"Generated {len(remapped)} animated karaoke captions...")
+                    else:
+                        print("  [!] Notice: Whisper engine not detected. Burned subtitles skipped.")
+                except Exception as ex:
+                    print(f"  [!] Warning: Subtitle generation failed: {ex}. Rendering video without burned subtitles.")
+
         try:
             if len(shot_plans) > 40 or self.config.force_chunk_mode:
                 return self._render_chunked(shot_plans, output_path, progress_callback)
@@ -145,6 +188,11 @@ class RenderEngine:
             if temp_ambient_file and os.path.isfile(temp_ambient_file):
                 try:
                     os.remove(temp_ambient_file)
+                except OSError:
+                    pass
+            if temp_ass_file and os.path.isfile(temp_ass_file):
+                try:
+                    os.remove(temp_ass_file)
                 except OSError:
                     pass
 
@@ -328,6 +376,14 @@ class RenderEngine:
         else:
             final_a_label = final_audio_in
 
+        # Apply burned-in Hormozi / MrBeast subtitles on final stitched video
+        if self.active_ass_path and os.path.isfile(self.active_ass_path):
+            escaped_ass = self.active_ass_path.replace("\\", "/").replace(":", "\\:")
+            filter_parts.append(f"[v_stitched]ass=filename='{escaped_ass}'[v_captioned]")
+            final_v_label = "[v_captioned]"
+        else:
+            final_v_label = "[v_stitched]"
+
         full_filtergraph = ";\n".join(filter_parts)
 
         # Prepare FFmpeg command
@@ -339,11 +395,11 @@ class RenderEngine:
         ]
 
         if has_bgm:
-            cmd += ["-stream_loop", "-1", "-i", self.config.bgm_path]
+            cmd += ["-stream_loop", "-1", "-t", f"{total_speech_dur + 1.0:.3f}", "-i", self.config.bgm_path]
 
         cmd += [
             "-filter_complex", full_filtergraph,
-            "-map", "[v_stitched]",
+            "-map", final_v_label,
             "-map", final_a_label,
             "-c:v", self.config.video_codec,
             "-pix_fmt", "yuv420p",
@@ -354,7 +410,7 @@ class RenderEngine:
             "-c:a", self.config.audio_codec,
             "-ar", "44100",
             "-b:a", "192k",
-            "-shortest",
+            "-t", f"{total_speech_dur:.3f}",
             "-movflags", "+faststart",
             output_path,
         ]
@@ -483,18 +539,17 @@ class RenderEngine:
                 "-i", concat_list,
             ]
             if has_bgm:
-                concat_cmd += ["-stream_loop", "-1", "-i", self.config.bgm_path]
+                concat_cmd += ["-stream_loop", "-1", "-t", f"{total_speech_dur + 1.0:.3f}", "-i", self.config.bgm_path]
 
             if has_bgm:
                 bgm_vol = self.config.bgm_volume
-                total_speech_dur = sum(s.segment.duration for s in shot_plans)
                 filtergraph = (
                     "[0:a]highpass=f=80[a_voice]; "
                     f"[1:a]atrim=duration={total_speech_dur:.3f},volume={bgm_vol:.3f},asetpts=PTS-STARTPTS[bgm_raw]; "
                     "[bgm_raw][a_voice]sidechaincompress=threshold=0.035:ratio=9:attack=35:release=450[ducked_bgm]; "
                     f"[a_voice][ducked_bgm]amix=inputs=2:duration=first:dropout_transition=0,atrim=duration={total_speech_dur:.3f},loudnorm=I=-16:TP=-1.5:LRA=11[a_final]"
                 )
-                concat_cmd += ["-filter_complex", filtergraph, "-map", "0:v", "-map", "[a_final]", "-shortest"]
+                concat_cmd += ["-filter_complex", filtergraph, "-map", "0:v", "-map", "[a_final]"]
             else:
                 audio_master = []
                 if self.config.highpass_audio:
@@ -504,6 +559,10 @@ class RenderEngine:
                 if audio_master:
                     concat_cmd += ["-af", ",".join(audio_master)]
 
+            if self.active_ass_path and os.path.isfile(self.active_ass_path):
+                escaped_ass = self.active_ass_path.replace("\\", "/").replace(":", "\\:")
+                concat_cmd += ["-vf", f"ass=filename='{escaped_ass}'"]
+
             concat_cmd += [
                 "-c:v", self.config.video_codec,
                 "-pix_fmt", "yuv420p",
@@ -511,6 +570,7 @@ class RenderEngine:
                 "-level:v", "3.1",
                 "-c:a", self.config.audio_codec,
                 "-ar", "44100",
+                "-t", f"{total_speech_dur:.3f}",
                 "-movflags", "+faststart",
                 output_path,
             ]

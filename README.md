@@ -127,6 +127,8 @@ Total Camera Switches: 3
 python3 omnicam.py input.mp4 \
   --pacing dynamic \          # Director pacing: dynamic, podcast, documentary, dramatic
   --color cinematic \         # Color grade: cinematic, podcast, vintage, none
+  --captions \                # Burn dynamic "Hormozi / MrBeast" active-word animated subtitles
+  --caption-color yellow \    # Highlight color: yellow, green, cyan, red, white
   --bgm /path/to/lofi.mp3 \   # Auto-ducking BGM audio track (or 'ambient'/'lofi')
   --bgm-volume 0.22 \         # Music level before ducking (ducks to -22dB during speech)
   --title "MY PODCAST" \      # Opening lower-third title banner
