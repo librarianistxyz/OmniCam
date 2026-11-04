@@ -1,23 +1,23 @@
-# 🎬 OmniCam: AI Virtual Multi-Camera Director
+# 🎬 OmniCam: AI Virtual Multi-Camera Director & Studio Workstation
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Android%20(Termux)-green.svg)](https://github.com/librarianistxyz/OmniCam)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Android%20(Termux)%20%7C%20macOS%20%7C%20Windows-green.svg)](https://github.com/librarianistxyz/OmniCam)
 [![Privacy](https://img.shields.io/badge/Privacy-100%25%20Offline%20%7C%20Zero%20Cloud-orange.svg)](https://github.com/librarianistxyz/OmniCam)
 
-> **Transform raw, handheld single-camera phone footage into a multi-camera studio production — fully automated, zero cloud, 100% offline.**
+> **Transform raw single-camera phone or webcam footage into a multi-camera studio master — fully automated, zero cloud, 100% offline.**
 
 ---
 
 ## 🌟 The Vision
 
-When you record yourself speaking on a smartphone, you naturally pause, hesitate, take breaths, or lose your train of thought. Standard video editors either leave all that awkward dead air in, or make crude **jump cuts** that look amateurish and jarring because your face snaps abruptly in the exact same frame.
+When you record yourself speaking, awkward pauses, breaths, and hesitations naturally occur. Standard jump cuts look amateurish and jarring because your face snaps abruptly in the exact same frame.
 
 Professional studios (TED, Vox, Wired, Joe Rogan) hide cuts by **switching camera angles**:
 - Sentence A ends on a **Master Wide** angle.
-- The silence is eliminated.
-- Sentence B starts on an intimate **Punch-In Close-Up** or **Rule-of-Thirds Offset**.
+- Dead air is instantly removed.
+- Sentence B punches in on an intimate **Tight Close-Up** or **Rule-of-Thirds Offset**.
 
-**OmniCam automates this entire production workflow instantly.**
+**OmniCam automates this entire production workflow in real time with zero cloud dependency.**
 
 ```
 +---------------------------------------------------------------------------------+
@@ -27,191 +27,241 @@ Professional studios (TED, Vox, Wired, Joe Rogan) hide cuts by **switching camer
                                        │
                                        ▼
                      [ 🧠 OmniCam AI Director Engine ]
-                     ├── Acoustic Silence Detection
-                     ├── Face & Headroom Horizon Tracking
-                     ├── Zero-Jump-Cut State Machine
-                     └── EBU R128 Studio Audio Mastering
+                     ├── Acoustic Silence & Vocal Hesitation Detection
+                     ├── Face & Horizon Framing Engine
+                     ├── Zero-Jump-Cut Multi-Cam State Machine
+                     ├── Real-Time Virtual Playhead GPU Composition
+                     └── EBU R128 Studio Audio Mastering & Sidechain Ducking
                                        │
                                        ▼
 +---------------------------------------------------------------------------------+
 |                           MULTI-CAMERA 1080p MASTER                             |
 |  [Cam 1: Wide]            ──>  [Cam 2: Tight Close-up]  ──>  [Cam 3: Ken Burns] |
 |  "Hey everyone..."              "...today I'm revealing..."  "a brand new engine"|
-|               (0s dead air, smooth studio cadence, pro color)                    |
+|               (0s dead air, smooth studio cadence, pro color & FX)               |
 +---------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 📐 The 4K Mathematics: Native Clarity
+## 📋 System Requirements
 
-A 4K recording (**3840×2160**) possesses **4× the pixel density** of Full HD 1080p (**1920×1080**):
-
-$$\text{Area}_{4K} = 3840 \times 2160 = 8,294,400\text{ pixels}$$
-$$\text{Area}_{1080p} = 1920 \times 1080 = 2,073,600\text{ pixels}$$
-
-By cropping into distinct regions of a 4K sensor (up to $1.8\times$ zoom) and rendering a 1080p master, **every virtual camera angle is 100% native resolution** with zero upscaling blur or pixelation.
-
----
-
-## 🎥 The 5 Virtual Cameras
-
-| Virtual Camera | Description | Purpose |
-| :--- | :--- | :--- |
-| **Cam 1: Master Wide** | Full frame scaled to 1080p | Context, establishing posture, relaxed delivery. |
-| **Cam 2: Tight Close-Up** | $1.75\times$ crop centered on speaker's eyes/mouth | High-impact punchlines, emotional hooks, emphasis. |
-| **Cam 3: Rule-of-Thirds Left** | Subject framed on left-third line looking right | Conversational interview depth and perspective. |
-| **Cam 4: Rule-of-Thirds Right** | Subject framed on right-third line looking left | Dynamic perspective balance against Cam 3. |
-| **Cam 5: Ken Burns Slow Push-In**| Continuous micro-zoom ($1.0\times \to 1.2\times$) | Keeps long explanations (>4s) visually engaging. |
+| Component | Minimum | Recommended | Notes |
+| :--- | :--- | :--- | :--- |
+| **Operating System** | Linux, Android (Termux), macOS, Windows (WSL2) | Linux / Android 8.0+ | Zero external cloud servers needed. |
+| **Python** | Python 3.8+ | Python 3.10 - 3.12 | Uses standard library (`http.server`, `subprocess`). |
+| **FFmpeg** | FFmpeg 4.4+ with `ffprobe` | FFmpeg 6.0+ | Handles encoding, filtering, and video decoders. |
+| **Git** | Any modern version | Latest | For cloning and pulling repository updates. |
+| **Whisper** *(Optional)* | Python `openai-whisper` | `tiny.en` or `base.en` | For auto-subtitles and lexical filler word removal. |
 
 ---
 
-## ✨ Features
+## 📱 Android Setup (Termux Guide)
 
-- **🌐 Localhost Mobile Web Studio (`http://localhost:8080`)**: Zero-dependency browser interface running inside Termux on your phone. Visual interactive timeline of all cuts, color grading & ducking sliders, storage video scanner, and one-tap rendering with in-browser video player.
-- **⚡ Invisible Cut Engine**: Silences and pauses are removed. Every single cut triggers an automatic angle switch so the edit feels natural and deliberate.
-- **🗣️ Filler Word & Vocal Hesitation Removal (`--remove-fillers`)**: Dual-engine lexical (Whisper token matching) and acoustic spectral stationarity filter detects prolonged vocal hesitations ("uh", "um", "ah", "like", "you know") and cuts them out cleanly, turning awkward hesitations into dynamic angle switches.
-- **🎞️ Automatic B-Roll Cutaways (`--broll ./clips/`)**: When explaining concepts for extended takes (>4s), OmniCam automatically cuts to relevant footage or still photos for 2–3s with smooth Ken Burns drift, keeping your voiceover seamless underneath.
-- **🎥 Digital Gimbal Horizon Stabilization**: 2-pass optical motion analysis (`vidstabdetect` / `vidstabtransform`) stabilizes walking bounce, handheld camera shake, and horizon tilt—rendering butter-smooth gimbal motion without heavy hardware rigs.
-- **🎙️ Studio Audio Mastering**:
-  - High-pass filter at 80Hz (eliminates handling thumps and wind rumble).
-  - Sidechain compressed auto-ducking background music (`--bgm`) that ducks ~22dB during speech and swells in pauses.
-  - EBU R128 Loudness Normalization (`loudnorm`, -16 LUFS, ready for YouTube/Reels/TikTok).
-  - Boundary micro-fades to prevent clicks and pops.
-- **🔤 Hormozi / MrBeast Active-Word Animated Captions**: Offline Whisper transcription generates high-contrast neon subtitles that light up word-by-word synchronously with speech, remapped mathematically across edited takes.
-- **✨ CapCut Blend Mode Overlay Engine (`--overlay`)**: Viral looping video textures (Warm Golden Flares, 16mm/35mm Film Dust, 90s Retro VHS Static, Prism Bokeh, Fiery Film Burns, Anamorphic Flares) blended in real time over footage using FFmpeg screen & addition blend modes (`blend=all_mode='screen':all_opacity=0.85`) with zero quality loss.
-- **🎨 Cinematic Color Grading**:
-  - `cinematic`: Contrast S-curve, warm highlights, subtle cool shadow balance.
-  - `podcast`: Vibrant modern YouTube tech aesthetic.
-  - `vintage`: Muted documentary warmth.
-  - `none`: Raw camera pass-through.
-- **🛡️ Zero-Dependency Architecture**: Runs with pure Python standard library + FFmpeg. If OpenCV is present, it dynamically tracks the speaker's face; otherwise, it uses the Golden-Ratio Talking Head heuristic.
-- **📱 Fully Mobile & Termux Compatible**: Pull this repo to Termux on your Samsung Galaxy S9+ (or any Android device) and edit 4K video right on your phone without sending a single byte to the cloud.
+### 1. Where to Download Termux ("Termer")
+
+> ⚠️ **IMPORTANT WARNING:**  
+> **DO NOT install Termux from the Google Play Store!**  
+> The Google Play Store build of Termux has been obsolete and deprecated since 2020 due to Android SDK restrictions. It will fail with `pkg update` errors.
+
+Download the latest official Termux build from either of these verified sources:
+
+1. **F-Droid (Recommended):**  
+   👉 [Download Termux on F-Droid](https://f-droid.org/packages/com.termux/)  
+   *(Click "Download APK" near the bottom of the page)*
+
+2. **Official GitHub Releases:**  
+   👉 [Download Termux on GitHub Releases](https://github.com/termux/termux-app/releases)  
+   *(Select `termux-app_v..._universal.apk` or `arm64-v8a.apk`)*
 
 ---
 
-## 🚀 Quick Start
+### 2. Step-by-Step Installation on Android
 
-### 1. Requirements
-- Python 3.8+
-- FFmpeg & FFprobe installed and available in PATH.
-
-### 2. Basic Usage
+Open Termux on your phone and run these commands:
 
 ```bash
-# Option A: Visual Web Studio on your phone (Open http://localhost:8080 in Chrome)
+# Step 1: Update core repositories and package lists
+pkg update -y && pkg upgrade -y
+
+# Step 2: Install Git, Python, and FFmpeg
+pkg install -y git python ffmpeg
+
+# Step 3: Grant storage permission (allows accessing phone camera/downloads)
+termux-setup-storage
+```
+*(When prompted on your phone screen, tap **Allow** to grant storage access).*
+
+```bash
+# Step 4: Clone the OmniCam repository
+git clone https://github.com/librarianistxyz/OmniCam.git
+
+# Step 5: Enter directory and launch Web Studio
+cd OmniCam
 ./omnicam.sh --web
-
-# Option B: Automated CLI edit
-./omnicam.sh my_4k_recording.mp4
 ```
 
-### 3. Dry-Run (Preview Cut Sheet)
-
-Before rendering, inspect the timestamps, removed pauses, and assigned camera angles without waiting for encoding:
-
-```bash
-python3 omnicam.py my_video.mp4 --preview
-```
-
-**Example Output:**
-```
-================================================================================
-#   START     END       DUR     ANGLE         DIRECTOR NOTE
---------------------------------------------------------------------------------
-1     0.00s    3.10s    3.10s  CLOSEUP       Tight Close-Up Punch-In (High Emotional Emphasis, 3.1s)
-2     4.50s    7.60s    3.10s  WIDE          Master Wide Shot (Full Scene Context, 3.1s)
-3     8.90s   14.20s    5.30s  SLOW_PUSH     Cinematic Slow Push-In (Continuous Focus, 5.3s)
-================================================================================
-Original Length: 00:15.50 (15.50s)
-Edited Length:   00:11.50 (11.50s)
-Dead Air Cut:    00:04.00 (4.00s, -25.8%)
-Total Camera Switches: 3
-================================================================================
-```
+Now open **Google Chrome** (or any mobile browser) on your phone and visit:  
+👉 **`http://localhost:8080`**
 
 ---
 
-## 🎛️ Advanced Options
+## 💻 PC Setup Guide (Linux, macOS & Windows)
+
+### 🐧 Linux (Ubuntu / Debian / Mint / Fedora / Arch)
 
 ```bash
-python3 omnicam.py input.mp4 \
-  --remove-fillers \          # Cut filler words ('uh', 'um', 'ah', 'like', 'you know') and vocal hesitations
-  --fillers "uh,um,like" \    # Custom target filler words to excise (optional)
-  --broll ./clips/ \          # Auto B-roll folder: cuts to secondary footage/photos during long takes (>4s)
-  --broll-min-dur 4.0 \       # Minimum speech duration to trigger B-roll (default: 4.0s)
-  --broll-length 2.5 \        # Cutaway duration in seconds (default: 2.5s)
-  --stabilize \               # 2-pass Digital Gimbal Horizon Stabilization (walking & shake fix)
-  --stabilize-smoothing 25 \  # Gimbal smoothing radius in frames (default: 25)
-  --pacing dynamic \          # Director pacing: dynamic, podcast, documentary, dramatic
-  --color cinematic \         # Color grade: cinematic, podcast, vintage, none
-  --overlay light_leak_01 \   # CapCut overlay: light_leak_01, film_dust_scratches, vhs_static_overlay, prism_bokeh, etc.
-  --overlay-blend screen \    # Blend mode: screen, addition, overlay, lighten, softlight (default: screen)
-  --overlay-opacity 0.85 \    # Overlay opacity: 0.0 to 1.0 (default: 0.85)
-  --captions \                # Burn dynamic "Hormozi / MrBeast" active-word animated subtitles
-  --caption-color yellow \    # Highlight color: yellow, green, cyan, red, white
-  --bgm /path/to/lofi.mp3 \   # Auto-ducking BGM audio track (or 'ambient'/'lofi')
-  --bgm-volume 0.22 \         # Music level before ducking (ducks to -22dB during speech)
-  --title "MY PODCAST" \      # Opening lower-third title banner
-  --subtitle "EPISODE 1" \    # Opening lower-third subtitle
-  --silence-thresh -32.0 \    # Sensitivity in dB (lower = only quietest pauses cut)
-  --min-silence 0.35 \        # Minimum pause in seconds to trigger cut
-  --zoom 1.75 \               # Punch-in zoom factor
-  --resolution 720p \         # Target output: 720p (default), 1080p, 4k
-  -o finished_master.mp4
+# Step 1: Install prerequisites
+# On Ubuntu / Debian / Mint:
+sudo apt update && sudo apt install -y git python3 python3-pip ffmpeg
+
+# On Fedora:
+sudo dnf install -y git python3 python3-pip ffmpeg
+
+# On Arch Linux:
+sudo pacman -S git python ffmpeg
+
+# Step 2: Clone repository
+git clone https://github.com/librarianistxyz/OmniCam.git
+cd OmniCam
+
+# Step 3: Launch Web Studio or CLI
+./omnicam.sh --web
 ```
+Open **`http://localhost:8080`** in your browser.
 
 ---
 
-## 📱 Running in Termux on Samsung Galaxy S9+
+### 🍏 macOS (Apple Silicon M1/M2/M3 & Intel)
 
-1. **Install dependencies in Termux**:
+```bash
+# Step 1: Install Homebrew (if not installed) from https://brew.sh
+# Step 2: Install dependencies
+brew install git python ffmpeg
+
+# Step 3: Clone repository
+git clone https://github.com/librarianistxyz/OmniCam.git
+cd OmniCam
+
+# Step 4: Launch Web Studio
+./omnicam.sh --web
+```
+Open **`http://localhost:8080`** in Safari or Chrome.
+
+---
+
+### 🪟 Windows (WSL2 / Git Bash)
+
+#### Method A: WSL2 Ubuntu (Recommended for max speed)
+1. Open PowerShell and install WSL if needed: `wsl --install`
+2. Open your **Ubuntu** terminal in Windows and run:
    ```bash
-   pkg update && pkg install -y git python ffmpeg
+   sudo apt update && sudo apt install -y git python3 ffmpeg
+   git clone https://github.com/librarianistxyz/OmniCam.git
+   cd OmniCam
+   python3 omnicam.py --web
    ```
+3. Open Edge or Chrome in Windows and go to: **`http://localhost:8080`**
 
-2. **Clone repository**:
+#### Method B: Native Windows (Git Bash + Python)
+1. Install [Git for Windows](https://git-scm.com/download/win) and [Python 3](https://www.python.org/downloads/).
+2. Install [FFmpeg for Windows](https://www.gyan.dev/ffmpeg/builds/) and add its `bin` folder to your Windows system `PATH`.
+3. Open Git Bash or Command Prompt:
    ```bash
    git clone https://github.com/librarianistxyz/OmniCam.git
    cd OmniCam
+   python omnicam.py --web
    ```
-
-3. **Record in 4K on Phone Camera**:
-   - Open Camera $\to$ Settings $\to$ Rear Video Size $\to$ **UHD / 4K (3840x2160)**.
-   - Record your speech holding the phone naturally.
-
-4. **Launch Web Studio or CLI**:
-   ```bash
-   # Termux storage access
-   termux-setup-storage
-
-   # Option A: Visual Web Studio (open http://localhost:8080 in Chrome)
-   ./omnicam.sh --web
-
-   # Option B: Automated CLI edit
-   ./omnicam.sh ~/storage/dcim/Camera/20261103_120000.mp4 -o ~/storage/dcim/Camera/edited_studio.mp4
-   ```
+4. Open **`http://localhost:8080`** in your browser.
 
 ---
 
-## 🧪 Verification & Tests
+## 🔄 How to Pull & Update (Phone & PC)
 
-Run the built-in end-to-end synthetic verification test suite:
+Whenever new features, transitions, or FX are released, update your local installation anytime:
+
+```bash
+# Open terminal (in Termux, Linux, macOS, or Windows WSL)
+cd ~/OmniCam
+
+# Fetch and merge the latest code
+git pull origin master
+```
+
+---
+
+## 🎨 What's Inside: The Full Creative Suite
+
+### 1. ⚡ Real-Time Virtual Playhead Engine
+- **Instant Cut Previews**: Live seek-skipping cuts dead air in under 1ms without rendering.
+- **Dynamic 60 FPS Camera Framing**: Uses hardware-accelerated viewport transforms to punch in on angles live.
+- **Live 3D LUT Color Sync**: Switch between Cinematic, Podcast, Vintage, or Noir grades instantly.
+
+### 2. 🪄 CapCut Transitions & Freeze Frames
+- **White Flash & Crash Zoom**: 0.08s flash and punch-in transitions between angle cuts.
+- **Dramatic 0.6s Freeze Frames**: Pauses on emphatic pauses with synthesized whoosh sound effects.
+
+### 3. ✨ Blend Mode Overlays (`--overlay`)
+- Built-in looping video textures:
+  - `light_leak_01` (Golden flare edge leaks)
+  - `light_leak_02` (Sunset crimson burst)
+  - `film_dust_scratches` (16mm/35mm organic dust specks)
+  - `vhs_static_overlay` (90s retro tracking CRT static)
+  - `prism_bokeh` (Floating optical prism bokeh)
+  - `film_burn_01` (Fiery amber film burn)
+  - `vintage_super8` (Super 8mm projector gate)
+
+### 4. 🎛️ Visual Effects (FX) Suite
+- **Pro-Mist Diffusion Bloom** (`--fx-glow promist`): Creamy highlights & smooth skin tones.
+- **Chromatic RGB Aberration** (`--fx-rgb subtle`): Optical anamorphic lens edge fringing.
+- **Organic Handheld Cam Drift** (`--fx-motion handheld`): Natural operator breathing on static tripod shots.
+- **Action Impact Quake** (`--fx-motion quake`): Punchy cut & beat shudder.
+- **90s Camcorder Viewfinder OSD** (`--fx-camcorder`): Retro HUD with blinking `REC ●`, battery, and timecode.
+- **Portrait Depth Blur** (`--fx-tilt-shift`): Soft background bokeh keeping speaker face in focus.
+- **Analog 35mm Film Grain** (`--film-grain`): Organic silver halide texture.
+- **2.35:1 Anamorphic Cinema Bars** (`--letterbox`): Widescreen top/bottom letterbox.
+
+---
+
+## 🚀 Quick CLI Reference
+
+```bash
+# Standard automated multi-camera production
+./omnicam.sh recording.mp4
+
+# Full viral short / TikTok production setup
+python3 omnicam.py recording.mp4 \
+  --remove-fillers \
+  --color cinematic \
+  --fx-glow promist \
+  --fx-motion handheld \
+  --overlay light_leak_01 \
+  --overlay-opacity 0.75 \
+  --captions \
+  --caption-color yellow \
+  --bgm ambient \
+  --bgm-volume 0.20 \
+  --letterbox \
+  -o finished_viral_master.mp4
+```
+
+---
+
+## 🧪 Verification & Synthetic Tests
+
+Run the built-in end-to-end verification suite:
 
 ```bash
 python3 test_omnicam.py
 ```
 
-This generates a synthetic 4K video with spoken tones and silence gaps, executes the full silence detector, camera director, B-roll insertions, animated captions, and render engine, verifying zero-jump-cut compliance and audio normalization automatically.
+Generates a synthetic 4K video, runs the acoustic silence detector, camera director, B-roll insertion, animated captions, and FFmpeg filtergraph pipeline to verify 100% compliance.
 
 ---
 
 ## 📄 License & Attribution
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.  
+Licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.  
 See the [LICENSE](LICENSE) file for complete details.
 
 **Copyright (C) 2026 librarianistxyz (<https://github.com/librarianistxyz/OmniCam>)**
-
-*Under the AGPLv3, you are free to run, study, modify, and distribute this software, provided that any derivative works or network deployments (including web services or SaaS) remain 100% open-source under the exact same AGPLv3 terms with original author copyright notices preserved.*
-
