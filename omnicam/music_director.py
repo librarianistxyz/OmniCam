@@ -269,10 +269,10 @@ class MusicVideoDirector:
 
             # Create SpeechSegment representing the musical interval
             seg = SpeechSegment(
+                index=idx,
                 start=round(t_take_start, 3),
                 end=round(t_take_end, 3),
-                text=f"[{curr_sec.name.upper()} // BAR {idx + 1}]",
-                speaker_id=f"take_{take_idx}",
+                duration=round(shot_dur, 3),
             )
 
             shot = ShotPlan(

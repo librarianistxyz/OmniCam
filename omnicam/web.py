@@ -901,20 +901,55 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       z-index: 45;
     }
 
-    /* Sliding Tool Drawer / Sheet */
-    .nle-inspector-drawer {
-      background: var(--bg-panel);
-      border-top: 1px solid var(--border-subtle);
-      max-height: 0;
+    /* Professional Desktop Studio Layout & Responsive Panel System */
+    .nle-desktop-workspace {
+      display: flex;
+      flex-direction: row;
+      flex: 1;
+      min-height: 0;
+      width: 100vw;
+      position: relative;
       overflow: hidden;
-      transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), padding 0.2s ease;
+    }
+
+    .nle-desktop-left-col {
       display: flex;
       flex-direction: column;
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nle-desktop-right-panel {
+      width: 440px;
+      max-width: 440px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-left: 1px solid var(--border-subtle);
+      background: var(--bg-panel);
+      z-index: 40;
+      position: relative;
+      overflow: hidden;
+      transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+    }
+
+    /* Dedicated Tool Inspector Container */
+    .nle-inspector-drawer {
+      background: var(--bg-panel);
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      height: 100%;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 1rem 1.25rem;
+      scrollbar-width: thin;
     }
     .nle-inspector-drawer.open {
-      max-height: 230px;
-      padding: 0.85rem 1.25rem;
-      overflow-y: auto;
+      display: flex;
     }
 
     .drawer-header {
@@ -1310,15 +1345,55 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       justify-content: space-between;
     }
 
-    /* Responsive Adjustments */
+    /* Responsive Adjustments: Desktop Side-by-Side vs Mobile Bottom Drawer */
+    @media (min-width: 769px) {
+      .nle-dock-bar {
+        display: none !important;
+      }
+      .nle-bottom-section {
+        display: none !important;
+      }
+      .nle-inspector-drawer {
+        border-top: none;
+        max-height: none !important;
+      }
+    }
+
     @media (max-width: 768px) {
+      .nle-desktop-workspace {
+        flex-direction: column;
+      }
+      .nle-desktop-right-panel {
+        display: none !important;
+      }
+      .nle-dock-bar {
+        display: none !important; /* Removed down below as requested */
+      }
       .nle-topbar { padding: 0 0.65rem; gap: 0.5rem; }
       .clip-name-pill { max-width: 150px; }
       .timeline-ruler-header { height: 22px; }
       .nle-timeline-area { height: 160px; }
       .track-row { height: 42px; }
-      .dock-tool-btn { min-width: 50px; font-size: 0.65rem; padding: 0.3rem 0.45rem; }
       .top-tool-chip { font-size: 0.72rem; padding: 0.28rem 0.65rem; }
+      .nle-inspector-drawer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--bg-panel);
+        border-top: 1px solid var(--border-subtle);
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), padding 0.2s ease;
+        z-index: 100;
+        padding: 0;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.85);
+      }
+      .nle-inspector-drawer.open {
+        max-height: 320px;
+        padding: 0.85rem 1.25rem 1.5rem;
+        overflow-y: auto;
+      }
     }
   </style>
 </head>
@@ -1402,11 +1477,6 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <span>Effects</span>
         </button>
 
-        <button class="top-tool-chip" id="topBtnMusic" onclick="openToolPanel('Music', 'fa-music')" type="button">
-          <i class="fa-solid fa-music" style="color: #06B6D4;"></i>
-          <span>Music Studio</span>
-        </button>
-
         <button class="top-tool-chip" id="topBtnOverlays" onclick="openToolPanel('Overlays', 'fa-sparkles')" type="button">
           <i class="fa-solid fa-sparkles" style="color: #F43F5E;"></i>
           <span>Overlays</span>
@@ -1458,6 +1528,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <input type="file" id="nativeFilePicker" accept="video/*" style="display: none;" onchange="handleNativeFileSelect(this)" />
     <input type="hidden" id="inputVideo" value="" />
 
+    <!-- ======================================================================
+         PROFESSIONAL DESKTOP WORKSPACE (Video Center-Left, Tools Fixed Right)
+         ====================================================================== -->
+    <div class="nle-desktop-workspace">
+      <!-- Left Column: Center Video Monitor + Multi-Track Timeline -->
+      <div class="nle-desktop-left-col">
     <!-- ======================================================================
          CENTER CINEMA MONITOR / CANVAS
          ====================================================================== -->
@@ -1618,12 +1694,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         </div>
       </div>
     </section>
+      </div>
 
-    <!-- ======================================================================
-         BOTTOM TOOL DOCK & INSPECTOR DRAWER
-         ====================================================================== -->
-    <footer class="nle-bottom-section">
-
+      <!-- Right Column: Dedicated Fixed Inspector & Tools Panel -->
+      <aside class="nle-desktop-right-panel" id="desktopRightPanel">
       <!-- Sliding Inspector Drawer / Sheet -->
       <div class="nle-inspector-drawer" id="inspectorDrawer">
         <div class="drawer-header">
@@ -2181,80 +2255,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           </div>
         </div>
       </div>
-
-      <!-- VN-Style Horizontal Action Dock -->
-      <div class="nle-dock-bar">
-        <button class="dock-tool-btn" id="dockBtnMedia" onclick="openToolPanel('Media', 'fa-folder-open')" type="button">
-          <i class="fa-solid fa-folder-open"></i>
-          <span>Media</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnAngles" onclick="openToolPanel('Angles', 'fa-video')" type="button">
-          <i class="fa-solid fa-video"></i>
-          <span>Angles</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnTransitions" onclick="openToolPanel('Transitions', 'fa-bolt')" type="button">
-          <i class="fa-solid fa-bolt" style="color: var(--accent-neon);"></i>
-          <span>Transitions</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnEffects" onclick="openToolPanel('Effects', 'fa-wand-magic-sparkles')" type="button">
-          <i class="fa-solid fa-wand-magic-sparkles" style="color: #A78BFA;"></i>
-          <span>Effects</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnMusic" onclick="openToolPanel('Music', 'fa-music')" type="button">
-          <i class="fa-solid fa-music" style="color: #06B6D4;"></i>
-          <span>Music</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnOverlays" onclick="openToolPanel('Overlays', 'fa-sparkles')" type="button">
-          <i class="fa-solid fa-sparkles" style="color: #F43F5E;"></i>
-          <span>Overlays</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnText" onclick="openToolPanel('Text', 'fa-font')" type="button">
-          <i class="fa-solid fa-font" style="color: #FBBF24;"></i>
-          <span>Text</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnColor" onclick="openToolPanel('Color', 'fa-palette')" type="button">
-          <i class="fa-solid fa-palette"></i>
-          <span>3D LUT</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnAudio" onclick="openToolPanel('Audio', 'fa-volume-high')" type="button">
-          <i class="fa-solid fa-volume-high"></i>
-          <span>Sound</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnCaptions" onclick="openToolPanel('Captions', 'fa-closed-captioning')" type="button">
-          <i class="fa-solid fa-closed-captioning"></i>
-          <span>Captions</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnFillers" onclick="openToolPanel('Fillers', 'fa-scissors')" type="button">
-          <i class="fa-solid fa-scissors"></i>
-          <span>Fillers</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnGimbal" onclick="openToolPanel('Gimbal', 'fa-compass')" type="button">
-          <i class="fa-solid fa-compass"></i>
-          <span>Gimbal</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnBRoll" onclick="openToolPanel('BRoll', 'fa-layer-group')" type="button">
-          <i class="fa-solid fa-layer-group"></i>
-          <span>B-Roll</span>
-        </button>
-
-        <button class="dock-tool-btn" id="dockBtnRatio" onclick="openToolPanel('Ratio', 'fa-crop-simple')" type="button">
-          <i class="fa-solid fa-crop-simple"></i>
-          <span>Canvas</span>
-        </button>
-      </div>
-    </footer>
+      </aside>
+    </div>
 
   </div>
 
@@ -2721,6 +2723,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     function openToolPanel(panelId, iconClass) {
       const drawer = document.getElementById('inspectorDrawer');
       const title = document.getElementById('drawerTitle');
+      const rightPanel = document.getElementById('desktopRightPanel');
 
       // Reset active states on both bottom dock and top nav ribbon
       document.querySelectorAll('.dock-tool-btn, .top-tool-chip').forEach(b => b.classList.remove('active'));
@@ -2738,14 +2741,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
       title.innerHTML = '<i class="fa-solid ' + iconClass + '"></i> ' + panelId + ' Settings';
       drawer.classList.add('open');
+      if (rightPanel) rightPanel.style.display = 'flex';
 
-      // Sync active state and auto-scroll both bottom dock and top nav chip into view
-      const dockBtn = document.getElementById('dockBtn' + panelId);
-      if (dockBtn) {
-        dockBtn.classList.add('active');
-        dockBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      }
-
+      // Sync active state and auto-scroll top nav chip into view
       const topBtn = document.getElementById('topBtn' + panelId);
       if (topBtn) {
         topBtn.classList.add('active');
@@ -2757,8 +2755,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
     function closeDrawer() {
       const drawer = document.getElementById('inspectorDrawer');
+      const rightPanel = document.getElementById('desktopRightPanel');
       drawer.classList.remove('open');
       document.querySelectorAll('.dock-tool-btn, .top-tool-chip').forEach(b => b.classList.remove('active'));
+      
+      // On mobile hide the floating sheet; on desktop keep right panel ready
+      if (window.innerWidth <= 768 && rightPanel) {
+        rightPanel.style.display = 'none';
+      }
       activeDrawerPanel = null;
     }
 
@@ -3417,7 +3421,217 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
     function selectBrowserFile(filePath) {
       closeFileBrowser();
-      selectVideoSource(filePath);
+      if (window.browserPickerTarget === 'master_song') {
+        const inp = document.getElementById('masterSongInput');
+        if (inp) inp.value = filePath;
+        window.browserPickerTarget = null;
+        analyzeMusicGrid();
+      } else if (window.browserPickerTarget === 'take_video') {
+        addCameraTake(filePath);
+        window.browserPickerTarget = null;
+      } else {
+        selectVideoSource(filePath);
+      }
+    }
+
+    // ------------------------------------------------------------------------
+    // MUSIC VIDEO STUDIO ENGINE
+    // ------------------------------------------------------------------------
+    window.musicTakesList = [];
+
+    function toggleMusicMode(enabled) {
+      const modeBadge = document.getElementById('statModeBadge');
+      if (modeBadge) {
+        modeBadge.innerText = enabled ? '🎵 MUSIC VIDEO' : '🎙️ SPEECH';
+        modeBadge.style.color = enabled ? '#06B6D4' : '#10B981';
+      }
+      if (enabled && document.getElementById('masterSongInput').value.trim()) {
+        analyzeMusicGrid();
+      }
+    }
+
+    function browseMasterSong() {
+      window.browserPickerTarget = 'master_song';
+      openFileBrowser();
+    }
+
+    function addCameraTake(manualPath) {
+      const pathVal = manualPath || (document.getElementById('addTakeInput') ? document.getElementById('addTakeInput').value.trim() : '');
+      if (!pathVal) {
+        window.browserPickerTarget = 'take_video';
+        openFileBrowser();
+        return;
+      }
+      if (!window.musicTakesList.includes(pathVal)) {
+        window.musicTakesList.push(pathVal);
+      }
+      if (document.getElementById('addTakeInput')) {
+        document.getElementById('addTakeInput').value = '';
+      }
+      renderTakesListUI();
+      autoSyncTakes();
+    }
+
+    function removeCameraTake(idx) {
+      window.musicTakesList.splice(idx, 1);
+      renderTakesListUI();
+    }
+
+    function renderTakesListUI(syncResults) {
+      const container = document.getElementById('takesSyncList');
+      if (!container) return;
+      const currentVid = document.getElementById('inputVideo').value.trim();
+      const allTakes = [];
+      if (currentVid) allTakes.push({ path: currentVid, is_primary: true });
+      window.musicTakesList.forEach((p, i) => {
+        if (p !== currentVid) allTakes.push({ path: p, is_primary: false, index: i });
+      });
+
+      if (allTakes.length === 0) {
+        container.innerHTML = '<div style="font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 0.5rem;">Load video footage and a master song, then click Auto-Sync.</div>';
+        return;
+      }
+
+      const syncMap = {};
+      if (syncResults && Array.isArray(syncResults)) {
+        syncResults.forEach(r => { syncMap[r.take_path] = r; });
+      }
+
+      container.innerHTML = allTakes.map((tk, idx) => {
+        const fn = tk.path.split('/').pop();
+        const sync = syncMap[tk.path];
+        const offsetStr = sync ? (sync.offset_seconds >= 0 ? '+' : '') + sync.offset_seconds.toFixed(3) + 's' : 'Not Synced';
+        const confStr = sync ? Math.round(sync.confidence * 100) + '%' : '--';
+        const isLocked = sync ? sync.is_locked : false;
+        const statusBadge = isLocked 
+          ? '<span style="background: rgba(16,185,129,0.2); color: #10B981; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem;">LOCKED ✓</span>'
+          : '<span style="background: rgba(244,63,94,0.2); color: #F43F5E; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem;">PENDING</span>';
+
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.75rem;">
+            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 48%;">
+              <span style="color: ${tk.is_primary ? '#06B6D4' : '#E2E8F0'}; font-weight: 600;">Take ${idx + 1}:</span>
+              <span title="${escapeHtml(tk.path)}">${escapeHtml(fn)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <span style="font-family: monospace; color: #A78BFA; font-size: 0.7rem;">${offsetStr} (${confStr})</span>
+              ${statusBadge}
+              ${!tk.is_primary ? `<button type="button" onclick="removeCameraTake(${tk.index})" style="background: transparent; border: none; color: #EF4444; cursor: pointer; padding: 0 4px;"><i class="fa-solid fa-times"></i></button>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function autoSyncTakes() {
+      const songPath = document.getElementById('masterSongInput').value.trim();
+      const currentVid = document.getElementById('inputVideo').value.trim();
+      const allTakes = [];
+      if (currentVid) allTakes.push(currentVid);
+      window.musicTakesList.forEach(t => { if (!allTakes.includes(t)) allTakes.push(t); });
+
+      if (!songPath) {
+        alert('Please pick or enter a Master Song Audio file (song.wav / song.mp3) first.');
+        return;
+      }
+      if (allTakes.length === 0) {
+        alert('Please select at least one camera take video.');
+        return;
+      }
+
+      const syncBtn = document.getElementById('btnSyncTakes');
+      const origHtml = syncBtn ? syncBtn.innerHTML : '';
+      if (syncBtn) {
+        syncBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing (FFT)...';
+        syncBtn.disabled = true;
+      }
+
+      try {
+        const res = await fetch('/api/music/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ song_path: songPath, take_paths: allTakes })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        renderTakesListUI(data.takes);
+      } catch (err) {
+        alert('Auto-Sync failed: ' + err.message);
+      } finally {
+        if (syncBtn) {
+          syncBtn.innerHTML = origHtml;
+          syncBtn.disabled = false;
+        }
+      }
+    }
+
+    async function analyzeMusicGrid() {
+      const songPath = document.getElementById('masterSongInput').value.trim();
+      if (!songPath) {
+        alert('Please select or specify a master song audio file first.');
+        return;
+      }
+
+      const currentVid = document.getElementById('inputVideo').value.trim();
+      const allTakes = [];
+      if (currentVid) allTakes.push(currentVid);
+      window.musicTakesList.forEach(t => { if (!allTakes.includes(t)) allTakes.push(t); });
+
+      const manualBpm = parseFloat(document.getElementById('musicBpmInput').value) || 0.0;
+
+      try {
+        const res = await fetch('/api/music/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            song_path: songPath,
+            take_paths: allTakes,
+            bpm: manualBpm,
+            drop_punchins: document.getElementById('musicDropPunchToggle') ? document.getElementById('musicDropPunchToggle').checked : true,
+            speed_ramps: document.getElementById('musicSpeedRampToggle') ? document.getElementById('musicSpeedRampToggle').checked : true,
+            beat_fx: document.getElementById('musicBeatFxToggle') ? document.getElementById('musicBeatFxToggle').checked : true,
+          })
+        });
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+
+        const a = data.analysis;
+        document.getElementById('musicBpmInput').value = a.bpm.toFixed(1);
+        document.getElementById('musicTotalBars').innerText = a.total_bars;
+        document.getElementById('musicKickDrops').innerText = a.kick_onsets ? a.kick_onsets.length : '0';
+
+        const secRow = document.getElementById('musicSectionsRow');
+        if (secRow && a.sections) {
+          secRow.innerHTML = a.sections.map(s => {
+            const colors = {
+              intro: '#6B7280',
+              verse: '#3B82F6',
+              pre_chorus: '#F59E0B',
+              chorus: '#EF4444',
+              drop: '#EC4899',
+              outro: '#6B7280'
+            };
+            const col = colors[s.name] || '#06B6D4';
+            return `<span class="cat-pill" style="border-color: ${col}; color: ${col}; font-size: 0.68rem; font-weight: 700;">${s.name.toUpperCase()} (${s.cadence_bars}b)</span>`;
+          }).join('');
+        }
+
+        if (data.takes) {
+          renderTakesListUI(data.takes);
+        }
+
+        if (data.shots && data.shots.length > 0) {
+          renderTimeline({
+            shots: data.shots,
+            total_duration: a.total_duration,
+            edited_duration: a.total_duration,
+            saved_pct: 0
+          });
+        }
+      } catch (err) {
+        alert('Music Analysis Error: ' + err.message);
+      }
     }
 
     // ------------------------------------------------------------------------
@@ -3490,7 +3704,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         show_title: document.getElementById('showTitleToggle') ? document.getElementById('showTitleToggle').checked : true,
         title_text: document.getElementById('titleTextInput') ? document.getElementById('titleTextInput').value.trim() : 'OMNICAM AI • MULTI-CAM PRODUCTION',
         subtitle_text: document.getElementById('subtitleTextInput') ? document.getElementById('subtitleTextInput').value.trim() : 'PRO VIRTUAL STUDIO // 4K CLARITY',
-        custom_watermark: (document.getElementById('customWatermarkInput') && document.getElementById('customWatermarkInput').value.trim()) || null
+        custom_watermark: (document.getElementById('customWatermarkInput') && document.getElementById('customWatermarkInput').value.trim()) || null,
+        music_mode: document.getElementById('musicModeToggle') ? document.getElementById('musicModeToggle').checked : false,
+        song_path: document.getElementById('masterSongInput') ? document.getElementById('masterSongInput').value.trim() : null,
+        take_paths: window.musicTakesList || [],
+        bpm: parseFloat(document.getElementById('musicBpmInput') ? document.getElementById('musicBpmInput').value : '120') || 120,
+        bass_pump: document.getElementById('musicBassPumpToggle') ? document.getElementById('musicBassPumpToggle').checked : false,
+        speed_ramps: document.getElementById('musicSpeedRampToggle') ? document.getElementById('musicSpeedRampToggle').checked : false,
+        beat_fx: document.getElementById('musicBeatFxToggle') ? document.getElementById('musicBeatFxToggle').checked : false,
+        drop_punchins: document.getElementById('musicDropPunchToggle') ? document.getElementById('musicDropPunchToggle').checked : true
       };
 
       try {
@@ -3639,6 +3861,7 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                             is_file = entry.is_file(follow_symlinks=False)
                             lower = entry.name.lower()
                             is_video = is_file and lower.endswith((".mp4", ".mov", ".mkv", ".webm", ".avi", ".3gp", ".m4v"))
+                            is_audio = is_file and lower.endswith((".mp3", ".wav", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".wma"))
 
                             size_str = ""
                             if is_file:
@@ -3657,12 +3880,13 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                                 "path": entry.path,
                                 "is_dir": is_dir,
                                 "is_video": is_video,
+                                "is_audio": is_audio,
                                 "size": size_str,
                             })
                         except (PermissionError, OSError):
                             continue
 
-                entries.sort(key=lambda x: (not x["is_dir"], not x["is_video"], x["name"].lower()))
+                entries.sort(key=lambda x: (not x["is_dir"], not (x["is_video"] or x["is_audio"]), x["name"].lower()))
 
                 # Quick device root shortcuts
                 roots = []
@@ -3841,6 +4065,76 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
         except Exception:
             params = {}
 
+        if path == "/api/music/sync":
+            song_path = params.get("song_path")
+            take_paths = params.get("take_paths", [])
+            if not song_path or not os.path.isfile(song_path):
+                self.send_json({"error": f"Master song not found: {song_path}"}, status=400)
+                return
+            valid_takes = [t for t in take_paths if t and os.path.isfile(t)]
+            if not valid_takes:
+                self.send_json({"error": "No valid take files provided."}, status=400)
+                return
+            try:
+                sync_engine = MultiTakeSyncEngine()
+                results = sync_engine.align_multiple_takes(song_path, valid_takes)
+                self.send_json({"status": "ok", "takes": [t.to_dict() for t in results]})
+            except Exception as ex:
+                self.send_json({"error": str(ex)}, status=500)
+            return
+
+        if path == "/api/music/analyze":
+            song_path = params.get("song_path")
+            if not song_path or not os.path.isfile(song_path):
+                self.send_json({"error": f"Master song not found: {song_path}"}, status=400)
+                return
+            manual_bpm = float(params.get("bpm", 0.0)) or None
+            take_paths = params.get("take_paths", [])
+            valid_takes = [t for t in take_paths if t and os.path.isfile(t)]
+            try:
+                music_analyzer = MusicBeatAnalyzer()
+                analysis = music_analyzer.analyze(song_path, manual_bpm=manual_bpm)
+
+                takes_info = []
+                if valid_takes:
+                    sync_engine = MultiTakeSyncEngine()
+                    takes_info = sync_engine.align_multiple_takes(song_path, valid_takes)
+
+                director = MusicVideoDirector(
+                    analysis=analysis,
+                    takes=takes_info,
+                    tracker=None,
+                    target_resolution=params.get("resolution", "720p"),
+                    enable_drop_punchins=bool(params.get("drop_punchins", True)),
+                    enable_speed_ramps=bool(params.get("speed_ramps", True)),
+                    enable_beat_fx=bool(params.get("beat_fx", True)),
+                )
+                shot_plans = director.plan_music_video()
+                shots_data = [
+                    {
+                        "index": sp.index,
+                        "angle": sp.angle.value,
+                        "start": sp.segment.start,
+                        "end": sp.segment.end,
+                        "duration": sp.segment.duration,
+                        "description": sp.description,
+                        "clip_index": sp.clip_index,
+                        "transition": getattr(sp, "transition", "flash"),
+                        "speed_ramp": getattr(sp, "speed_ramp", "none"),
+                        "beat_effect": getattr(sp, "beat_effect", None),
+                    }
+                    for sp in shot_plans
+                ]
+                self.send_json({
+                    "status": "ok",
+                    "analysis": analysis.to_dict(),
+                    "takes": [t.to_dict() for t in takes_info],
+                    "shots": shots_data,
+                })
+            except Exception as ex:
+                self.send_json({"error": str(ex)}, status=500)
+            return
+
         if path == "/api/analyze":
             input_path = params.get("input_path")
             if not input_path or not os.path.isfile(input_path):
@@ -3918,33 +4212,65 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
 
             def run_render_job():
                 try:
-                    analyzer = AudioAnalyzer(
-                        noise_threshold_db=-32.0,
-                        min_silence_duration=0.35,
-                    )
-                    segments = analyzer.extract_speech_segments(input_path)
-
-                    if params.get("remove_fillers"):
-                        hesitations = detect_acoustic_hesitations(input_path)
-                        segments = remove_filler_intervals(segments, hesitations)
-
-                    tracker = VisionTracker(input_path)
-                    broll_dir = params.get("broll_dir")
-                    broll_mgr = BRollManager(broll_dir) if (broll_dir and os.path.isdir(broll_dir)) else None
+                    is_music_mode = bool(params.get("music_mode", False))
+                    song_path = params.get("song_path")
 
                     target_person = params.get("target_person", "primary")
                     selective_color = params.get("selective_color", "none")
+                    broll_dir = params.get("broll_dir")
 
-                    director = CameraDirector(
-                        tracker=tracker,
-                        pacing_style=params.get("pacing", "dynamic"),
-                        zoom_factor=float(params.get("zoom", 1.75)),
-                        broll_manager=broll_mgr,
-                        enable_freeze_frames=bool(params.get("freeze_frame", True)),
-                        transition_style=params.get("transition", "flash"),
-                        target_person=target_person,
-                    )
-                    shot_plans = director.plan_production(segments)
+                    if is_music_mode and song_path and os.path.isfile(song_path):
+                        take_paths = params.get("take_paths", [])
+                        valid_takes = [t for t in take_paths if t and os.path.isfile(t)]
+                        if input_path not in valid_takes:
+                            valid_takes.insert(0, input_path)
+
+                        sync_engine = MultiTakeSyncEngine()
+                        takes_info = sync_engine.align_multiple_takes(song_path, valid_takes)
+
+                        music_analyzer = MusicBeatAnalyzer()
+                        analysis = music_analyzer.analyze(song_path, manual_bpm=float(params.get("bpm", 0.0)) or None)
+
+                        tracker = VisionTracker(valid_takes[0])
+                        director = MusicVideoDirector(
+                            analysis=analysis,
+                            takes=takes_info,
+                            tracker=tracker,
+                            target_resolution=params.get("resolution", "720p"),
+                            zoom_factor=float(params.get("zoom", 1.85)),
+                            enable_drop_punchins=bool(params.get("drop_punchins", True)),
+                            enable_speed_ramps=bool(params.get("speed_ramps", True)),
+                            enable_beat_fx=bool(params.get("beat_fx", True)),
+                        )
+                        shot_plans = director.plan_music_video()
+                        all_inputs = valid_takes
+                        active_bpm = analysis.bpm
+                    else:
+                        analyzer = AudioAnalyzer(
+                            noise_threshold_db=-32.0,
+                            min_silence_duration=0.35,
+                        )
+                        segments = analyzer.extract_speech_segments(input_path)
+
+                        if params.get("remove_fillers"):
+                            hesitations = detect_acoustic_hesitations(input_path)
+                            segments = remove_filler_intervals(segments, hesitations)
+
+                        tracker = VisionTracker(input_path)
+                        broll_mgr = BRollManager(broll_dir) if (broll_dir and os.path.isdir(broll_dir)) else None
+
+                        director = CameraDirector(
+                            tracker=tracker,
+                            pacing_style=params.get("pacing", "dynamic"),
+                            zoom_factor=float(params.get("zoom", 1.75)),
+                            broll_manager=broll_mgr,
+                            enable_freeze_frames=bool(params.get("freeze_frame", True)),
+                            transition_style=params.get("transition", "flash"),
+                            target_person=target_person,
+                        )
+                        shot_plans = director.plan_production(segments)
+                        all_inputs = [input_path]
+                        active_bpm = None
 
                     stem, _ = os.path.splitext(input_path)
                     out_path = f"{stem}_capcut_master.mp4"
@@ -4002,6 +4328,13 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                         title_text=params.get("title_text") or params.get("title", "OMNICAM AI • MULTI-CAM PRODUCTION"),
                         subtitle_text=params.get("subtitle_text", "PRO VIRTUAL STUDIO // 4K CLARITY"),
                         custom_watermark=params.get("custom_watermark"),
+                        input_videos=all_inputs,
+                        music_mode=is_music_mode,
+                        song_audio_path=song_path if is_music_mode else None,
+                        bpm=active_bpm,
+                        enable_bass_pump=bool(params.get("bass_pump", False)),
+                        enable_speed_ramps=bool(params.get("speed_ramps", False)),
+                        beat_reactive_fx=bool(params.get("beat_fx", False)),
                         broll_dir=broll_dir,
                         transition_style=trans_choice,
                         enable_freeze_frames=bool(params.get("enable_freeze_frames", params.get("freeze_frame", True))),

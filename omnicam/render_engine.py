@@ -629,7 +629,10 @@ class RenderEngine:
             filter_parts.append(
                 f"[{song_input_idx}:a]atrim=0:{total_speech_dur:.3f},asetpts=PTS-STARTPTS,aresample=44100[a_master_song]"
             )
-            final_audio_in = "[a_master_song]"
+            filter_parts.append(
+                "[a_voice][a_master_song]amix=inputs=2:weights=0 1:dropout_transition=0[a_music_out]"
+            )
+            final_audio_in = "[a_music_out]"
         elif has_bgm and bgm_input_idx is not None:
             bgm_vol = self.config.bgm_volume
             # Trim BGM to exact speech duration and sidechain-compress against speech
