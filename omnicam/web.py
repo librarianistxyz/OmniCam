@@ -189,12 +189,91 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       padding: 0 1rem;
       z-index: 50;
       flex-shrink: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: 0.75rem;
+    }
+    .nle-topbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .topbar-left, .topbar-center, .topbar-right {
+      flex-shrink: 0;
     }
 
     .topbar-left {
       display: flex;
       align-items: center;
       gap: 0.75rem;
+    }
+
+    /* --------------------------------------------------------------------------
+       TOP TOOL NAV RIBBON (Scrollable Quick Tools Navigation)
+       -------------------------------------------------------------------------- */
+    .nle-top-tool-nav {
+      height: 44px;
+      background: #080A10;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      padding: 0 0.75rem;
+      z-index: 45;
+      flex-shrink: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .nle-top-tool-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .top-tool-nav-scroll {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: nowrap;
+    }
+
+    .top-tool-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      border-radius: var(--radius-full);
+      padding: 0.32rem 0.8rem;
+      font-size: 0.76rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-shrink: 0;
+      outline: none;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .top-tool-chip i {
+      font-size: 0.85rem;
+      transition: transform 0.15s ease;
+    }
+    .top-tool-chip:hover {
+      background: rgba(255, 255, 255, 0.09);
+      color: var(--text-white);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+    .top-tool-chip:hover i {
+      transform: scale(1.12);
+    }
+    .top-tool-chip.active {
+      background: rgba(0, 240, 255, 0.14);
+      border-color: var(--accent-neon);
+      color: var(--accent-neon);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
     }
 
     .app-brand-badge {
@@ -833,11 +912,19 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       height: 62px;
       display: flex;
       align-items: center;
-      justify-content: space-around;
-      padding: 0 0.5rem;
+      justify-content: flex-start;
+      gap: 0.4rem;
+      padding: 0 0.75rem;
       border-top: 1px solid var(--border-subtle);
       background: #080A10;
       overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .nle-dock-bar::-webkit-scrollbar {
+      display: none;
     }
 
     .dock-tool-btn {
@@ -1060,12 +1147,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
     /* Responsive Adjustments */
     @media (max-width: 768px) {
-      .topbar-center { display: none; }
-      .clip-name-pill { max-width: 140px; }
+      .nle-topbar { padding: 0 0.65rem; gap: 0.5rem; }
+      .clip-name-pill { max-width: 150px; }
       .timeline-ruler-header { height: 22px; }
       .nle-timeline-area { height: 160px; }
       .track-row { height: 42px; }
       .dock-tool-btn { min-width: 50px; font-size: 0.65rem; padding: 0.3rem 0.45rem; }
+      .top-tool-chip { font-size: 0.72rem; padding: 0.28rem 0.65rem; }
     }
   </style>
 </head>
@@ -1123,6 +1211,73 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         </button>
       </div>
     </header>
+
+    <!-- ======================================================================
+         TOP TOOLS NAV RIBBON (Scrollable VN / CapCut Style)
+         ====================================================================== -->
+    <nav class="nle-top-tool-nav" id="topToolNav" aria-label="Editor Tools Navigation">
+      <div class="top-tool-nav-scroll">
+        <button class="top-tool-chip" id="topBtnMedia" onclick="openToolPanel('Media', 'fa-folder-open')" type="button">
+          <i class="fa-solid fa-folder-open"></i>
+          <span>Media</span>
+        </button>
+
+        <button class="top-tool-chip" id="topBtnAngles" onclick="openToolPanel('Angles', 'fa-video')" type="button">
+          <i class="fa-solid fa-video"></i>
+          <span>Angles</span>
+        </button>
+
+        <button class="top-tool-chip" id="topBtnTransitions" onclick="openToolPanel('Transitions', 'fa-bolt')" type="button">
+          <i class="fa-solid fa-bolt" style="color: var(--accent-neon);"></i>
+          <span>Transitions</span>
+        </button>
+
+        <button class="top-tool-chip" id="topBtnEffects" onclick="openToolPanel('Effects', 'fa-wand-magic-sparkles')" type="button">
+          <i class="fa-solid fa-wand-magic-sparkles" style="color: #A78BFA;"></i>
+          <span>Effects</span>
+        </button>
+
+        <button class="top-tool-chip" id="topBtnText" onclick="openToolPanel('Text', 'fa-font')" type="button">
+          <i class="fa-solid fa-font" style="color: #FBBF24;"></i>
+          <span>Text</span>
+        </button>
+
+        <button class="top-tool-chip" id="topBtnColor" onclick="openToolPanel('Color', 'fa-palette')" type="button">
+          <i class="fa-solid fa-palette"></i>
+          <span>3D LUT</span>
+        </button>
+
+        <button class="top-tool-chip" id="topBtnAudio" onclick="openToolPanel('Audio', 'fa-volume-high')" type="button">
+          <i class="fa-solid fa-volume-high"></i>
+          <span>Sound</span>
+        </button>
+
+        <button class="top-tool-chip" id="topBtnCaptions" onclick="openToolPanel('Captions', 'fa-closed-captioning')" type="button">
+          <i class="fa-solid fa-closed-captioning"></i>
+          <span>Captions</span>
+        </button>
+
+        <button class="top-tool-chip" id="topBtnFillers" onclick="openToolPanel('Fillers', 'fa-scissors')" type="button">
+          <i class="fa-solid fa-scissors"></i>
+          <span>Fillers</span>
+        </button>
+
+        <button class="top-tool-chip" id="topBtnGimbal" onclick="openToolPanel('Gimbal', 'fa-compass')" type="button">
+          <i class="fa-solid fa-compass"></i>
+          <span>Gimbal</span>
+        </button>
+
+        <button class="top-tool-chip" id="topBtnBRoll" onclick="openToolPanel('BRoll', 'fa-layer-group')" type="button">
+          <i class="fa-solid fa-layer-group"></i>
+          <span>B-Roll</span>
+        </button>
+
+        <button class="top-tool-chip" id="topBtnRatio" onclick="openToolPanel('Ratio', 'fa-crop-simple')" type="button">
+          <i class="fa-solid fa-crop-simple"></i>
+          <span>Canvas</span>
+        </button>
+      </div>
+    </nav>
 
     <!-- Hidden native file input for gallery picker -->
     <input type="file" id="nativeFilePicker" accept="video/*" style="display: none;" onchange="handleNativeFileSelect(this)" />
@@ -1768,8 +1923,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const drawer = document.getElementById('inspectorDrawer');
       const title = document.getElementById('drawerTitle');
 
-      // Reset active dock states
-      document.querySelectorAll('.dock-tool-btn').forEach(b => b.classList.remove('active'));
+      // Reset active states on both bottom dock and top nav ribbon
+      document.querySelectorAll('.dock-tool-btn, .top-tool-chip').forEach(b => b.classList.remove('active'));
 
       if (activeDrawerPanel === panelId && drawer.classList.contains('open')) {
         closeDrawer();
@@ -1785,8 +1940,18 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       title.innerHTML = '<i class="fa-solid ' + iconClass + '"></i> ' + panelId + ' Settings';
       drawer.classList.add('open');
 
+      // Sync active state and auto-scroll both bottom dock and top nav chip into view
       const dockBtn = document.getElementById('dockBtn' + panelId);
-      if (dockBtn) dockBtn.classList.add('active');
+      if (dockBtn) {
+        dockBtn.classList.add('active');
+        dockBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+
+      const topBtn = document.getElementById('topBtn' + panelId);
+      if (topBtn) {
+        topBtn.classList.add('active');
+        topBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
 
       activeDrawerPanel = panelId;
     }
@@ -1794,7 +1959,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     function closeDrawer() {
       const drawer = document.getElementById('inspectorDrawer');
       drawer.classList.remove('open');
-      document.querySelectorAll('.dock-tool-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.dock-tool-btn, .top-tool-chip').forEach(b => b.classList.remove('active'));
       activeDrawerPanel = null;
     }
 
