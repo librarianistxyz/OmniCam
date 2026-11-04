@@ -1565,7 +1565,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         </div>
 
         <!-- Video Player Display -->
-        <video id="studioVideoPlayer" playsinline></video>
+        <video id="studioVideoPlayer" loop playsinline></video>
 
         <!-- Real-time Selective Color Person Isolation Overlay -->
         <div id="liveSelectiveColorOverlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 7; display: none;"></div>
@@ -3037,6 +3037,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         if (ov && ov.duration) {
           ov.currentTime = player.currentTime % ov.duration;
         }
+      };
+      player.onended = () => {
+        player.currentTime = 0;
+        activeShotIndex = -1;
+        isFreezeHolding = false;
+        player.play().catch(() => {});
       };
       applyLiveFilters();
 
