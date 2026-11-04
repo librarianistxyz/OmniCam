@@ -263,6 +263,38 @@ git pull origin master
 - **Analog 35mm Film Grain** (`--film-grain`): Organic silver halide texture.
 - **2.35:1 Anamorphic Cinema Bars** (`--letterbox`): Widescreen top/bottom letterbox.
 
+### 5. 🎵 Music Video Studio Mode (`--music-mode` & `--song`)
+Turn raw multi-take shoot footage into a MTV / Cole Bennett style music video locked to the song:
+- **1. Multi-Take Waveform Auto-Sync (Lip-Sync Alignment)**:
+  - Uses FFT cross-correlation (`np.fft.rfft` / `np.fft.irfft`) with zero external libraries.
+  - Compares noisy camera scratch audio against the clean Studio Master audio file (`song.wav` or `master.mp3`).
+  - Detects the exact millisecond offset ($\Delta t$) of each take to lock all camera angles in phase.
+- **2. Beat & Energy Grid Detection (`MusicBeatAnalyzer`)**:
+  - Detects BPM tempo, 4/4 measure bar downbeats, kick drum / 808 sub-bass drops (20–140 Hz), and snare transients (1.5–4.5 kHz).
+  - Classifies song structure: Intro/Verse (slower 4–8 bar cadence), Pre-Chorus/Build-up (2-bar tension cadence), and Chorus/Drop (1-bar rapid cuts).
+- **3. Musical Virtual Camera Directing (`MusicVideoDirector`)**:
+  - **The 808 / Drop Punch-In**: Instant snap from Master Wide directly into an aggressive Extreme Close-Up centered on the singer's face.
+  - **Dutch Tilt & Counter-Pans**: Alternating angles across measures (Bar 1: Thirds Left, Bar 2: Thirds Right, Bar 3: Zoom push).
+  - **Multi-Take Rotation**: Seamlessly switches between takes (`Take 1 Wide`, `Take 2 Close-up`, `Take 3 Performance`) staying in phase ($T_{\text{take}} = T_{\text{song}} - \Delta t$).
+- **4. Beat-Reactive Visual Effects (`--beat-fx`)**:
+  - Downbeat lens flares, fiery film burns on chorus starts, and chromatic RGB glitch flashes on 808 drops.
+- **5. Speed Ramping & Motion Pumping (`--speed-ramps` & `--bass-pump`)**:
+  - **Speed Ramping**: Slow-motion 60% cruise during vocal sustained notes snapping into 250% acceleration into cuts.
+  - **Bass Pump**: Sub-bass camera vibration synced to kick frequencies via mathematical exponential oscillation.
+
+```bash
+# Full Music Video Production with Multi-Take Auto-Sync
+python3 -m omnicam.cli take1_wide.mp4 \
+  --music-mode \
+  --song studio_master.wav \
+  --takes take2_closeup.mp4 take3_performance.mp4 \
+  --bass-pump \
+  --speed-ramps \
+  --beat-fx \
+  --color cinematic \
+  -o finished_music_video.mp4
+```
+
 ---
 
 ## 🚀 Quick CLI Reference
