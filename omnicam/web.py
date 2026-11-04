@@ -55,6 +55,7 @@ class StudioServerState:
         self.progress: float = 0.0
         self.status_message: str = "Ready"
         self.output_file: Optional[str] = None
+        self.saved_device_path: Optional[str] = None
         self.error: Optional[str] = None
 
 
@@ -1420,6 +1421,30 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <!-- Video Player Display -->
         <video id="studioVideoPlayer" playsinline></video>
 
+        <!-- Real-time CapCut Blend Mode Overlay Player -->
+        <video id="liveOverlayPlayer" loop playsinline muted style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; mix-blend-mode: screen; opacity: 0; transition: opacity 0.25s ease; z-index: 8;"></video>
+
+        <!-- Real-time Lens Vignette Overlay -->
+        <div id="liveVignetteOverlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 9; background: radial-gradient(circle at center, transparent 55%, rgba(0, 0, 0, 0.72) 100%); display: none;"></div>
+
+        <!-- Real-time 35mm Film Grain Overlay -->
+        <div id="liveFilmGrainOverlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 10; opacity: 0.16; display: none; background-image: url('data:image/svg+xml;utf8,<svg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'noiseFilter\'><feTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/></filter><rect width=\'100%\' height=\'100%\' filter=\'url(%23noiseFilter)\'/></svg>');"></div>
+
+        <!-- Real-time Anamorphic 2.35:1 Letterbox Bars -->
+        <div id="liveLetterboxTop" style="position: absolute; top: 0; left: 0; right: 0; height: 9%; background: #000; pointer-events: none; z-index: 12; display: none; transition: height 0.2s ease;"></div>
+        <div id="liveLetterboxBottom" style="position: absolute; bottom: 0; left: 0; right: 0; height: 9%; background: #000; pointer-events: none; z-index: 12; display: none; transition: height 0.2s ease;"></div>
+
+        <!-- Real-time Lower-Third Title Overlay -->
+        <div id="liveLowerThirdOverlay" style="position: absolute; bottom: 25px; left: 20px; right: 20px; z-index: 13; pointer-events: none; display: none;">
+          <div style="display: flex; align-items: stretch; background: rgba(0, 0, 0, 0.82); border-radius: 4px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.6); max-width: 480px;">
+            <div style="width: 5px; background: var(--accent-neon);"></div>
+            <div style="padding: 0.45rem 0.85rem;">
+              <div id="liveTitleText" style="font-size: 0.82rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.02em;">OMNICAM AI • MULTI-CAM PRODUCTION</div>
+              <div id="liveSubtitleText" style="font-size: 0.68rem; font-weight: 600; color: var(--accent-neon);">PRO VIRTUAL STUDIO // 4K CLARITY</div>
+            </div>
+          </div>
+        </div>
+
         <!-- Real-time Flash Transition FX Overlay -->
         <div id="playerFlashOverlay" class="flash-fx-overlay"></div>
 
@@ -1585,10 +1610,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <div class="drawer-controls-grid">
             <div class="control-item">
               <span class="control-label">Cinematic Grading Preset</span>
-              <select class="nle-select" id="colorGradeSelect" onchange="applyLiveColorGrade()">
+              <select class="nle-select" id="colorGradeSelect" onchange="applyLiveFilters()">
                 <option value="cinematic" selected>Cinematic S-Curve (Warm skin, cool shadows)</option>
                 <option value="podcast">Modern Tech Podcast (High vibrance &amp; pop)</option>
                 <option value="vintage">Vintage 35mm (Muted organic tones)</option>
+                <option value="noir">Noir Monochrome (High contrast black &amp; white)</option>
                 <option value="none">Clean / Neutral (Raw sensor pass-through)</option>
               </select>
             </div>
@@ -1596,7 +1622,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
               <span class="control-label">Vignette &amp; Contrast</span>
               <label class="toggle-row">
                 <span>Subtle Film Vignette &amp; S-Curve</span>
-                <input type="checkbox" id="vignetteToggle" checked />
+                <input type="checkbox" id="vignetteToggle" checked onchange="applyLiveFilters()" />
               </label>
             </div>
           </div>
@@ -1801,7 +1827,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
             <div class="control-item">
               <span class="control-label">Blend Mode Algorithm</span>
-              <select class="nle-select" id="overlayBlendModeSelect">
+              <select class="nle-select" id="overlayBlendModeSelect" onchange="applyLiveOverlaySettings()">
                 <option value="screen" selected>⚡ Screen (Viral CapCut standard - keeps colors &amp; brights)</option>
                 <option value="addition">💥 Addition / Linear Dodge (Super bright glow &amp; bloom)</option>
                 <option value="overlay">🎞️ Overlay (Contrast enhancement &amp; rich shadows)</option>
@@ -1812,7 +1838,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
             <div class="control-item">
               <span class="control-label">Blend Opacity (<span id="overlayOpacityVal">85%</span>)</span>
-              <input type="range" class="nle-range-slider" id="overlayOpacitySlider" min="10" max="100" value="85" oninput="document.getElementById('overlayOpacityVal').innerText = this.value + '%'" />
+              <input type="range" class="nle-range-slider" id="overlayOpacitySlider" min="10" max="100" value="85" oninput="document.getElementById('overlayOpacityVal').innerText = this.value + '%'; applyLiveOverlaySettings();" />
             </div>
           </div>
         </div>
@@ -1824,14 +1850,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
               <span class="control-label">Cinema Letterbox</span>
               <label class="toggle-row">
                 <span>2.35:1 Anamorphic Top/Bottom Bars</span>
-                <input type="checkbox" id="letterboxToggle" />
+                <input type="checkbox" id="letterboxToggle" onchange="applyLiveFilters()" />
               </label>
             </div>
             <div class="control-item">
               <span class="control-label">Analog 35mm Film Grain</span>
               <label class="toggle-row">
                 <span>Organic Film Grain Noise</span>
-                <input type="checkbox" id="filmGrainToggle" />
+                <input type="checkbox" id="filmGrainToggle" onchange="applyLiveFilters()" />
               </label>
             </div>
             <div class="control-item">
@@ -1857,16 +1883,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
               <span class="control-label">Broadcast Lower-Third Title</span>
               <label class="toggle-row">
                 <span>Animated Title Card in Intro</span>
-                <input type="checkbox" id="showTitleToggle" checked />
+                <input type="checkbox" id="showTitleToggle" checked onchange="applyLiveFilters()" />
               </label>
             </div>
             <div class="control-item">
               <span class="control-label">Main Headline Title</span>
-              <input type="text" class="nle-input" id="titleTextInput" value="OMNICAM AI • MULTI-CAM PRODUCTION" placeholder="Headline text..." />
+              <input type="text" class="nle-input" id="titleTextInput" value="OMNICAM AI • MULTI-CAM PRODUCTION" placeholder="Headline text..." oninput="applyLiveFilters()" />
             </div>
             <div class="control-item">
               <span class="control-label">Subtitle / Presenter Line</span>
-              <input type="text" class="nle-input" id="subtitleTextInput" value="PRO VIRTUAL STUDIO // 4K CLARITY" placeholder="Presenter handle or subtitle..." />
+              <input type="text" class="nle-input" id="subtitleTextInput" value="PRO VIRTUAL STUDIO // 4K CLARITY" placeholder="Presenter handle or subtitle..." oninput="applyLiveFilters()" />
             </div>
             <div class="control-item">
               <span class="control-label">Virtual Camera HUD Badge</span>
@@ -2066,22 +2092,25 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
         <!-- Render Complete -->
         <div id="exportCompleteState" style="display: none; text-align: center;">
-          <div style="width: 54px; height: 54px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 1rem;">
+          <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 0.75rem;">
             <i class="fa-solid fa-check"></i>
           </div>
-          <h4 style="font-family: var(--font-display); font-size: 1.15rem; color: var(--text-white); margin-bottom: 0.35rem;">
+          <h4 style="font-family: var(--font-display); font-size: 1.15rem; color: var(--text-white); margin-bottom: 0.25rem;">
             Master Cut Complete!
           </h4>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-            Zero jump cuts, studio loudness normalized, and color graded.
-          </p>
 
-          <div style="display: flex; gap: 0.75rem; justify-content: center;">
+          <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 0.45rem 0.85rem; font-size: 0.78rem; color: #34D399; font-weight: 700; margin: 0.65rem auto 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; max-width: 440px;">
+            <i class="fa-solid fa-circle-check"></i> <span id="exportSavedPathBadge">Saved automatically to device storage &amp; Downloads!</span>
+          </div>
+
+          <video id="exportCompletePlayer" controls playsinline style="width: 100%; max-height: 220px; border-radius: var(--radius-md); background: #000; margin-bottom: 1rem; border: 1px solid var(--border-subtle);"></video>
+
+          <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
             <a id="downloadVideoLink" class="btn-action-glow btn-action-primary" href="#" download style="text-decoration: none;">
-              <i class="fa-solid fa-download"></i> Download MP4
+              <i class="fa-solid fa-download"></i> Save / Download Again
             </a>
-            <button class="btn-action-glow" onclick="playRenderedInMonitor()" type="button">
-              <i class="fa-solid fa-play"></i> Preview Master
+            <button class="btn-action-glow" onclick="playRenderedInMonitor(); closeExportModal();" type="button">
+              <i class="fa-solid fa-film"></i> Open in Editor Monitor
             </button>
           </div>
         </div>
@@ -2113,6 +2142,108 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           badge.innerText = 'Active: ' + title;
           badge.style.color = 'var(--accent-neon)';
         }
+      }
+
+      updateLiveOverlay(overlayId);
+    }
+
+    function updateLiveOverlay(overlayId) {
+      const overlayVideo = document.getElementById('liveOverlayPlayer');
+      if (!overlayVideo) return;
+
+      if (!overlayId || overlayId === 'none') {
+        overlayVideo.style.opacity = '0';
+        overlayVideo.pause();
+        return;
+      }
+
+      const blendSelect = document.getElementById('overlayBlendModeSelect');
+      const opacitySlider = document.getElementById('overlayOpacitySlider');
+      let blendMode = blendSelect ? blendSelect.value : 'screen';
+      if (blendMode === 'addition') blendMode = 'screen';
+      const opacity = opacitySlider ? parseFloat(opacitySlider.value) / 100.0 : 0.85;
+
+      overlayVideo.src = '/assets/overlays/' + overlayId + '.mp4';
+      overlayVideo.style.mixBlendMode = blendMode;
+      overlayVideo.style.opacity = opacity.toString();
+      overlayVideo.currentTime = 0;
+
+      const player = document.getElementById('studioVideoPlayer');
+      if (player && !player.paused) {
+        overlayVideo.play().catch(() => {});
+      } else {
+        overlayVideo.play().catch(() => {});
+        setTimeout(() => {
+          const p = document.getElementById('studioVideoPlayer');
+          if (p && p.paused) overlayVideo.pause();
+        }, 120);
+      }
+    }
+
+    function applyLiveOverlaySettings() {
+      const overlayVideo = document.getElementById('liveOverlayPlayer');
+      if (!overlayVideo || selectedOverlayEffect === 'none') return;
+
+      const blendSelect = document.getElementById('overlayBlendModeSelect');
+      const opacitySlider = document.getElementById('overlayOpacitySlider');
+      if (blendSelect) {
+        let bm = blendSelect.value;
+        if (bm === 'addition') bm = 'screen';
+        overlayVideo.style.mixBlendMode = bm;
+      }
+      if (opacitySlider) {
+        overlayVideo.style.opacity = (parseFloat(opacitySlider.value) / 100.0).toString();
+      }
+    }
+
+    function applyLiveFilters() {
+      const player = document.getElementById('studioVideoPlayer');
+      if (!player) return;
+
+      // 1. Color Grading Filter
+      const grade = (document.getElementById('colorGradeSelect')?.value || 'cinematic').toLowerCase();
+      let filterStr = 'none';
+      if (grade === 'cinematic') {
+        filterStr = 'contrast(1.16) brightness(1.02) saturate(1.22) sepia(0.08) hue-rotate(-5deg)';
+      } else if (grade === 'podcast') {
+        filterStr = 'contrast(1.12) brightness(1.04) saturate(1.28)';
+      } else if (grade === 'vintage') {
+        filterStr = 'contrast(1.04) brightness(0.98) saturate(0.82) sepia(0.24) hue-rotate(-8deg)';
+      } else if (grade === 'noir') {
+        filterStr = 'contrast(1.28) brightness(0.96) grayscale(1.0)';
+      }
+      player.style.filter = filterStr;
+
+      // 2. Anamorphic 2.35:1 Letterbox Bars
+      const isLetterbox = document.getElementById('letterboxToggle')?.checked || false;
+      const lbTop = document.getElementById('liveLetterboxTop');
+      const lbBottom = document.getElementById('liveLetterboxBottom');
+      if (lbTop && lbBottom) {
+        lbTop.style.display = isLetterbox ? 'block' : 'none';
+        lbBottom.style.display = isLetterbox ? 'block' : 'none';
+      }
+
+      // 3. Lens Vignette
+      const isVignette = document.getElementById('vignetteToggle')?.checked || false;
+      const vig = document.getElementById('liveVignetteOverlay');
+      if (vig) vig.style.display = isVignette ? 'block' : 'none';
+
+      // 4. 35mm Film Grain
+      const isGrain = document.getElementById('filmGrainToggle')?.checked || false;
+      const grain = document.getElementById('liveFilmGrainOverlay');
+      if (grain) grain.style.display = isGrain ? 'block' : 'none';
+
+      // 5. Lower-Third Title
+      const isTitle = document.getElementById('showTitleToggle')?.checked || false;
+      const titleBox = document.getElementById('liveLowerThirdOverlay');
+      if (titleBox) {
+        titleBox.style.display = isTitle ? 'block' : 'none';
+        const tInput = document.getElementById('titleTextInput');
+        const sInput = document.getElementById('subtitleTextInput');
+        const tElem = document.getElementById('liveTitleText');
+        const sElem = document.getElementById('liveSubtitleText');
+        if (tInput && tElem) tElem.innerText = tInput.value.trim() || 'OMNICAM AI • MULTI-CAM PRODUCTION';
+        if (sInput && sElem) sElem.innerText = sInput.value.trim() || 'PRO VIRTUAL STUDIO // 4K CLARITY';
       }
     }
     let renderedOutputPath = null;
@@ -2444,14 +2575,27 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       player.onplay = () => {
         document.getElementById('transportPlayIcon').className = 'fa-solid fa-pause';
         document.getElementById('monitorPlayIcon').className = 'fa-solid fa-pause';
-        applyLiveColorGrade();
+        applyLiveFilters();
+        const ov = document.getElementById('liveOverlayPlayer');
+        if (ov && selectedOverlayEffect !== 'none') {
+          ov.play().catch(() => {});
+        }
         startPlaybackLoop();
       };
       player.onpause = () => {
         document.getElementById('transportPlayIcon').className = 'fa-solid fa-play';
         document.getElementById('monitorPlayIcon').className = 'fa-solid fa-play';
+        const ov = document.getElementById('liveOverlayPlayer');
+        if (ov) ov.pause();
         stopPlaybackLoop();
       };
+      player.onseeking = () => {
+        const ov = document.getElementById('liveOverlayPlayer');
+        if (ov && ov.duration) {
+          ov.currentTime = player.currentTime % ov.duration;
+        }
+      };
+      applyLiveFilters();
 
       // Automatically analyze & generate timeline cuts
       analyzeFootage(filePath);
@@ -2929,10 +3073,37 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
               document.getElementById('exportActiveState').style.display = 'none';
               document.getElementById('exportCompleteState').style.display = 'block';
 
-              const dl = document.getElementById('downloadVideoLink');
+              const fileName = data.output_file.split('/').pop();
               const vidUrl = '/video?path=' + encodeURIComponent(data.output_file);
-              dl.href = vidUrl;
-              dl.download = data.output_file.split('/').pop();
+
+              // 1. Programmatically trigger browser download to save directly to phone storage
+              const autoDl = document.createElement('a');
+              autoDl.href = vidUrl;
+              autoDl.download = fileName;
+              document.body.appendChild(autoDl);
+              autoDl.click();
+              document.body.removeChild(autoDl);
+
+              // 2. Set up download button and embedded preview player in modal
+              const dl = document.getElementById('downloadVideoLink');
+              if (dl) {
+                dl.href = vidUrl;
+                dl.download = fileName;
+              }
+              const compPlayer = document.getElementById('exportCompletePlayer');
+              if (compPlayer) {
+                compPlayer.src = vidUrl;
+                compPlayer.load();
+                compPlayer.play().catch(() => {});
+              }
+              const badge = document.getElementById('exportSavedPathBadge');
+              if (badge) {
+                if (data.saved_device_path) {
+                  badge.innerText = 'Saved to Gallery / Storage: ' + data.saved_device_path;
+                } else {
+                  badge.innerText = 'Saved automatically to Device Downloads (' + fileName + ')';
+                }
+              }
             }
           }
         } catch (e) {}
@@ -3107,6 +3278,7 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                     "progress": STATE.progress,
                     "status": STATE.status_message,
                     "output_file": STATE.output_file,
+                    "saved_device_path": STATE.saved_device_path,
                     "error": STATE.error,
                 }
             self.send_response(200)
@@ -3364,10 +3536,35 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
 
                     engine.render(shot_plans, out_path, progress_callback=update_prog)
 
+                    # Automatically mirror / save to device photo library / downloads folder if on mobile/Termux
+                    saved_device_path = None
+                    try:
+                        candidate_dirs = [
+                            "/sdcard/DCIM/Camera",
+                            "/sdcard/Movies",
+                            "/sdcard/Download",
+                            os.path.expanduser("~/storage/shared/DCIM/Camera"),
+                            os.path.expanduser("~/storage/downloads"),
+                        ]
+                        for cdir in candidate_dirs:
+                            if os.path.isdir(cdir):
+                                out_filename = os.path.basename(out_path)
+                                target_dest = os.path.join(cdir, out_filename)
+                                shutil.copy2(out_path, target_dest)
+                                saved_device_path = target_dest
+                                try:
+                                    subprocess.run(["termux-media-scan", target_dest], capture_output=True, timeout=5)
+                                except Exception:
+                                    pass
+                                break
+                    except Exception as err:
+                        print(f"  [!] Note: auto-copy to phone storage: {err}")
+
                     with STATE.lock:
                         STATE.progress = 1.0
-                        STATE.status_message = "Complete"
+                        STATE.status_message = "Complete - Saved to Device"
                         STATE.output_file = out_path
+                        STATE.saved_device_path = saved_device_path
                         STATE.is_rendering = False
                 except Exception as ex:
                     with STATE.lock:
