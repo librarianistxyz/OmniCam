@@ -169,6 +169,44 @@ def main():
         help="Add 2.35:1 Anamorphic cinema bars (letterbox) for high-end cinematic widescreen look.",
     )
     parser.add_argument(
+        "--film-grain",
+        action="store_true",
+        help="Burn organic 35mm silver halide film grain noise.",
+    )
+    parser.add_argument(
+        "--fx-glow",
+        choices=["none", "promist", "dreamy"],
+        default="none",
+        help="Cinematic highlight bloom & diffusion glow (e.g., 1/4 Black Pro-Mist).",
+    )
+    parser.add_argument(
+        "--fx-rgb",
+        choices=["none", "subtle", "heavy"],
+        default="none",
+        help="Chromatic aberration RGB channel split (subtle lens fringe or heavy cyber glitch).",
+    )
+    parser.add_argument(
+        "--fx-motion",
+        choices=["none", "handheld", "quake"],
+        default="none",
+        help="Simulated camera motion (handheld camera operator drift or impact quake).",
+    )
+    parser.add_argument(
+        "--fx-camcorder",
+        action="store_true",
+        help="Burn 90s retro VHS camcorder HUD overlay (REC ●, battery, timecode, safe brackets).",
+    )
+    parser.add_argument(
+        "--fx-tilt-shift",
+        action="store_true",
+        help="Soft optical portrait depth blur on background keeping subject in sharp focus.",
+    )
+    parser.add_argument(
+        "--fx-flicker",
+        action="store_true",
+        help="Vintage cinema film gate luminance breathing and subtle shutter flicker.",
+    )
+    parser.add_argument(
         "--overlay",
         help="Blend mode looping video overlay (e.g., light_leak_01, light_leak_02, film_dust_scratches, vhs_static_overlay, prism_bokeh, film_burn_01, or path to MP4).",
     )
@@ -478,6 +516,13 @@ def main():
         title_text=args.title,
         subtitle_text=args.subtitle,
         letterbox=args.letterbox,
+        film_grain=args.film_grain,
+        fx_glow=args.fx_glow,
+        fx_rgb_split=args.fx_rgb,
+        fx_camera_motion=args.fx_motion,
+        fx_camcorder_osd=args.fx_camcorder,
+        fx_tilt_shift=args.fx_tilt_shift,
+        fx_flicker=args.fx_flicker,
         overlay_effect=args.overlay,
         overlay_blend_mode=args.overlay_blend,
         overlay_opacity=args.overlay_opacity,

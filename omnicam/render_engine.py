@@ -74,6 +74,12 @@ class RenderConfig:
     letterbox: bool = False
     vignette: bool = True
     film_grain: bool = False
+    fx_glow: str = "none"  # "none", "promist", "dreamy"
+    fx_rgb_split: str = "none"  # "none", "subtle", "heavy"
+    fx_camera_motion: str = "none"  # "none", "handheld", "quake"
+    fx_camcorder_osd: bool = False
+    fx_tilt_shift: bool = False
+    fx_flicker: bool = False
     custom_watermark: Optional[str] = None
     overlay_effect: Optional[str] = None
     overlay_blend_mode: str = "screen"
@@ -595,6 +601,70 @@ class RenderEngine:
 
         current_v_label = "[v_stitched]"
 
+        # 1. Camera Motion FX (Handheld camera drift or Quake impact)
+        cam_motion = getattr(self.config, "fx_camera_motion", "none") or "none"
+        if cam_motion == "handheld":
+            filter_parts.append(
+                f"{current_v_label}crop=w='iw-24':h='ih-24':"
+                f"x='12+6*sin(t*1.6)+3*cos(t*3.1)':y='12+5*cos(t*1.9)+2*sin(t*2.7)',"
+                f"scale={tw}:{th}:flags=bicubic[v_motion]"
+            )
+            current_v_label = "[v_motion]"
+        elif cam_motion == "quake":
+            filter_parts.append(
+                f"{current_v_label}crop=w='iw-28':h='ih-28':"
+                f"x='14+10*sin(t*12)*exp(-mod(t,2)*2)':y='14+8*cos(t*14)*exp(-mod(t,2)*2)',"
+                f"scale={tw}:{th}:flags=bicubic[v_motion]"
+            )
+            current_v_label = "[v_motion]"
+
+        # 2. Pro-Mist Diffusion Bloom / Glow FX
+        glow_fx = getattr(self.config, "fx_glow", "none") or "none"
+        if glow_fx in ("promist", "dreamy"):
+            blur_rad = 22 if glow_fx == "dreamy" else 14
+            glow_op = 0.38 if glow_fx == "dreamy" else 0.28
+            filter_parts.append(f"{current_v_label}split[v_glow_base][v_glow_in]")
+            filter_parts.append(f"[v_glow_in]boxblur={blur_rad}:2,eq=contrast=1.12:brightness=0.04[v_bloom]")
+            filter_parts.append(f"[v_glow_base][v_bloom]blend=all_mode=screen:all_opacity={glow_op}[v_glow]")
+            current_v_label = "[v_glow]"
+
+        # 3. Chromatic RGB Aberration Split FX
+        rgb_fx = getattr(self.config, "fx_rgb_split", "none") or "none"
+        if rgb_fx in ("subtle", "heavy"):
+            shift = 3 if rgb_fx == "subtle" else 6
+            filter_parts.append(f"{current_v_label}rgbashift=rh=-{shift}:bv={shift}[v_rgb]")
+            current_v_label = "[v_rgb]"
+
+        # 4. Vintage Film Gate Flicker FX
+        if getattr(self.config, "fx_flicker", False):
+            filter_parts.append(f"{current_v_label}eq=brightness='0.025*sin(t*20)':contrast='1.0+0.018*cos(t*16)'[v_flicker]")
+            current_v_label = "[v_flicker]"
+
+        # 5. Depth Tilt-Shift / Portrait Background Blur FX
+        if getattr(self.config, "fx_tilt_shift", False):
+            filter_parts.append(f"{current_v_label}split[v_ts_base][v_ts_in]")
+            filter_parts.append(f"[v_ts_in]boxblur=12:2[v_ts_blur]")
+            filter_parts.append(f"[v_ts_base][v_ts_blur]blend=all_expr='if(between(X,W*0.25,W*0.75)*between(Y,H*0.2,H*0.8),A,B*0.85+A*0.15)'[v_tilt]")
+            current_v_label = "[v_tilt]"
+
+        # 6. Analog 35mm Film Grain Noise FX
+        if getattr(self.config, "film_grain", False):
+            filter_parts.append(f"{current_v_label}noise=alls=16:allf=t+u[v_grain]")
+            current_v_label = "[v_grain]"
+
+        # 7. Retro 90s Camcorder Viewfinder OSD FX
+        if getattr(self.config, "fx_camcorder_osd", False) and self.font_path:
+            font_esc = self.font_path.replace("\\", "/").replace(":", "\\:")
+            filter_parts.append(
+                f"{current_v_label}"
+                f"drawtext=fontfile='{font_esc}':text='REC':fontcolor=white:fontsize=16:x=50:y=30,"
+                f"drawbox=x=30:y=33:w=12:h=12:color=red@0.9:t=fill:enable='lt(mod(t\\,1.0)\\,0.6)',"
+                f"drawtext=fontfile='{font_esc}':text='[ ■■■ ] SP':fontcolor=white:fontsize=14:x={tw-110}:y=30,"
+                f"drawtext=fontfile='{font_esc}':text='+':fontcolor=white@0.6:fontsize=22:x=(w-text_w)/2:y=(h-text_h)/2,"
+                f"drawtext=fontfile='{font_esc}':text='OCT. 24 1998':fontcolor=white:fontsize=13:x={tw-120}:y={th-40}[v_osd]"
+            )
+            current_v_label = "[v_osd]"
+
         # CapCut Blend Mode Overlay Engine (blend=mode=screen / addition / overlay)
         if overlay_input_idx is not None and overlay_file:
             blend_mode = getattr(self.config, "overlay_blend_mode", "screen") or "screen"
@@ -843,9 +913,20 @@ class RenderEngine:
                 if audio_master:
                     concat_cmd += ["-af", ",".join(audio_master)]
 
+            vf_master = []
+            if getattr(self.config, "fx_rgb_split", "none") in ("subtle", "heavy"):
+                shift = 3 if self.config.fx_rgb_split == "subtle" else 6
+                vf_master.append(f"rgbashift=rh=-{shift}:bv={shift}")
+            if getattr(self.config, "fx_flicker", False):
+                vf_master.append("eq=brightness='0.025*sin(t*20)':contrast='1.0+0.018*cos(t*16)'")
+            if getattr(self.config, "film_grain", False):
+                vf_master.append("noise=alls=16:allf=t+u")
             if self.active_ass_path and os.path.isfile(self.active_ass_path):
                 escaped_ass = self.active_ass_path.replace("\\", "/").replace(":", "\\:")
-                concat_cmd += ["-vf", f"ass=filename='{escaped_ass}'"]
+                vf_master.append(f"ass=filename='{escaped_ass}'")
+
+            if vf_master:
+                concat_cmd += ["-vf", ",".join(vf_master)]
 
             concat_cmd += [
                 "-c:v", self.config.video_codec,

@@ -519,6 +519,50 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       100% { opacity: 0; }
     }
 
+    /* Dynamic FX Animations */
+    @keyframes fxHandheld {
+      0% { transform: scale(var(--cam-scale, 1.0)) translate(var(--cam-tx, 0px), var(--cam-ty, 0px)) rotate(0deg); }
+      25% { transform: scale(var(--cam-scale, 1.0)) translate(calc(var(--cam-tx, 0px) - 3px), calc(var(--cam-ty, 0px) + 2px)) rotate(0.12deg); }
+      50% { transform: scale(var(--cam-scale, 1.0)) translate(calc(var(--cam-tx, 0px) + 2px), calc(var(--cam-ty, 0px) - 2px)) rotate(-0.1deg); }
+      75% { transform: scale(var(--cam-scale, 1.0)) translate(calc(var(--cam-tx, 0px) - 2px), calc(var(--cam-ty, 0px) - 1px)) rotate(0.08deg); }
+      100% { transform: scale(var(--cam-scale, 1.0)) translate(var(--cam-tx, 0px), var(--cam-ty, 0px)) rotate(0deg); }
+    }
+    .fx-handheld-motion {
+      animation: fxHandheld 3.8s ease-in-out infinite alternate !important;
+    }
+
+    @keyframes fxQuake {
+      0%, 100% { transform: scale(var(--cam-scale, 1.0)) translate(var(--cam-tx, 0px), var(--cam-ty, 0px)); }
+      10% { transform: scale(var(--cam-scale, 1.0)) translate(calc(var(--cam-tx, 0px) - 6px), calc(var(--cam-ty, 0px) + 5px)); }
+      20% { transform: scale(var(--cam-scale, 1.0)) translate(calc(var(--cam-tx, 0px) + 6px), calc(var(--cam-ty, 0px) - 4px)); }
+      30% { transform: scale(var(--cam-scale, 1.0)) translate(calc(var(--cam-tx, 0px) - 3px), calc(var(--cam-ty, 0px) + 2px)); }
+      40% { transform: scale(var(--cam-scale, 1.0)) translate(calc(var(--cam-tx, 0px) + 2px), calc(var(--cam-ty, 0px) - 1px)); }
+      50% { transform: scale(var(--cam-scale, 1.0)) translate(var(--cam-tx, 0px), var(--cam-ty, 0px)); }
+    }
+    .fx-quake-motion {
+      animation: fxQuake 2.0s ease-in-out infinite !important;
+    }
+
+    @keyframes fxFlickerAnim {
+      0% { opacity: 0; }
+      20% { opacity: 0.05; }
+      40% { opacity: 0.02; }
+      60% { opacity: 0.07; }
+      80% { opacity: 0.01; }
+      100% { opacity: 0; }
+    }
+    .fx-flicker-layer {
+      animation: fxFlickerAnim 0.14s steps(2, start) infinite;
+    }
+
+    @keyframes recPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    .rec-indicator-dot {
+      animation: recPulse 1s ease-in-out infinite;
+    }
+
     .freeze-badge-overlay {
       position: absolute;
       bottom: 20px;
@@ -1430,6 +1474,27 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <!-- Real-time 35mm Film Grain Overlay -->
         <div id="liveFilmGrainOverlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 10; opacity: 0.16; display: none; background-image: url('data:image/svg+xml;utf8,<svg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'noiseFilter\'><feTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/></filter><rect width=\'100%\' height=\'100%\' filter=\'url(%23noiseFilter)\'/></svg>');"></div>
 
+        <!-- Real-time Portrait Depth Blur (Tilt-Shift) Overlay -->
+        <div id="liveTiltShiftOverlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 10; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); mask-image: radial-gradient(ellipse at 50% 45%, transparent 35%, black 75%); -webkit-mask-image: radial-gradient(ellipse at 50% 45%, transparent 35%, black 75%); display: none;"></div>
+
+        <!-- Real-time 35mm Film Gate Flicker Overlay -->
+        <div id="liveFilmFlickerOverlay" class="fx-flicker-layer" style="position: absolute; inset: 0; pointer-events: none; z-index: 11; background: #ffffff; display: none;"></div>
+
+        <!-- Real-time 90s Retro Camcorder Viewfinder OSD -->
+        <div id="liveCamcorderHud" style="position: absolute; inset: 16px; pointer-events: none; z-index: 16; display: none; font-family: monospace; color: #ffffff; text-shadow: 0 1px 4px rgba(0,0,0,0.95);">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 800;">
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <span class="rec-indicator-dot" style="color: #ef4444; font-size: 1.1rem;">●</span> REC
+            </div>
+            <div>[ ■■■ ] SP</div>
+          </div>
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 48px; height: 48px; border: 1px dashed rgba(255,255,255,0.45); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: rgba(255,255,255,0.7);">+</div>
+          <div style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700;">
+            <div id="liveCamcorderTc">TC 00:00:00:00</div>
+            <div>OCT. 24 1998</div>
+          </div>
+        </div>
+
         <!-- Real-time Anamorphic 2.35:1 Letterbox Bars -->
         <div id="liveLetterboxTop" style="position: absolute; top: 0; left: 0; right: 0; height: 9%; background: #000; pointer-events: none; z-index: 12; display: none; transition: height 0.2s ease;"></div>
         <div id="liveLetterboxBottom" style="position: absolute; bottom: 0; left: 0; right: 0; height: 9%; background: #000; pointer-events: none; z-index: 12; display: none; transition: height 0.2s ease;"></div>
@@ -1843,9 +1908,68 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Panel 10: Effects -->
+        <!-- Panel 10: CapCut / NLE FX Studio -->
         <div class="drawer-panel" id="panelEffects" style="display: none;">
           <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">Pro-Mist Highlight Diffusion Bloom</span>
+              <select class="nle-select" id="fxGlowSelect" onchange="applyLiveFilters()">
+                <option value="none" selected>None (Standard Sharpness)</option>
+                <option value="promist">1/4 Black Pro-Mist (Creamy highlights &amp; smooth skin)</option>
+                <option value="dreamy">Dreamy Ethereal Bloom (Vivid soft glow)</option>
+              </select>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">Chromatic Aberration (RGB Split)</span>
+              <select class="nle-select" id="fxRgbSelect" onchange="applyLiveFilters()">
+                <option value="none" selected>None (Clean Edges)</option>
+                <option value="subtle">Subtle Optical Lens Fringe (3px Red/Cyan offset)</option>
+                <option value="heavy">Cyberpunk Glitch Displacement (6px RGB shift)</option>
+              </select>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">Simulated Camera Motion</span>
+              <select class="nle-select" id="fxMotionSelect" onchange="applyLiveFilters()">
+                <option value="none" selected>Static Locked Off (Tripod)</option>
+                <option value="handheld">Handheld Operator Drift (Organic human breathing)</option>
+                <option value="quake">Action Impact Quake (Cut &amp; beat shudder)</option>
+              </select>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">90s Retro Camcorder Viewfinder OSD</span>
+              <label class="toggle-row">
+                <span>Blinking REC ●, Battery, TC &amp; Framing HUD</span>
+                <input type="checkbox" id="fxCamcorderToggle" onchange="applyLiveFilters()" />
+              </label>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">Portrait Depth Blur (Tilt-Shift)</span>
+              <label class="toggle-row">
+                <span>Soft background blur (keeps subject face in sharp focus)</span>
+                <input type="checkbox" id="fxTiltShiftToggle" onchange="applyLiveFilters()" />
+              </label>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">Vintage Film Gate Flicker</span>
+              <label class="toggle-row">
+                <span>Analog 35mm projector gate luminance breathing</span>
+                <input type="checkbox" id="fxFlickerToggle" onchange="applyLiveFilters()" />
+              </label>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">Analog 35mm Film Grain</span>
+              <label class="toggle-row">
+                <span>Organic silver halide film grain noise</span>
+                <input type="checkbox" id="filmGrainToggle" onchange="applyLiveFilters()" />
+              </label>
+            </div>
+
             <div class="control-item">
               <span class="control-label">Cinema Letterbox</span>
               <label class="toggle-row">
@@ -1853,25 +1977,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
                 <input type="checkbox" id="letterboxToggle" onchange="applyLiveFilters()" />
               </label>
             </div>
-            <div class="control-item">
-              <span class="control-label">Analog 35mm Film Grain</span>
-              <label class="toggle-row">
-                <span>Organic Film Grain Noise</span>
-                <input type="checkbox" id="filmGrainToggle" onchange="applyLiveFilters()" />
-              </label>
-            </div>
+
             <div class="control-item">
               <span class="control-label">Organic Lens Vignette</span>
               <label class="toggle-row">
                 <span>Subtle Corner Shadow Falloff</span>
-                <input type="checkbox" id="vignetteToggle" checked />
+                <input type="checkbox" id="vignetteToggle" checked onchange="applyLiveFilters()" />
               </label>
-            </div>
-            <div class="control-item">
-              <span class="control-label">Studio Optical Clarity</span>
-              <span style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
-                Automatic Lanczos unsharp contrast is burned in so 4K punch-in close-ups retain crisp optical clarity.
-              </span>
             </div>
           </div>
         </div>
@@ -2200,21 +2312,68 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const player = document.getElementById('studioVideoPlayer');
       if (!player) return;
 
+      const filterParts = [];
+
       // 1. Color Grading Filter
       const grade = (document.getElementById('colorGradeSelect')?.value || 'cinematic').toLowerCase();
-      let filterStr = 'none';
       if (grade === 'cinematic') {
-        filterStr = 'contrast(1.16) brightness(1.02) saturate(1.22) sepia(0.08) hue-rotate(-5deg)';
+        filterParts.push('contrast(1.16) brightness(1.02) saturate(1.22) sepia(0.08) hue-rotate(-5deg)');
       } else if (grade === 'podcast') {
-        filterStr = 'contrast(1.12) brightness(1.04) saturate(1.28)';
+        filterParts.push('contrast(1.12) brightness(1.04) saturate(1.28)');
       } else if (grade === 'vintage') {
-        filterStr = 'contrast(1.04) brightness(0.98) saturate(0.82) sepia(0.24) hue-rotate(-8deg)';
+        filterParts.push('contrast(1.04) brightness(0.98) saturate(0.82) sepia(0.24) hue-rotate(-8deg)');
       } else if (grade === 'noir') {
-        filterStr = 'contrast(1.28) brightness(0.96) grayscale(1.0)';
+        filterParts.push('contrast(1.28) brightness(0.96) grayscale(1.0)');
       }
-      player.style.filter = filterStr;
 
-      // 2. Anamorphic 2.35:1 Letterbox Bars
+      // 2. Pro-Mist Highlight Diffusion Bloom FX
+      const glowFx = document.getElementById('fxGlowSelect')?.value || 'none';
+      if (glowFx === 'promist') {
+        filterParts.push('drop-shadow(0 0 10px rgba(255, 245, 220, 0.45)) brightness(1.04)');
+      } else if (glowFx === 'dreamy') {
+        filterParts.push('drop-shadow(0 0 18px rgba(255, 235, 210, 0.65)) brightness(1.08)');
+      }
+
+      // 3. Chromatic Aberration RGB Split FX
+      const rgbFx = document.getElementById('fxRgbSelect')?.value || 'none';
+      if (rgbFx === 'subtle') {
+        filterParts.push('drop-shadow(-3px 0 0 rgba(255, 30, 80, 0.35)) drop-shadow(3px 0 0 rgba(0, 240, 255, 0.35))');
+      } else if (rgbFx === 'heavy') {
+        filterParts.push('drop-shadow(-6px 0 0 rgba(255, 30, 80, 0.6)) drop-shadow(6px 0 0 rgba(0, 240, 255, 0.6))');
+      }
+
+      player.style.filter = filterParts.length > 0 ? filterParts.join(' ') : 'none';
+
+      // 4. Camera Motion FX (Handheld camera drift or Quake)
+      const motionFx = document.getElementById('fxMotionSelect')?.value || 'none';
+      player.classList.remove('fx-handheld-motion', 'fx-quake-motion');
+      if (motionFx === 'handheld') {
+        player.classList.add('fx-handheld-motion');
+      } else if (motionFx === 'quake') {
+        player.classList.add('fx-quake-motion');
+      }
+
+      // 5. 90s Camcorder Viewfinder OSD
+      const isCamcorder = document.getElementById('fxCamcorderToggle')?.checked || false;
+      const camHud = document.getElementById('liveCamcorderHud');
+      if (camHud) camHud.style.display = isCamcorder ? 'block' : 'none';
+
+      // 6. Portrait Depth Blur (Tilt-Shift)
+      const isTiltShift = document.getElementById('fxTiltShiftToggle')?.checked || false;
+      const tsElem = document.getElementById('liveTiltShiftOverlay');
+      if (tsElem) tsElem.style.display = isTiltShift ? 'block' : 'none';
+
+      // 7. Vintage Film Gate Flicker
+      const isFlicker = document.getElementById('fxFlickerToggle')?.checked || false;
+      const flkElem = document.getElementById('liveFilmFlickerOverlay');
+      if (flkElem) flkElem.style.display = isFlicker ? 'block' : 'none';
+
+      // 8. 35mm Film Grain
+      const isGrain = document.getElementById('filmGrainToggle')?.checked || false;
+      const grain = document.getElementById('liveFilmGrainOverlay');
+      if (grain) grain.style.display = isGrain ? 'block' : 'none';
+
+      // 9. Anamorphic 2.35:1 Letterbox Bars
       const isLetterbox = document.getElementById('letterboxToggle')?.checked || false;
       const lbTop = document.getElementById('liveLetterboxTop');
       const lbBottom = document.getElementById('liveLetterboxBottom');
@@ -2223,17 +2382,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         lbBottom.style.display = isLetterbox ? 'block' : 'none';
       }
 
-      // 3. Lens Vignette
+      // 10. Lens Vignette
       const isVignette = document.getElementById('vignetteToggle')?.checked || false;
       const vig = document.getElementById('liveVignetteOverlay');
       if (vig) vig.style.display = isVignette ? 'block' : 'none';
 
-      // 4. 35mm Film Grain
-      const isGrain = document.getElementById('filmGrainToggle')?.checked || false;
-      const grain = document.getElementById('liveFilmGrainOverlay');
-      if (grain) grain.style.display = isGrain ? 'block' : 'none';
-
-      // 5. Lower-Third Title
+      // 11. Lower-Third Title
       const isTitle = document.getElementById('showTitleToggle')?.checked || false;
       const titleBox = document.getElementById('liveLowerThirdOverlay');
       if (titleBox) {
@@ -2434,23 +2588,31 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const player = document.getElementById('studioVideoPlayer');
       if (!player) return;
       if (!liveDirectorEnabled) {
+        player.style.setProperty('--cam-scale', '1.0');
+        player.style.setProperty('--cam-tx', '0px');
+        player.style.setProperty('--cam-ty', '0px');
         player.style.transform = 'scale(1.0) translate(0, 0)';
         return;
       }
       const angle = (shot.angle || 'WIDE').toUpperCase();
-      let transform = 'scale(1.0) translate(0, 0)';
+      let scale = 1.0;
+      let tx = '0%';
+      let ty = '0%';
       if (angle === 'CLOSEUP' || angle === 'CLOSE_UP') {
-        transform = 'scale(1.36) translate(0%, -4%)';
+        scale = 1.36; tx = '0%'; ty = '-4%';
       } else if (angle === 'THIRD_LEFT' || angle === 'LEFT_THIRD') {
-        transform = 'scale(1.28) translate(-6%, -3%)';
+        scale = 1.28; tx = '-6%'; ty = '-3%';
       } else if (angle === 'THIRD_RIGHT' || angle === 'RIGHT_THIRD') {
-        transform = 'scale(1.28) translate(6%, -3%)';
+        scale = 1.28; tx = '6%'; ty = '-3%';
       } else if (angle === 'SLOW_PUSH') {
-        transform = 'scale(1.22) translate(0%, -2%)';
+        scale = 1.22; tx = '0%'; ty = '-2%';
       } else if (angle === 'BROLL') {
-        transform = 'scale(1.06) translate(0%, 0%)';
+        scale = 1.06; tx = '0%'; ty = '0%';
       }
-      player.style.transform = transform;
+      player.style.setProperty('--cam-scale', scale);
+      player.style.setProperty('--cam-tx', tx);
+      player.style.setProperty('--cam-ty', ty);
+      player.style.transform = `scale(${scale}) translate(${tx}, ${ty})`;
     }
 
     function applyLiveColorGrade() {
@@ -2624,6 +2786,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const dur = player.duration || currentTotalDur || 1;
 
       document.getElementById('hudTimecode').innerText = `${formatTime(cur)} / ${formatTime(dur)}`;
+
+      const camTc = document.getElementById('liveCamcorderTc');
+      if (camTc) {
+        const m = Math.floor(cur / 60);
+        const s = Math.floor(cur % 60);
+        const f = Math.floor((cur % 1) * 30);
+        camTc.innerText = `TC 00:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}:${f.toString().padStart(2, '0')}`;
+      }
 
       // Update Playhead position
       const pct = Math.min((cur / dur) * 100, 100);
@@ -3025,6 +3195,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         freeze_duration: document.getElementById('freezeDurSlider') ? parseFloat(document.getElementById('freezeDurSlider').value) : 0.6,
         letterbox: document.getElementById('letterboxToggle') ? document.getElementById('letterboxToggle').checked : false,
         film_grain: document.getElementById('filmGrainToggle') ? document.getElementById('filmGrainToggle').checked : false,
+        fx_glow: document.getElementById('fxGlowSelect') ? document.getElementById('fxGlowSelect').value : 'none',
+        fx_rgb_split: document.getElementById('fxRgbSelect') ? document.getElementById('fxRgbSelect').value : 'none',
+        fx_camera_motion: document.getElementById('fxMotionSelect') ? document.getElementById('fxMotionSelect').value : 'none',
+        fx_camcorder_osd: document.getElementById('fxCamcorderToggle') ? document.getElementById('fxCamcorderToggle').checked : false,
+        fx_tilt_shift: document.getElementById('fxTiltShiftToggle') ? document.getElementById('fxTiltShiftToggle').checked : false,
+        fx_flicker: document.getElementById('fxFlickerToggle') ? document.getElementById('fxFlickerToggle').checked : false,
         overlay_effect: selectedOverlayEffect !== 'none' ? selectedOverlayEffect : null,
         overlay_blend_mode: document.getElementById('overlayBlendModeSelect') ? document.getElementById('overlayBlendModeSelect').value : 'screen',
         overlay_opacity: document.getElementById('overlayOpacitySlider') ? parseFloat(document.getElementById('overlayOpacitySlider').value) / 100.0 : 0.85,
@@ -3510,6 +3686,12 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                         stabilize_smoothing=int(params.get("stabilize_smoothing", 25)),
                         letterbox=bool(params.get("letterbox", False)),
                         film_grain=bool(params.get("film_grain", False)),
+                        fx_glow=params.get("fx_glow", "none"),
+                        fx_rgb_split=params.get("fx_rgb_split", "none"),
+                        fx_camera_motion=params.get("fx_camera_motion", "none"),
+                        fx_camcorder_osd=bool(params.get("fx_camcorder_osd", False)),
+                        fx_tilt_shift=bool(params.get("fx_tilt_shift", False)),
+                        fx_flicker=bool(params.get("fx_flicker", False)),
                         vignette=bool(params.get("vignette", True)),
                         overlay_effect=params.get("overlay_effect") or params.get("overlay"),
                         overlay_blend_mode=params.get("overlay_blend_mode") or params.get("overlay_blend", "screen"),
