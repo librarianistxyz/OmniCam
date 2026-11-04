@@ -229,6 +229,96 @@ OVERLAY_PRESETS: List[OverlayPreset] = [
             "vignette='PI/4 + 0.05*sin(t*18)',scale=1280:720:flags=lanczos"
         ),
     ),
+    OverlayPreset(
+        id="cyber_hud_matrix",
+        title="Cyber Telemetry HUD",
+        category="Sci-Fi & High-Tech",
+        filename="cyber_hud_matrix.mp4",
+        description="Futuristic holographic targeting rings, telemetry grid, coordinate crosshairs & radar scan.",
+        recommended_blend="screen",
+        default_opacity=0.85,
+        duration=3.0,
+        lavfi_filter=(
+            "color=c=black:s=640x360:d=3:r=24,"
+            "drawgrid=w=64:h=64:color=0x00E5FF@0.14:t=1,"
+            "drawbox=x=30:y=30:w=80:h=3:color=0x00F0FF@0.8:t=fill,"
+            "drawbox=x=30:y=30:w=3:h=60:color=0x00F0FF@0.8:t=fill,"
+            "drawbox=x=530:y=30:w=80:h=3:color=0x00F0FF@0.8:t=fill,"
+            "drawbox=x=607:y=30:w=3:h=60:color=0x00F0FF@0.8:t=fill,"
+            "drawbox=x=30:y=327:w=80:h=3:color=0x00F0FF@0.8:t=fill,"
+            "drawbox=x=30:y=270:w=3:h=60:color=0x00F0FF@0.8:t=fill,"
+            "drawbox=x=530:y=327:w=80:h=3:color=0x00F0FF@0.8:t=fill,"
+            "drawbox=x=607:y=270:w=3:h=60:color=0x00F0FF@0.8:t=fill,"
+            "drawbox=x=0:y='mod(t*180,360)':w=640:h=2:color=0x00F0FF@0.4:t=fill,"
+            "scale=1280:720:flags=neighbor"
+        ),
+    ),
+    OverlayPreset(
+        id="holo_matrix_grid",
+        title="Hologram Matrix Grid",
+        category="Sci-Fi & High-Tech",
+        filename="holo_matrix_grid.mp4",
+        description="3D cyber wireframe floor & wall matrix grid with glowing data sweep pulses (Tron / Cyberpunk).",
+        recommended_blend="screen",
+        default_opacity=0.80,
+        duration=3.0,
+        lavfi_filter=(
+            "color=c=black:s=640x360:d=3:r=24,"
+            "drawgrid=w=32:h=24:color=0x00FF88@0.18:t=1,"
+            "drawbox=x='mod(t*240,640)':y=0:w=3:h=360:color=0x00FFCC@0.5:t=fill,"
+            "drawbox=x=0:y='mod(t*160,360)':w=640:h=3:color=0x00FF88@0.3:t=fill,"
+            "scale=1280:720:flags=bicubic"
+        ),
+    ),
+    OverlayPreset(
+        id="neural_circuit_core",
+        title="Neural Circuit Core",
+        category="Sci-Fi & High-Tech",
+        filename="neural_circuit_core.mp4",
+        description="Glowing electronic circuit board traces, neon microchip interconnects & data packets.",
+        recommended_blend="screen",
+        default_opacity=0.85,
+        duration=3.0,
+        lavfi_filter=(
+            "color=c=black:s=640x360:d=3:r=24,"
+            "drawgrid=w=128:h=72:color=0x8A2BE2@0.22:t=1,"
+            "drawbox=x=64:y='mod(t*200,360)':w=12:h=12:color=0x00F0FF@0.75:t=fill,"
+            "drawbox=x=450:y='360-mod(t*220,360)':w=10:h=10:color=0xFF00AA@0.75:t=fill,"
+            "scale=1280:720:flags=neighbor"
+        ),
+    ),
+    OverlayPreset(
+        id="tactical_sonar_radar",
+        title="Tactical Sonar Radar",
+        category="Sci-Fi & High-Tech",
+        filename="tactical_sonar_radar.mp4",
+        description="Sci-fi circular radar sweep beam with telemetry sonar concentric rings.",
+        recommended_blend="screen",
+        default_opacity=0.80,
+        duration=3.0,
+        lavfi_filter=(
+            "color=c=black:s=360x360:d=3:r=24,"
+            "geq=r='180*max(0,cos(atan2(Y-180,X-180)-T*3.5))':"
+            "g='240*max(0,cos(atan2(Y-180,X-180)-T*3.5))':"
+            "b='255*max(0,cos(atan2(Y-180,X-180)-T*3.5))':a='255',"
+            "scale=1280:720:flags=bicubic,boxblur=10:2"
+        ),
+    ),
+    OverlayPreset(
+        id="quantum_particles_stream",
+        title="Quantum Particles Stream",
+        category="Sci-Fi & High-Tech",
+        filename="quantum_particles_stream.mp4",
+        description="Floating upward luminescent cyber dust nodes and data packet bokeh stream.",
+        recommended_blend="screen",
+        default_opacity=0.85,
+        duration=3.0,
+        lavfi_filter=(
+            "color=c=black:s=640x360:d=3:r=24,noise=alls=16:allf=t+u,"
+            "curves=all='0/0 0.92/0 0.98/0.88 1/1',"
+            "colorbalance=rs=-0.2:gs=0.3:bs=0.5,boxblur=2:1,scale=1280:720:flags=bicubic"
+        ),
+    ),
 ]
 
 
@@ -399,10 +489,13 @@ class OverlayEngine:
         target_width: int = 1920,
         target_height: int = 1080,
         output_label: str = "v_blended",
+        background_only: bool = False,
     ) -> Tuple[List[str], str]:
         """
         Builds FFmpeg filter complex fragment to scale/crop the looping overlay video
         and blend it over the main video with the specified blend mode and opacity.
+        If background_only=True, applies a feathered subject isolation mask so the overlay
+        is placed behind the speaker, leaving the face and subject completely crisp and natural.
         """
         mode = blend_mode.lower()
         if mode not in cls.SUPPORTED_BLEND_MODES:
@@ -410,12 +503,25 @@ class OverlayEngine:
 
         opacity = max(0.0, min(1.0, float(opacity)))
 
-        filter_lines = [
-            # Scale and crop looping overlay to perfectly cover target aspect ratio
-            f"[{overlay_input_idx}:v]scale={target_width}:{target_height}:force_original_aspect_ratio=increase,"
-            f"crop={target_width}:{target_height},setsar=1[v_ov_scaled]",
-            # Blend onto base video
-            f"{base_video_label}[v_ov_scaled]blend=all_mode='{mode}':all_opacity={opacity:.2f}[{output_label}]",
-        ]
+        if not background_only:
+            filter_lines = [
+                # Scale and crop looping overlay to perfectly cover target aspect ratio
+                f"[{overlay_input_idx}:v]scale={target_width}:{target_height}:force_original_aspect_ratio=increase,"
+                f"crop={target_width}:{target_height},setsar=1[v_ov_scaled]",
+                # Blend onto base video
+                f"{base_video_label}[v_ov_scaled]blend=all_mode='{mode}':all_opacity={opacity:.2f}[{output_label}]",
+            ]
+        else:
+            filter_lines = [
+                # Scale and crop looping overlay to perfectly cover target aspect ratio
+                f"[{overlay_input_idx}:v]scale={target_width}:{target_height}:force_original_aspect_ratio=increase,"
+                f"crop={target_width}:{target_height},setsar=1[v_ov_scaled]",
+                # Create blended overlay video
+                f"{base_video_label}[v_ov_scaled]blend=all_mode='{mode}':all_opacity={opacity:.2f}[v_ov_all]",
+                # Generate feathered subject-isolation mask (speaker center protected at 0, background at 255)
+                f"{base_video_label}format=gray,geq=lum='255*clip(pow(hypot((X-W/2)/(W*0.32),(Y-H*0.48)/(H*0.44)),2.5),0,1)',boxblur=18:2[v_bg_mask]",
+                # Merge: speaker untouched from base, background enhanced with high-tech overlay
+                f"{base_video_label}[v_ov_all][v_bg_mask]maskedmerge[{output_label}]",
+            ]
         return filter_lines, f"[{output_label}]"
 

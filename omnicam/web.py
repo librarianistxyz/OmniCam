@@ -1887,7 +1887,40 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
                   <div class="ov-thumb-name">Super 8mm</div>
                   <div class="ov-thumb-tag">Projector Bob</div>
                 </div>
+                <div class="overlay-thumb-card" id="ovCard_cyber_hud_matrix" onclick="selectOverlay('cyber_hud_matrix', 'Cyber Telemetry HUD')">
+                  <div class="ov-thumb-icon" style="color: #00F0FF;"><i class="fa-solid fa-crosshairs"></i></div>
+                  <div class="ov-thumb-name">Cyber HUD</div>
+                  <div class="ov-thumb-tag">Sci-Fi Telemetry</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_holo_matrix_grid" onclick="selectOverlay('holo_matrix_grid', 'Hologram Matrix Grid')">
+                  <div class="ov-thumb-icon" style="color: #10B981;"><i class="fa-solid fa-border-all"></i></div>
+                  <div class="ov-thumb-name">Holo Grid</div>
+                  <div class="ov-thumb-tag">3D Tron Floor</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_neural_circuit_core" onclick="selectOverlay('neural_circuit_core', 'Neural Circuit Core')">
+                  <div class="ov-thumb-icon" style="color: #A855F7;"><i class="fa-solid fa-microchip"></i></div>
+                  <div class="ov-thumb-name">Neural Core</div>
+                  <div class="ov-thumb-tag">Neon Circuits</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_tactical_sonar_radar" onclick="selectOverlay('tactical_sonar_radar', 'Tactical Sonar Radar')">
+                  <div class="ov-thumb-icon" style="color: #06B6D4;"><i class="fa-solid fa-radar"></i></div>
+                  <div class="ov-thumb-name">Sonar Radar</div>
+                  <div class="ov-thumb-tag">Tactical Sweep</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_quantum_particles_stream" onclick="selectOverlay('quantum_particles_stream', 'Quantum Particles Stream')">
+                  <div class="ov-thumb-icon" style="color: #38BDF8;"><i class="fa-solid fa-atom"></i></div>
+                  <div class="ov-thumb-name">Quantum Stream</div>
+                  <div class="ov-thumb-tag">Sci-Fi Bokeh</div>
+                </div>
               </div>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">Overlay Placement &amp; Subject Isolation</span>
+              <select class="nle-select" id="overlayTargetSelect" onchange="applyLiveOverlaySettings()">
+                <option value="fullscreen" selected>🌐 Fullscreen Blend (Entire Canvas)</option>
+                <option value="background_only">👤 Behind Speaker (Background-Only Mask)</option>
+              </select>
             </div>
 
             <div class="control-item">
@@ -2290,6 +2323,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           if (p && p.paused) overlayVideo.pause();
         }, 120);
       }
+      applyLiveOverlaySettings();
     }
 
     function applyLiveOverlaySettings() {
@@ -2298,6 +2332,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
       const blendSelect = document.getElementById('overlayBlendModeSelect');
       const opacitySlider = document.getElementById('overlayOpacitySlider');
+      const targetSelect = document.getElementById('overlayTargetSelect');
+
       if (blendSelect) {
         let bm = blendSelect.value;
         if (bm === 'addition') bm = 'screen';
@@ -2305,6 +2341,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       }
       if (opacitySlider) {
         overlayVideo.style.opacity = (parseFloat(opacitySlider.value) / 100.0).toString();
+      }
+      if (targetSelect && targetSelect.value === 'background_only') {
+        const maskGrad = 'radial-gradient(ellipse 65% 85% at 50% 48%, transparent 40%, black 75%)';
+        overlayVideo.style.webkitMaskImage = maskGrad;
+        overlayVideo.style.maskImage = maskGrad;
+      } else {
+        overlayVideo.style.webkitMaskImage = 'none';
+        overlayVideo.style.maskImage = 'none';
       }
     }
 
@@ -3204,6 +3248,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         overlay_effect: selectedOverlayEffect !== 'none' ? selectedOverlayEffect : null,
         overlay_blend_mode: document.getElementById('overlayBlendModeSelect') ? document.getElementById('overlayBlendModeSelect').value : 'screen',
         overlay_opacity: document.getElementById('overlayOpacitySlider') ? parseFloat(document.getElementById('overlayOpacitySlider').value) / 100.0 : 0.85,
+        overlay_target: document.getElementById('overlayTargetSelect') ? document.getElementById('overlayTargetSelect').value : 'fullscreen',
         vignette: document.getElementById('vignetteToggle') ? document.getElementById('vignetteToggle').checked : true,
         show_hud: document.getElementById('hudToggle') ? document.getElementById('hudToggle').checked : true,
         show_title: document.getElementById('showTitleToggle') ? document.getElementById('showTitleToggle').checked : true,
@@ -3696,6 +3741,7 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                         overlay_effect=params.get("overlay_effect") or params.get("overlay"),
                         overlay_blend_mode=params.get("overlay_blend_mode") or params.get("overlay_blend", "screen"),
                         overlay_opacity=float(params.get("overlay_opacity", 0.85)),
+                        overlay_target=params.get("overlay_target", "fullscreen"),
                         show_hud=bool(params.get("show_hud", True)),
                         show_title=bool(params.get("show_title", True)),
                         title_text=params.get("title_text") or params.get("title", "OMNICAM AI • MULTI-CAM PRODUCTION"),

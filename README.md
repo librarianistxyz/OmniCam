@@ -1,4 +1,4 @@
-# 🎬 OmniCam: AI Virtual Multi-Camera Director & Studio Workstation
+# 🎬 OmniCam: Autonomous Multi-Camera Director & Studio Workstation
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Android%20(Termux)%20%7C%20macOS%20%7C%20Windows-green.svg)](https://github.com/librarianistxyz/OmniCam)
@@ -26,7 +26,7 @@ Professional studios (TED, Vox, Wired, Joe Rogan) hide cuts by **switching camer
 +---------------------------------------------------------------------------------+
                                        │
                                        ▼
-                     [ 🧠 OmniCam AI Director Engine ]
+                     [ 🎬 OmniCam Director Engine ]
                      ├── Acoustic Silence & Vocal Hesitation Detection
                      ├── Face & Horizon Framing Engine
                      ├── Zero-Jump-Cut Multi-Cam State Machine
@@ -201,8 +201,14 @@ git pull origin master
 - **White Flash & Crash Zoom**: 0.08s flash and punch-in transitions between angle cuts.
 - **Dramatic 0.6s Freeze Frames**: Pauses on emphatic pauses with synthesized whoosh sound effects.
 
-### 3. ✨ Blend Mode Overlays (`--overlay`)
-- Built-in looping video textures:
+### 3. ✨ Blend Mode Overlays (`--overlay` & `--overlay-target`)
+- **Sci-Fi & High-Tech HUD Suite**:
+  - `cyber_hud_matrix` (Futuristic targeting rings, telemetry grid & radar scan)
+  - `holo_matrix_grid` (3D cyber wireframe floor & wall matrix grid)
+  - `neural_circuit_core` (Glowing electronic circuit traces & neon data packets)
+  - `tactical_sonar_radar` (Circular sci-fi sonar sweep beam & range rings)
+  - `quantum_particles_stream` (Floating luminescent cyber dust bokeh stream)
+- **Cinematic Film Suite**:
   - `light_leak_01` (Golden flare edge leaks)
   - `light_leak_02` (Sunset crimson burst)
   - `film_dust_scratches` (16mm/35mm organic dust specks)
@@ -210,6 +216,8 @@ git pull origin master
   - `prism_bokeh` (Floating optical prism bokeh)
   - `film_burn_01` (Fiery amber film burn)
   - `vintage_super8` (Super 8mm projector gate)
+- **Subject-Isolation Background Masking** (`--overlay-target background_only`):
+  - In Web Studio and FFmpeg rendering, puts the high-tech matrix and telemetry overlays **behind the speaker**, keeping the face, hair, and torso completely clean and untouched.
 
 ### 4. 🎛️ Visual Effects (FX) Suite
 - **Pro-Mist Diffusion Bloom** (`--fx-glow promist`): Creamy highlights & smooth skin tones.

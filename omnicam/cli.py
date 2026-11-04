@@ -223,6 +223,12 @@ def main():
         help="Opacity of blend mode overlay from 0.0 to 1.0 (default: 0.85).",
     )
     parser.add_argument(
+        "--overlay-target",
+        choices=["fullscreen", "background_only"],
+        default="fullscreen",
+        help="Target placement for overlay: 'fullscreen' (blends over whole screen) or 'background_only' (isolates subject and places overlay behind speaker).",
+    )
+    parser.add_argument(
         "--bgm",
         help="Path to background music audio file (e.g., /sdcard/Movies/lo-fi.mp3), or 'ambient'/'lofi' for built-in royalty-free ambient bed.",
     )
@@ -526,6 +532,7 @@ def main():
         overlay_effect=args.overlay,
         overlay_blend_mode=args.overlay_blend,
         overlay_opacity=args.overlay_opacity,
+        overlay_target=args.overlay_target,
         force_chunk_mode=args.chunk_mode,
     )
 

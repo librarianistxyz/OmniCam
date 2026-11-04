@@ -85,6 +85,7 @@ class RenderConfig:
     overlay_blend_mode: str = "screen"
     overlay_opacity: float = 0.85
     overlay_path: Optional[str] = None
+    overlay_target: str = "fullscreen"  # "fullscreen" or "background_only"
     video_codec: str = "libx264"
     audio_codec: str = "aac"
     crf: int = 21
@@ -669,6 +670,7 @@ class RenderEngine:
         if overlay_input_idx is not None and overlay_file:
             blend_mode = getattr(self.config, "overlay_blend_mode", "screen") or "screen"
             opacity = getattr(self.config, "overlay_opacity", 0.85)
+            is_bg_only = (getattr(self.config, "overlay_target", "fullscreen") == "background_only")
             ov_filters, blended_label = OverlayEngine.build_blend_filtergraph(
                 base_video_label=current_v_label,
                 overlay_input_idx=overlay_input_idx,
@@ -677,6 +679,7 @@ class RenderEngine:
                 target_width=tw,
                 target_height=th,
                 output_label="v_blended",
+                background_only=is_bg_only,
             )
             filter_parts.extend(ov_filters)
             current_v_label = blended_label
