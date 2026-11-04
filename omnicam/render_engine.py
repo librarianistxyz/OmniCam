@@ -88,6 +88,12 @@ class RenderConfig:
     overlay_target: str = "fullscreen"  # "fullscreen" or "background_only"
     target_person: str = "primary"  # "primary", "left", "right", "person_1", "person_2"
     selective_color: str = "none"  # "none", "person_color_bg_mono", "person_color_bg_sherlock", "person_color_bg_oppenheimer", "person_grade_only", "bg_grade_only"
+    music_mode: bool = False
+    song_audio_path: Optional[str] = None
+    bpm: Optional[float] = None
+    enable_bass_pump: bool = False
+    enable_speed_ramps: bool = False
+    beat_reactive_fx: bool = False
     video_codec: str = "libx264"
     audio_codec: str = "aac"
     crf: int = 21
@@ -697,7 +703,7 @@ class RenderEngine:
             person_x = 0.65
 
         if sel_color != "none":
-            filter_parts.append(f"{current_v_label}split=2[v_sc_base][v_sc_grade_in]")
+            filter_parts.append(f"{current_v_label}split=3[v_sc_base][v_sc_grade_in][v_sc_mask_src]")
 
             # Generate the background or selective graded branch
             if sel_color == "person_color_bg_mono":
@@ -720,7 +726,7 @@ class RenderEngine:
 
             # Generate soft feathered spatial person mask (0 = person center, 255 = background)
             filter_parts.append(
-                f"[v_sc_base]format=gray,geq=lum='255*clip(pow(hypot((X-W*{person_x:.2f})/(W*0.28),(Y-H*0.48)/(H*0.42)),2.2),0,1)',boxblur=18:2[v_sc_mask]"
+                f"[v_sc_mask_src]format=gray,geq=lum='255*clip(pow(hypot((X-W*{person_x:.2f})/(W*0.28),(Y-H*0.48)/(H*0.42)),2.2),0,1)',boxblur=18:2[v_sc_mask]"
             )
 
             if sel_color in ("person_color_bg_mono", "person_color_bg_sherlock", "person_color_bg_oppenheimer", "bg_grade_only"):

@@ -1132,14 +1132,16 @@ class OverlayEngine:
             px = max(0.15, min(0.85, float(person_center_x)))
             py = max(0.20, min(0.80, float(person_center_y)))
             filter_lines = [
+                # Explicitly split base_video_label so all branches share exact identical frame dimensions & pad
+                f"{base_video_label}split=3[v_ov_base1][v_ov_base2][v_ov_base3]",
                 # Scale and crop looping overlay to perfectly cover target aspect ratio
                 f"[{overlay_input_idx}:v]scale={target_width}:{target_height}:force_original_aspect_ratio=increase,"
                 f"crop={target_width}:{target_height},setsar=1[v_ov_scaled]",
                 # Create blended overlay video
-                f"{base_video_label}[v_ov_scaled]blend=all_mode='{mode}':all_opacity={opacity:.2f}[v_ov_all]",
+                f"[v_ov_base1][v_ov_scaled]blend=all_mode='{mode}':all_opacity={opacity:.2f}[v_ov_all]",
                 # Generate feathered subject-isolation mask centered on tracked person (subject at 0, background at 255)
-                f"{base_video_label}format=gray,geq=lum='255*clip(pow(hypot((X-W*{px:.2f})/(W*0.32),(Y-H*{py:.2f})/(H*0.44)),2.5),0,1)',boxblur=18:2[v_bg_mask]",
+                f"[v_ov_base2]format=gray,geq=lum='255*clip(pow(hypot((X-W*{px:.2f})/(W*0.32),(Y-H*{py:.2f})/(H*0.44)),2.5),0,1)',boxblur=18:2[v_bg_mask]",
                 # Merge: speaker untouched from base, background enhanced with high-tech overlay
-                f"{base_video_label}[v_ov_all][v_bg_mask]maskedmerge[{output_label}]",
+                f"[v_ov_base3][v_ov_all][v_bg_mask]maskedmerge[{output_label}]",
             ]
         return filter_lines, f"[{output_label}]"
