@@ -169,6 +169,22 @@ def main():
         help="Add 2.35:1 Anamorphic cinema bars (letterbox) for high-end cinematic widescreen look.",
     )
     parser.add_argument(
+        "--overlay",
+        help="Blend mode looping video overlay (e.g., light_leak_01, light_leak_02, film_dust_scratches, vhs_static_overlay, prism_bokeh, film_burn_01, or path to MP4).",
+    )
+    parser.add_argument(
+        "--overlay-blend",
+        choices=["screen", "addition", "overlay", "lighten", "softlight", "dodge", "multiply"],
+        default="screen",
+        help="Blend mode for looping overlay texture (default: screen).",
+    )
+    parser.add_argument(
+        "--overlay-opacity",
+        type=float,
+        default=0.85,
+        help="Opacity of blend mode overlay from 0.0 to 1.0 (default: 0.85).",
+    )
+    parser.add_argument(
         "--bgm",
         help="Path to background music audio file (e.g., /sdcard/Movies/lo-fi.mp3), or 'ambient'/'lofi' for built-in royalty-free ambient bed.",
     )
@@ -462,6 +478,9 @@ def main():
         title_text=args.title,
         subtitle_text=args.subtitle,
         letterbox=args.letterbox,
+        overlay_effect=args.overlay,
+        overlay_blend_mode=args.overlay_blend,
+        overlay_opacity=args.overlay_opacity,
         force_chunk_mode=args.chunk_mode,
     )
 

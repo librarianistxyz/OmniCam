@@ -37,6 +37,7 @@ from .captions import (
 )
 from .stabilizer import VideoStabilizer, is_vidstab_supported
 from .broll import BRollManager, BRollAsset, SUPPORTED_VIDEO_EXTS
+from .overlay_engine import OverlayEngine
 
 
 @dataclass
@@ -74,6 +75,10 @@ class RenderConfig:
     vignette: bool = True
     film_grain: bool = False
     custom_watermark: Optional[str] = None
+    overlay_effect: Optional[str] = None
+    overlay_blend_mode: str = "screen"
+    overlay_opacity: float = 0.85
+    overlay_path: Optional[str] = None
     video_codec: str = "libx264"
     audio_codec: str = "aac"
     crf: int = 21
@@ -417,6 +422,17 @@ class RenderEngine:
             sfx_input_idx = len(input_args) // 2
             input_args.extend(["-i", temp_whoosh_file])
 
+        # CapCut Blend Mode Overlay input index (Light leaks, film burns, VHS dust, etc.)
+        overlay_file = None
+        overlay_input_idx = None
+        if self.config.overlay_effect or self.config.overlay_path:
+            ov_engine = OverlayEngine()
+            target_ov = self.config.overlay_path or self.config.overlay_effect
+            overlay_file = ov_engine.get_overlay_path(target_ov)
+            if overlay_file and os.path.isfile(overlay_file):
+                overlay_input_idx = len(input_args) // 2
+                input_args.extend(["-stream_loop", "-1", "-i", overlay_file])
+
         # BGM input index
         has_bgm = self.config.bgm_path and os.path.isfile(self.config.bgm_path)
         bgm_input_idx = None
@@ -577,13 +593,31 @@ class RenderEngine:
         else:
             final_a_label = final_audio_in
 
-        # Apply burned-in Hormozi / MrBeast subtitles on final stitched video
+        current_v_label = "[v_stitched]"
+
+        # CapCut Blend Mode Overlay Engine (blend=mode=screen / addition / overlay)
+        if overlay_input_idx is not None and overlay_file:
+            blend_mode = getattr(self.config, "overlay_blend_mode", "screen") or "screen"
+            opacity = getattr(self.config, "overlay_opacity", 0.85)
+            ov_filters, blended_label = OverlayEngine.build_blend_filtergraph(
+                base_video_label=current_v_label,
+                overlay_input_idx=overlay_input_idx,
+                blend_mode=blend_mode,
+                opacity=opacity,
+                target_width=tw,
+                target_height=th,
+                output_label="v_blended",
+            )
+            filter_parts.extend(ov_filters)
+            current_v_label = blended_label
+
+        # Apply burned-in Hormozi / MrBeast subtitles on final video (stays crisp over overlays)
         if self.active_ass_path and os.path.isfile(self.active_ass_path):
             escaped_ass = self.active_ass_path.replace("\\", "/").replace(":", "\\:")
-            filter_parts.append(f"[v_stitched]ass=filename='{escaped_ass}'[v_captioned]")
+            filter_parts.append(f"{current_v_label}ass=filename='{escaped_ass}'[v_captioned]")
             final_v_label = "[v_captioned]"
         else:
-            final_v_label = "[v_stitched]"
+            final_v_label = current_v_label
 
         full_filtergraph = ";\n".join(filter_parts)
 

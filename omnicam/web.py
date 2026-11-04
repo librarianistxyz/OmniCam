@@ -35,6 +35,7 @@ from typing import Dict, List, Optional
 
 from .audio_analyzer import AudioAnalyzer, SpeechSegment
 from .broll import BRollManager
+from .overlay_engine import OverlayEngine
 from .captions import WordTiming
 from .director import CameraAngle, CameraDirector, ShotPlan
 from .filler_remover import (
@@ -496,6 +497,48 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       object-fit: contain;
       background: #000000;
       display: none;
+      transform-origin: 50% 45%;
+      transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.2, 1);
+      will-change: transform, filter;
+    }
+
+    .flash-fx-overlay {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 12;
+    }
+    .flash-fx-overlay.flash-active {
+      animation: flashCutAnim 0.08s ease-out forwards;
+    }
+    @keyframes flashCutAnim {
+      0% { opacity: 0.85; }
+      100% { opacity: 0; }
+    }
+
+    .freeze-badge-overlay {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(220, 38, 38, 0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      padding: 0.35rem 0.85rem;
+      border-radius: var(--radius-full);
+      display: none;
+      align-items: center;
+      gap: 0.45rem;
+      z-index: 14;
+      box-shadow: 0 4px 16px rgba(220, 38, 38, 0.5);
     }
 
     /* Monitor HUD Overlay */
@@ -927,6 +970,62 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       display: none;
     }
 
+    /* CapCut Blend Mode Overlay Cards */
+    .overlay-cards-scroll {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0.35rem 0.1rem 0.65rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    .overlay-thumb-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 0.5rem 0.65rem;
+      min-width: 95px;
+      max-width: 105px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-shrink: 0;
+      text-align: center;
+      user-select: none;
+    }
+    .overlay-thumb-card:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+    .overlay-thumb-card.active {
+      border-color: var(--accent-neon);
+      background: rgba(0, 240, 255, 0.12);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
+    }
+    .ov-thumb-icon {
+      font-size: 1.25rem;
+      margin-bottom: 0.1rem;
+    }
+    .ov-thumb-name {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-white);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+    }
+    .ov-thumb-tag {
+      font-size: 0.62rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
     .dock-tool-btn {
       background: transparent;
       border: none;
@@ -1237,6 +1336,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <span>Effects</span>
         </button>
 
+        <button class="top-tool-chip" id="topBtnOverlays" onclick="openToolPanel('Overlays', 'fa-sparkles')" type="button">
+          <i class="fa-solid fa-sparkles" style="color: #F43F5E;"></i>
+          <span>Overlays</span>
+        </button>
+
         <button class="top-tool-chip" id="topBtnText" onclick="openToolPanel('Text', 'fa-font')" type="button">
           <i class="fa-solid fa-font" style="color: #FBBF24;"></i>
           <span>Text</span>
@@ -1316,6 +1420,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <!-- Video Player Display -->
         <video id="studioVideoPlayer" playsinline></video>
 
+        <!-- Real-time Flash Transition FX Overlay -->
+        <div id="playerFlashOverlay" class="flash-fx-overlay"></div>
+
+        <!-- Dramatic Freeze Frame Badge Overlay -->
+        <div id="freezeBadgeOverlay" class="freeze-badge-overlay">
+          <i class="fa-solid fa-snowflake"></i> <span>DRAMATIC FREEZE</span>
+        </div>
+
         <!-- Monitor HUD Overlay -->
         <div class="monitor-hud-top" id="monitorHudTop" style="display: none;">
           <div class="hud-badge-angle" id="hudAngleBadge">
@@ -1341,6 +1453,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         </button>
         <button class="transport-btn" onclick="stepVideo(1.0)" type="button" title="Step Forward 1s">
           <i class="fa-solid fa-forward-step"></i>
+        </button>
+        <button class="transport-btn" id="btnLiveDirectorToggle" onclick="toggleLiveDirector()" type="button" title="Toggle Real-Time Virtual Playhead (Instant edits & angles without exporting)" style="width: auto; padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 700; color: var(--accent-neon); border: 1px solid rgba(0, 240, 255, 0.4); border-radius: var(--radius-full); background: rgba(0, 240, 255, 0.08); display: inline-flex; align-items: center; gap: 0.4rem;">
+          <i class="fa-solid fa-bolt"></i> <span id="liveDirectorText">Live Edit: ON</span>
         </button>
         <button class="transport-btn" onclick="reAnalyzeFootage()" type="button" title="Re-generate Cuts with Current Settings">
           <i class="fa-solid fa-wand-magic-sparkles"></i>
@@ -1470,7 +1585,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <div class="drawer-controls-grid">
             <div class="control-item">
               <span class="control-label">Cinematic Grading Preset</span>
-              <select class="nle-select" id="colorGradeSelect">
+              <select class="nle-select" id="colorGradeSelect" onchange="applyLiveColorGrade()">
                 <option value="cinematic" selected>Cinematic S-Curve (Warm skin, cool shadows)</option>
                 <option value="podcast">Modern Tech Podcast (High vibrance &amp; pop)</option>
                 <option value="vintage">Vintage 35mm (Muted organic tones)</option>
@@ -1604,6 +1719,104 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           </div>
         </div>
 
+        <!-- Panel: CapCut Blend Mode Overlay Engine -->
+        <div class="drawer-panel" id="panelOverlays" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item" style="grid-column: 1 / -1;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                <span class="control-label"><i class="fa-solid fa-wand-magic-sparkles"></i> CapCut Blend Mode Overlay Engine</span>
+                <span style="font-size: 0.72rem; color: var(--accent-neon); font-weight: 700;" id="activeOverlayBadge">No Overlay Active</span>
+              </div>
+              <p style="font-size: 0.76rem; color: var(--text-muted); margin: 0 0 0.65rem 0; line-height: 1.4;">
+                Looping cinematic textures blended seamlessly over footage using FFmpeg screen &amp; addition blend modes (Film burns, light leaks, 35mm grain, and lens flares).
+              </p>
+              <div class="overlay-cards-scroll">
+                <div class="overlay-thumb-card active" id="ovCard_none" onclick="selectOverlay('none', 'No Overlay')">
+                  <div class="ov-thumb-icon"><i class="fa-solid fa-ban"></i></div>
+                  <div class="ov-thumb-name">None</div>
+                  <div class="ov-thumb-tag">Clean</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_light_leak_01" onclick="selectOverlay('light_leak_01', 'Golden Flare Leak')">
+                  <div class="ov-thumb-icon" style="color: #F59E0B;"><i class="fa-solid fa-sun"></i></div>
+                  <div class="ov-thumb-name">Golden Leak 1</div>
+                  <div class="ov-thumb-tag">Warm Flare</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_light_leak_02" onclick="selectOverlay('light_leak_02', 'Sunset Crimson Burst')">
+                  <div class="ov-thumb-icon" style="color: #EC4899;"><i class="fa-solid fa-sun-plant-wilt"></i></div>
+                  <div class="ov-thumb-name">Sunset Leak 2</div>
+                  <div class="ov-thumb-tag">Neon Crimson</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_film_dust_scratches" onclick="selectOverlay('film_dust_scratches', '16mm/35mm Dust & Scratches')">
+                  <div class="ov-thumb-icon" style="color: #A3E635;"><i class="fa-solid fa-film"></i></div>
+                  <div class="ov-thumb-name">Film Dust</div>
+                  <div class="ov-thumb-tag">16mm Grain</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_vhs_static_overlay" onclick="selectOverlay('vhs_static_overlay', '90s Retro VHS Static')">
+                  <div class="ov-thumb-icon" style="color: #38BDF8;"><i class="fa-solid fa-tape"></i></div>
+                  <div class="ov-thumb-name">VHS Static</div>
+                  <div class="ov-thumb-tag">Retro 90s</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_prism_bokeh" onclick="selectOverlay('prism_bokeh', 'Dreamy Prism Bokeh')">
+                  <div class="ov-thumb-icon" style="color: #C084FC;"><i class="fa-solid fa-gem"></i></div>
+                  <div class="ov-thumb-name">Prism Bokeh</div>
+                  <div class="ov-thumb-tag">Hexagonal</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_film_burn_01" onclick="selectOverlay('film_burn_01', 'Fiery Film Burn')">
+                  <div class="ov-thumb-icon" style="color: #F97316;"><i class="fa-solid fa-fire"></i></div>
+                  <div class="ov-thumb-name">Film Burn 1</div>
+                  <div class="ov-thumb-tag">Fiery Burst</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_film_burn_02" onclick="selectOverlay('film_burn_02', 'Edge Halation Burn')">
+                  <div class="ov-thumb-icon" style="color: #EF4444;"><i class="fa-solid fa-volcano"></i></div>
+                  <div class="ov-thumb-name">Halation Burn</div>
+                  <div class="ov-thumb-tag">Gate Halation</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_retro_crt_scanlines" onclick="selectOverlay('retro_crt_scanlines', 'Cyber CRT Scanlines')">
+                  <div class="ov-thumb-icon" style="color: #06B6D4;"><i class="fa-solid fa-tv"></i></div>
+                  <div class="ov-thumb-name">CRT Scanlines</div>
+                  <div class="ov-thumb-tag">Cyber Lines</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_lens_flare_anamorphic" onclick="selectOverlay('lens_flare_anamorphic', 'Anamorphic Flare Streak')">
+                  <div class="ov-thumb-icon" style="color: #00F0FF;"><i class="fa-solid fa-lightbulb"></i></div>
+                  <div class="ov-thumb-name">Anamorphic</div>
+                  <div class="ov-thumb-tag">Cyan Streak</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_golden_particles" onclick="selectOverlay('golden_particles', 'Floating Golden Particles')">
+                  <div class="ov-thumb-icon" style="color: #FBBF24;"><i class="fa-solid fa-sparkles"></i></div>
+                  <div class="ov-thumb-name">Golden Motes</div>
+                  <div class="ov-thumb-tag">Luxury Dust</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_glitch_digital" onclick="selectOverlay('glitch_digital', 'Cyber Digital Glitch')">
+                  <div class="ov-thumb-icon" style="color: #E11D48;"><i class="fa-solid fa-bug"></i></div>
+                  <div class="ov-thumb-name">RGB Glitch</div>
+                  <div class="ov-thumb-tag">Cyberpunk</div>
+                </div>
+                <div class="overlay-thumb-card" id="ovCard_vintage_super8" onclick="selectOverlay('vintage_super8', 'Super 8 Projector')">
+                  <div class="ov-thumb-icon" style="color: #D97706;"><i class="fa-solid fa-video"></i></div>
+                  <div class="ov-thumb-name">Super 8mm</div>
+                  <div class="ov-thumb-tag">Projector Bob</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">Blend Mode Algorithm</span>
+              <select class="nle-select" id="overlayBlendModeSelect">
+                <option value="screen" selected>⚡ Screen (Viral CapCut standard - keeps colors &amp; brights)</option>
+                <option value="addition">💥 Addition / Linear Dodge (Super bright glow &amp; bloom)</option>
+                <option value="overlay">🎞️ Overlay (Contrast enhancement &amp; rich shadows)</option>
+                <option value="lighten">🌟 Lighten (Retains brightest pixels)</option>
+                <option value="softlight">🌫️ Soft Light (Subtle analog film wash)</option>
+              </select>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">Blend Opacity (<span id="overlayOpacityVal">85%</span>)</span>
+              <input type="range" class="nle-range-slider" id="overlayOpacitySlider" min="10" max="100" value="85" oninput="document.getElementById('overlayOpacityVal').innerText = this.value + '%'" />
+            </div>
+          </div>
+        </div>
+
         <!-- Panel 10: Effects -->
         <div class="drawer-panel" id="panelEffects" style="display: none;">
           <div class="drawer-controls-grid">
@@ -1722,6 +1935,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <button class="dock-tool-btn" id="dockBtnEffects" onclick="openToolPanel('Effects', 'fa-wand-magic-sparkles')" type="button">
           <i class="fa-solid fa-wand-magic-sparkles" style="color: #A78BFA;"></i>
           <span>Effects</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnOverlays" onclick="openToolPanel('Overlays', 'fa-sparkles')" type="button">
+          <i class="fa-solid fa-sparkles" style="color: #F43F5E;"></i>
+          <span>Overlays</span>
         </button>
 
         <button class="dock-tool-btn" id="dockBtnText" onclick="openToolPanel('Text', 'fa-font')" type="button">
@@ -1878,6 +2096,25 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     let currentShots = [];
     let currentTotalDur = 0;
     let activeDrawerPanel = null;
+    let selectedOverlayEffect = 'none';
+
+    function selectOverlay(overlayId, title) {
+      selectedOverlayEffect = overlayId;
+      document.querySelectorAll('.overlay-thumb-card').forEach(c => c.classList.remove('active'));
+      const activeCard = document.getElementById('ovCard_' + overlayId);
+      if (activeCard) activeCard.classList.add('active');
+
+      const badge = document.getElementById('activeOverlayBadge');
+      if (badge) {
+        if (overlayId === 'none') {
+          badge.innerText = 'No Overlay Active';
+          badge.style.color = 'var(--text-muted)';
+        } else {
+          badge.innerText = 'Active: ' + title;
+          badge.style.color = 'var(--accent-neon)';
+        }
+      }
+    }
     let renderedOutputPath = null;
     let currentAspectRatio = '16:9';
 
@@ -2024,6 +2261,165 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     }
 
     // ------------------------------------------------------------------------
+    // REAL-TIME VIRTUAL PLAYHEAD ENGINE (CapCut-Style Live Non-Destructive Editing)
+    // ------------------------------------------------------------------------
+    let liveDirectorEnabled = true;
+    let activeShotIndex = -1;
+    let isFreezeHolding = false;
+    let playbackRaf = null;
+    let audioCtx = null;
+
+    function playWhooshSfx() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const bufferSize = Math.floor(audioCtx.sampleRate * 0.16);
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(950, audioCtx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.15);
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        noise.start();
+      } catch (e) {}
+    }
+
+    function applyShotFraming(shot) {
+      const player = document.getElementById('studioVideoPlayer');
+      if (!player) return;
+      if (!liveDirectorEnabled) {
+        player.style.transform = 'scale(1.0) translate(0, 0)';
+        return;
+      }
+      const angle = (shot.angle || 'WIDE').toUpperCase();
+      let transform = 'scale(1.0) translate(0, 0)';
+      if (angle === 'CLOSEUP' || angle === 'CLOSE_UP') {
+        transform = 'scale(1.36) translate(0%, -4%)';
+      } else if (angle === 'THIRD_LEFT' || angle === 'LEFT_THIRD') {
+        transform = 'scale(1.28) translate(-6%, -3%)';
+      } else if (angle === 'THIRD_RIGHT' || angle === 'RIGHT_THIRD') {
+        transform = 'scale(1.28) translate(6%, -3%)';
+      } else if (angle === 'SLOW_PUSH') {
+        transform = 'scale(1.22) translate(0%, -2%)';
+      } else if (angle === 'BROLL') {
+        transform = 'scale(1.06) translate(0%, 0%)';
+      }
+      player.style.transform = transform;
+    }
+
+    function applyLiveColorGrade() {
+      const player = document.getElementById('studioVideoPlayer');
+      if (!player) return;
+      if (!liveDirectorEnabled) {
+        player.style.filter = 'none';
+        return;
+      }
+      const grade = (document.getElementById('colorGradeSelect')?.value || 'cinematic').toLowerCase();
+      if (grade === 'cinematic') {
+        player.style.filter = 'contrast(1.14) brightness(1.02) saturate(1.22) sepia(0.08) hue-rotate(-5deg)';
+      } else if (grade === 'podcast') {
+        player.style.filter = 'contrast(1.10) brightness(1.03) saturate(1.25)';
+      } else if (grade === 'vintage') {
+        player.style.filter = 'contrast(1.02) saturate(0.85) sepia(0.20) hue-rotate(-6deg)';
+      } else {
+        player.style.filter = 'none';
+      }
+    }
+
+    function triggerCutTransition() {
+      const overlay = document.getElementById('playerFlashOverlay');
+      if (!overlay) return;
+      overlay.classList.remove('flash-active');
+      void overlay.offsetWidth;
+      overlay.classList.add('flash-active');
+    }
+
+    function holdFreezeFrame(shot) {
+      isFreezeHolding = true;
+      const player = document.getElementById('studioVideoPlayer');
+      const freezeBadge = document.getElementById('freezeBadgeOverlay');
+      if (player) player.pause();
+      if (freezeBadge) freezeBadge.style.display = 'inline-flex';
+      playWhooshSfx();
+
+      const durMs = Math.round((shot.freeze_duration || 0.6) * 1000);
+      setTimeout(() => {
+        if (freezeBadge) freezeBadge.style.display = 'none';
+        isFreezeHolding = false;
+        const nextShot = currentShots[activeShotIndex + 1];
+        if (nextShot && player) {
+          triggerCutTransition();
+          player.currentTime = nextShot.start;
+          player.play().catch(() => {});
+        }
+      }, durMs);
+    }
+
+    function toggleLiveDirector() {
+      liveDirectorEnabled = !liveDirectorEnabled;
+      const btn = document.getElementById('btnLiveDirectorToggle');
+      const text = document.getElementById('liveDirectorText');
+      const player = document.getElementById('studioVideoPlayer');
+      if (liveDirectorEnabled) {
+        if (btn) {
+          btn.style.color = 'var(--accent-neon)';
+          btn.style.borderColor = 'rgba(0, 240, 255, 0.4)';
+          btn.style.background = 'rgba(0, 240, 255, 0.08)';
+        }
+        if (text) text.innerText = 'Live Edit: ON';
+        applyLiveColorGrade();
+        if (activeShotIndex >= 0 && activeShotIndex < currentShots.length) {
+          applyShotFraming(currentShots[activeShotIndex]);
+        }
+      } else {
+        if (btn) {
+          btn.style.color = 'var(--text-dim)';
+          btn.style.borderColor = 'var(--border-subtle)';
+          btn.style.background = 'transparent';
+        }
+        if (text) text.innerText = 'Raw Footage';
+        if (player) {
+          player.style.transform = 'scale(1.0) translate(0, 0)';
+          player.style.filter = 'none';
+        }
+      }
+    }
+
+    function startPlaybackLoop() {
+      cancelAnimationFrame(playbackRaf);
+      function loop() {
+        const player = document.getElementById('studioVideoPlayer');
+        if (player && !player.paused) {
+          syncRealtimePlayback(player.currentTime);
+          playbackRaf = requestAnimationFrame(loop);
+        }
+      }
+      playbackRaf = requestAnimationFrame(loop);
+    }
+
+    function stopPlaybackLoop() {
+      if (playbackRaf) {
+        cancelAnimationFrame(playbackRaf);
+        playbackRaf = null;
+      }
+    }
+
+    // ------------------------------------------------------------------------
     // VIDEO SOURCE SELECTION & PLAYBACK
     // ------------------------------------------------------------------------
     function selectVideoSource(filePath, displayName) {
@@ -2042,14 +2438,19 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       document.getElementById('monitorTransportBar').style.display = 'flex';
 
       // Setup Timecode & Playhead updates
+      activeShotIndex = -1;
+      isFreezeHolding = false;
       player.ontimeupdate = updatePlayerTimecode;
       player.onplay = () => {
         document.getElementById('transportPlayIcon').className = 'fa-solid fa-pause';
         document.getElementById('monitorPlayIcon').className = 'fa-solid fa-pause';
+        applyLiveColorGrade();
+        startPlaybackLoop();
       };
       player.onpause = () => {
         document.getElementById('transportPlayIcon').className = 'fa-solid fa-play';
         document.getElementById('monitorPlayIcon').className = 'fa-solid fa-play';
+        stopPlaybackLoop();
       };
 
       // Automatically analyze & generate timeline cuts
@@ -2067,12 +2468,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
     function stepVideo(deltaSec) {
       const player = document.getElementById('studioVideoPlayer');
+      activeShotIndex = -1;
+      isFreezeHolding = false;
       player.currentTime = Math.max(0, player.currentTime + deltaSec);
+      syncRealtimePlayback(player.currentTime);
     }
 
-    function updatePlayerTimecode() {
+    function syncRealtimePlayback(cur) {
       const player = document.getElementById('studioVideoPlayer');
-      const cur = player.currentTime || 0;
+      if (!player) return;
       const dur = player.duration || currentTotalDur || 1;
 
       document.getElementById('hudTimecode').innerText = `${formatTime(cur)} / ${formatTime(dur)}`;
@@ -2084,20 +2488,76 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         playhead.style.left = pct + '%';
       }
 
-      // Update Active Cut in HUD
-      if (currentShots.length > 0) {
-        for (let i = 0; i < currentShots.length; i++) {
-          const s = currentShots[i];
-          if (cur >= s.start && cur <= s.end) {
-            document.getElementById('hudAngleName').innerText = `CAM ${i+1} // ${(s.angle || 'WIDE').replace('_', ' ')}`;
-            // Highlight active cut block
-            document.querySelectorAll('.shot-block-nle').forEach((el, idx) => {
-              if (idx === i) el.classList.add('active');
-              else el.classList.remove('active');
-            });
-            break;
+      if (!liveDirectorEnabled || !currentShots || currentShots.length === 0) {
+        return;
+      }
+      if (isFreezeHolding) return;
+
+      // Reset freeze trigger flags if restarted
+      if (cur < 0.2) {
+        currentShots.forEach(s => s._freezeTriggered = false);
+      }
+
+      // Check if active shot finished
+      if (activeShotIndex >= 0 && activeShotIndex < currentShots.length) {
+        const active = currentShots[activeShotIndex];
+        if (cur >= active.end) {
+          if (active.is_freeze && !active._freezeTriggered) {
+            active._freezeTriggered = true;
+            holdFreezeFrame(active);
+            return;
+          }
+          if (activeShotIndex + 1 < currentShots.length) {
+            const next = currentShots[activeShotIndex + 1];
+            if (next.start > cur) {
+              triggerCutTransition();
+              player.currentTime = next.start;
+              return;
+            }
           }
         }
+      }
+
+      // Check matching shot
+      let matchingIdx = -1;
+      for (let i = 0; i < currentShots.length; i++) {
+        const s = currentShots[i];
+        if (cur >= s.start - 0.05 && cur <= s.end + 0.05) {
+          matchingIdx = i;
+          break;
+        }
+      }
+
+      if (matchingIdx === -1 && !player.paused) {
+        // In silence dead air: jump forward to next shot!
+        const next = currentShots.find(s => s.start > cur);
+        if (next) {
+          triggerCutTransition();
+          player.currentTime = next.start;
+          return;
+        }
+      } else if (matchingIdx !== -1 && matchingIdx !== activeShotIndex) {
+        activeShotIndex = matchingIdx;
+        const shot = currentShots[matchingIdx];
+        applyShotFraming(shot);
+        triggerCutTransition();
+
+        const hudAngle = document.getElementById('hudAngleName');
+        if (hudAngle) {
+          hudAngle.innerText = `CAM ${matchingIdx + 1} // ${(shot.angle || 'WIDE').replace('_', ' ')}`;
+        }
+
+        document.querySelectorAll('.shot-block-nle').forEach((el, idx) => {
+          if (idx === matchingIdx) el.classList.add('active');
+          else el.classList.remove('active');
+        });
+      }
+    }
+
+    function updatePlayerTimecode() {
+      const player = document.getElementById('studioVideoPlayer');
+      if (player) {
+        syncRealtimePlayback(player.currentTime || 0);
       }
     }
 
@@ -2110,7 +2570,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const player = document.getElementById('studioVideoPlayer');
       const dur = player.duration || currentTotalDur;
       if (dur > 0) {
+        activeShotIndex = -1;
+        isFreezeHolding = false;
         player.currentTime = pct * dur;
+        syncRealtimePlayback(player.currentTime);
       }
     }
 
@@ -2201,7 +2664,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         block.onclick = (e) => {
           e.stopPropagation();
           const player = document.getElementById('studioVideoPlayer');
+          activeShotIndex = -1;
+          isFreezeHolding = false;
           player.currentTime = shot.start;
+          syncRealtimePlayback(shot.start);
           player.play().catch(() => {});
         };
 
@@ -2415,6 +2881,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         freeze_duration: document.getElementById('freezeDurSlider') ? parseFloat(document.getElementById('freezeDurSlider').value) : 0.6,
         letterbox: document.getElementById('letterboxToggle') ? document.getElementById('letterboxToggle').checked : false,
         film_grain: document.getElementById('filmGrainToggle') ? document.getElementById('filmGrainToggle').checked : false,
+        overlay_effect: selectedOverlayEffect !== 'none' ? selectedOverlayEffect : null,
+        overlay_blend_mode: document.getElementById('overlayBlendModeSelect') ? document.getElementById('overlayBlendModeSelect').value : 'screen',
+        overlay_opacity: document.getElementById('overlayOpacitySlider') ? parseFloat(document.getElementById('overlayOpacitySlider').value) / 100.0 : 0.85,
         vignette: document.getElementById('vignetteToggle') ? document.getElementById('vignetteToggle').checked : true,
         show_hud: document.getElementById('hudToggle') ? document.getElementById('hudToggle').checked : true,
         show_title: document.getElementById('showTitleToggle') ? document.getElementById('showTitleToggle').checked : true,
@@ -2646,6 +3115,33 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(data).encode("utf-8"))
             return
 
+        if path == "/api/overlays":
+            engine = OverlayEngine()
+            overlays = engine.list_available_overlays()
+            self.send_json({"overlays": overlays})
+            return
+
+        if path.startswith("/assets/overlays/"):
+            fname = path[len("/assets/overlays/"):]
+            safe_fname = os.path.basename(fname)
+            full_p = os.path.join("assets", "overlays", safe_fname)
+            if os.path.isfile(full_p):
+                try:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "video/mp4")
+                    self.send_header("Content-Length", str(os.path.getsize(full_p)))
+                    self.send_header("Accept-Ranges", "bytes")
+                    self.end_headers()
+                    with open(full_p, "rb") as f:
+                        while chunk := f.read(65536):
+                            self.wfile.write(chunk)
+                except Exception:
+                    pass
+                return
+            else:
+                self.send_error(404, "Overlay asset not found")
+                return
+
         if path == "/video":
             qs = urllib.parse.parse_qs(parsed.query)
             file_path = qs.get("path", [None])[0]
@@ -2843,6 +3339,9 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                         letterbox=bool(params.get("letterbox", False)),
                         film_grain=bool(params.get("film_grain", False)),
                         vignette=bool(params.get("vignette", True)),
+                        overlay_effect=params.get("overlay_effect") or params.get("overlay"),
+                        overlay_blend_mode=params.get("overlay_blend_mode") or params.get("overlay_blend", "screen"),
+                        overlay_opacity=float(params.get("overlay_opacity", 0.85)),
                         show_hud=bool(params.get("show_hud", True)),
                         show_title=bool(params.get("show_title", True)),
                         title_text=params.get("title_text") or params.get("title", "OMNICAM AI • MULTI-CAM PRODUCTION"),
