@@ -418,3 +418,4 @@ class OverlayEngine:
             f"{base_video_label}[v_ov_scaled]blend=all_mode='{mode}':all_opacity={opacity:.2f}[{output_label}]",
         ]
         return filter_lines, f"[{output_label}]"
+

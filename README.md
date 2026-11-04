@@ -79,6 +79,7 @@ By cropping into distinct regions of a 4K sensor (up to $1.8\times$ zoom) and re
   - EBU R128 Loudness Normalization (`loudnorm`, -16 LUFS, ready for YouTube/Reels/TikTok).
   - Boundary micro-fades to prevent clicks and pops.
 - **🔤 Hormozi / MrBeast Active-Word Animated Captions**: Offline Whisper transcription generates high-contrast neon subtitles that light up word-by-word synchronously with speech, remapped mathematically across edited takes.
+- **✨ CapCut Blend Mode Overlay Engine (`--overlay`)**: Viral looping video textures (Warm Golden Flares, 16mm/35mm Film Dust, 90s Retro VHS Static, Prism Bokeh, Fiery Film Burns, Anamorphic Flares) blended in real time over footage using FFmpeg screen & addition blend modes (`blend=all_mode='screen':all_opacity=0.85`) with zero quality loss.
 - **🎨 Cinematic Color Grading**:
   - `cinematic`: Contrast S-curve, warm highlights, subtle cool shadow balance.
   - `podcast`: Vibrant modern YouTube tech aesthetic.
@@ -144,6 +145,9 @@ python3 omnicam.py input.mp4 \
   --stabilize-smoothing 25 \  # Gimbal smoothing radius in frames (default: 25)
   --pacing dynamic \          # Director pacing: dynamic, podcast, documentary, dramatic
   --color cinematic \         # Color grade: cinematic, podcast, vintage, none
+  --overlay light_leak_01 \   # CapCut overlay: light_leak_01, film_dust_scratches, vhs_static_overlay, prism_bokeh, etc.
+  --overlay-blend screen \    # Blend mode: screen, addition, overlay, lighten, softlight (default: screen)
+  --overlay-opacity 0.85 \    # Overlay opacity: 0.0 to 1.0 (default: 0.85)
   --captions \                # Burn dynamic "Hormozi / MrBeast" active-word animated subtitles
   --caption-color yellow \    # Highlight color: yellow, green, cyan, red, white
   --bgm /path/to/lofi.mp3 \   # Auto-ducking BGM audio track (or 'ambient'/'lofi')

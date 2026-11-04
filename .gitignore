@@ -28,6 +28,7 @@ renders/
 *.wav
 *.aac
 !examples/*.mp4
+!assets/overlays/*.mp4
 
 # OS & Editor Files
 .DS_Store
