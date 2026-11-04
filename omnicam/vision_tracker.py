@@ -41,6 +41,8 @@ class FaceRegion:
     norm_w: float  # Width normalized (0.0 -> 1.0)
     norm_h: float  # Height normalized (0.0 -> 1.0)
     confidence: float = 1.0
+    person_id: int = 1
+    label: str = "Person 1"
 
 
 @dataclass
@@ -139,15 +141,12 @@ class VisionTracker:
             is_portrait=is_portrait,
         )
 
-    def sample_face_region(self, timestamp: float) -> FaceRegion:
+    def detect_all_faces(self, timestamp: float) -> List[FaceRegion]:
         """
-        Samples a video frame at a given timestamp to detect the speaker's face.
-        If OpenCV is missing or face is not detected, returns the golden-ratio default.
+        Detects all visible faces at a given timestamp and returns them sorted left-to-right.
         """
-        default_face = FaceRegion(norm_x=0.50, norm_y=0.38, norm_w=0.25, norm_h=0.30, confidence=0.5)
-
         if not OPENCV_AVAILABLE or self.face_cascade is None:
-            return default_face
+            return [FaceRegion(norm_x=0.50, norm_y=0.38, norm_w=0.25, norm_h=0.30, confidence=0.5, person_id=1, label="Person 1")]
 
         try:
             cap = cv2.VideoCapture(self.video_path)
@@ -156,7 +155,7 @@ class VisionTracker:
             cap.release()
 
             if not success or frame is None:
-                return default_face
+                return [FaceRegion(norm_x=0.50, norm_y=0.38, norm_w=0.25, norm_h=0.30, confidence=0.5, person_id=1, label="Person 1")]
 
             h, w, _ = frame.shape
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -164,23 +163,61 @@ class VisionTracker:
                 gray,
                 scaleFactor=1.15,
                 minNeighbors=4,
-                minSize=(int(w * 0.10), int(h * 0.10)),
+                minSize=(int(w * 0.08), int(h * 0.08)),
             )
 
             if len(faces) == 0:
-                return default_face
+                return [FaceRegion(norm_x=0.50, norm_y=0.38, norm_w=0.25, norm_h=0.30, confidence=0.5, person_id=1, label="Person 1")]
 
-            best_face = max(faces, key=lambda f: f[2] * f[3])
-            fx, fy, fw, fh = best_face
-
-            cx = (fx + fw / 2.0) / w
-            cy = (fy + fh / 2.0) / h
-            nw = fw / w
-            nh = fh / h
-
-            return FaceRegion(norm_x=cx, norm_y=cy, norm_w=nw, norm_h=nh, confidence=0.95)
+            # Sort detected faces horizontally from left to right
+            sorted_faces = sorted(faces, key=lambda f: f[0])
+            results = []
+            for idx, (fx, fy, fw, fh) in enumerate(sorted_faces):
+                cx = (fx + fw / 2.0) / w
+                cy = (fy + fh / 2.0) / h
+                nw = fw / w
+                nh = fh / h
+                results.append(
+                    FaceRegion(
+                        norm_x=cx,
+                        norm_y=cy,
+                        norm_w=nw,
+                        norm_h=nh,
+                        confidence=0.95,
+                        person_id=idx + 1,
+                        label=f"Person {idx + 1}"
+                    )
+                )
+            return results
         except Exception:
-            return default_face
+            return [FaceRegion(norm_x=0.50, norm_y=0.38, norm_w=0.25, norm_h=0.30, confidence=0.5, person_id=1, label="Person 1")]
+
+    def sample_face_region(self, timestamp: float, target_person: str = "primary") -> FaceRegion:
+        """
+        Samples a video frame at a given timestamp to detect the speaker's face.
+        Supports tracking a specific person:
+          - 'primary': Main talking head (largest or most central face)
+          - 'left' or 'person_1': Leftmost speaker
+          - 'right' or 'person_2': Rightmost speaker
+          - 'center': Most central speaker
+        """
+        all_faces = self.detect_all_faces(timestamp)
+        if not all_faces:
+            return FaceRegion(norm_x=0.50, norm_y=0.38, norm_w=0.25, norm_h=0.30, confidence=0.5)
+
+        target = (target_person or "primary").lower()
+
+        if target in ("left", "person_1", "p1") and len(all_faces) >= 1:
+            return all_faces[0]
+
+        if target in ("right", "person_2", "p2") and len(all_faces) >= 2:
+            return all_faces[-1]
+
+        if target in ("center", "middle") and len(all_faces) >= 3:
+            return min(all_faces, key=lambda f: abs(f.norm_x - 0.5))
+
+        # Default 'primary': select the largest face (closest to camera / talking)
+        return max(all_faces, key=lambda f: f.norm_w * f.norm_h)
 
     def compute_crop_coordinates(
         self,

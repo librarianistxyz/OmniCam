@@ -74,6 +74,7 @@ class CameraDirector:
         enable_freeze_frames: bool = True,
         freeze_duration: float = 0.6,
         transition_style: str = "flash",
+        target_person: str = "primary",
         clip_index: int = 0,
         clip_path: Optional[str] = None,
     ):
@@ -87,6 +88,7 @@ class CameraDirector:
         self.enable_freeze_frames = enable_freeze_frames
         self.freeze_duration = freeze_duration
         self.transition_style = transition_style
+        self.target_person = target_person or "primary"
         self.clip_index = clip_index
         self.clip_path = clip_path
 
@@ -124,7 +126,7 @@ class CameraDirector:
                     duration=lead_dur,
                     silence_before=seg.silence_before,
                 )
-                face1 = self.tracker.sample_face_region((sub1.start + sub1.end) / 2.0)
+                face1 = self.tracker.sample_face_region((sub1.start + sub1.end) / 2.0, target_person=self.target_person)
                 angle1 = self._select_angle(
                     seg_idx=shot_counter,
                     duration=lead_dur,
@@ -171,7 +173,7 @@ class CameraDirector:
                     duration=tail_dur,
                     silence_before=0.0,
                 )
-                face3 = self.tracker.sample_face_region((sub3.start + sub3.end) / 2.0)
+                face3 = self.tracker.sample_face_region((sub3.start + sub3.end) / 2.0, target_person=self.target_person)
                 angle3 = self._select_angle(
                     seg_idx=shot_counter,
                     duration=tail_dur,
@@ -188,7 +190,7 @@ class CameraDirector:
             else:
                 # Sample speaker's position at the midpoint of this speech segment
                 mid_time = (seg.start + seg.end) / 2.0
-                face = self.tracker.sample_face_region(mid_time)
+                face = self.tracker.sample_face_region(mid_time, target_person=self.target_person)
 
                 # Choose angle based on pacing style, segment duration, and history
                 angle = self._select_angle(
