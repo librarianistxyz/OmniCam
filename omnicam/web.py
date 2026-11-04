@@ -46,6 +46,9 @@ from .filler_remover import (
 )
 from .render_engine import RenderConfig, RenderEngine
 from .vision_tracker import VisionTracker
+from .music_sync import MultiTakeSyncEngine, TakeSyncInfo
+from .music_analyzer import MusicBeatAnalyzer, MusicAnalysisResult, SongSection
+from .music_director import MusicVideoDirector
 
 
 class StudioServerState:
@@ -1399,6 +1402,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <span>Effects</span>
         </button>
 
+        <button class="top-tool-chip" id="topBtnMusic" onclick="openToolPanel('Music', 'fa-music')" type="button">
+          <i class="fa-solid fa-music" style="color: #06B6D4;"></i>
+          <span>Music Studio</span>
+        </button>
+
         <button class="top-tool-chip" id="topBtnOverlays" onclick="openToolPanel('Overlays', 'fa-sparkles')" type="button">
           <i class="fa-solid fa-sparkles" style="color: #F43F5E;"></i>
           <span>Overlays</span>
@@ -1856,6 +1864,118 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           </div>
         </div>
 
+        <!-- Panel: Music Video Studio (Auto-Sync, Beat Grid, 808 Drops, Speed Ramps) -->
+        <div class="drawer-panel" id="panelMusic" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item" style="grid-column: 1 / -1;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                <span class="control-label"><i class="fa-solid fa-music" style="color: #06B6D4;"></i> Music Video Studio Engine</span>
+                <label class="toggle-row" style="margin: 0; padding: 0;">
+                  <span style="font-size: 0.75rem; font-weight: 700; color: #06B6D4; margin-right: 0.5rem;">MV MODE</span>
+                  <input type="checkbox" id="musicModeToggle" onchange="toggleMusicMode(this.checked)" />
+                </label>
+              </div>
+              <p style="font-size: 0.76rem; color: var(--text-muted); margin: 0 0 0.5rem 0; line-height: 1.4;">
+                Locks multiple camera takes to a clean master song (song.wav/mp3), aligns cuts to musical bars, 808 bass punch-ins, speed ramps, and kick-synced sub-bass vibration.
+              </p>
+            </div>
+
+            <!-- Master Song Input -->
+            <div class="control-item" style="grid-column: 1 / -1;">
+              <span class="control-label">1. Clean Studio Master Song (WAV / MP3)</span>
+              <div style="display: flex; gap: 0.4rem; margin-top: 0.3rem;">
+                <input type="text" class="nle-input" id="masterSongInput" placeholder="/path/to/song.wav or .mp3" style="flex: 1;" />
+                <button type="button" class="btn-action-glow" onclick="browseMasterSong()" style="padding: 0 0.8rem; font-size: 0.78rem;">
+                  <i class="fa-solid fa-folder-open"></i> Pick
+                </button>
+              </div>
+            </div>
+
+            <!-- Auto-Sync Multi-Takes -->
+            <div class="control-item" style="grid-column: 1 / -1;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                <span class="control-label">2. Multi-Take Waveform Auto-Sync (Lip-Sync)</span>
+                <button type="button" class="btn-action-glow" id="btnSyncTakes" onclick="autoSyncTakes()" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; background: rgba(6,182,212,0.18); border-color: #06B6D4; color: #06B6D4;">
+                  <i class="fa-solid fa-bolt"></i> Auto-Sync Takes (FFT)
+                </button>
+              </div>
+              <div id="takesSyncList" style="background: rgba(0,0,0,0.35); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.5rem; max-height: 140px; overflow-y: auto;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 0.5rem;">
+                  Load video footage and a master song, then click Auto-Sync.
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.4rem; margin-top: 0.4rem;">
+                <input type="text" class="nle-input" id="addTakeInput" placeholder="Add camera take path..." style="flex: 1; font-size: 0.75rem;" />
+                <button type="button" class="cat-pill" onclick="addCameraTake()" style="font-size: 0.75rem; white-space: nowrap;">+ Add Take</button>
+              </div>
+            </div>
+
+            <!-- Beat Grid & Tempo Card -->
+            <div class="control-item" style="grid-column: 1 / -1;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                <span class="control-label">3. Rhythm &amp; Energy Grid (BPM)</span>
+                <button type="button" class="cat-pill" onclick="analyzeMusicGrid()" style="font-size: 0.72rem;">
+                  <i class="fa-solid fa-chart-simple"></i> Analyze Grid
+                </button>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-top: 0.3rem;">
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.4rem; text-align: center;">
+                  <span style="font-size: 0.68rem; color: var(--text-muted); display: block;">TEMPO</span>
+                  <input type="number" id="musicBpmInput" value="120" step="0.5" min="50" max="220" style="background: transparent; border: none; color: #06B6D4; font-size: 1.05rem; font-weight: 800; width: 60px; text-align: center;" />
+                  <span style="font-size: 0.65rem; color: var(--text-muted);">BPM</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.4rem; text-align: center;">
+                  <span style="font-size: 0.68rem; color: var(--text-muted); display: block;">MEASURES</span>
+                  <span id="musicTotalBars" style="font-size: 1.05rem; font-weight: 800; color: #A78BFA;">--</span>
+                  <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Bars (4/4)</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.4rem; text-align: center;">
+                  <span style="font-size: 0.68rem; color: var(--text-muted); display: block;">808 / KICKS</span>
+                  <span id="musicKickDrops" style="font-size: 1.05rem; font-weight: 800; color: #F43F5E;">--</span>
+                  <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">Transients</span>
+                </div>
+              </div>
+              <div id="musicSectionsRow" style="display: flex; gap: 0.3rem; overflow-x: auto; margin-top: 0.4rem; padding-bottom: 0.2rem;">
+                <span class="cat-pill" style="font-size: 0.68rem; opacity: 0.6;">Structure: Awaiting Analysis</span>
+              </div>
+            </div>
+
+            <!-- Music Video Grammar & Motion Pumping Toggles -->
+            <div class="control-item">
+              <span class="control-label">Drop Punch-In</span>
+              <label class="toggle-row">
+                <span>808 Bass Extreme Close-Up Snap</span>
+                <input type="checkbox" id="musicDropPunchToggle" checked />
+              </label>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">Motion Pumping</span>
+              <label class="toggle-row">
+                <span>Sub-Bass Camera Vibration (Bass Pump)</span>
+                <input type="checkbox" id="musicBassPumpToggle" checked />
+              </label>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">Speed Ramping</span>
+              <label class="toggle-row">
+                <span>Cole Bennett Slow-to-Fast Transitions</span>
+                <input type="checkbox" id="musicSpeedRampToggle" checked />
+              </label>
+            </div>
+
+            <div class="control-item">
+              <span class="control-label">Beat-Reactive Overlays</span>
+              <label class="toggle-row">
+                <span>Downbeat Flares &amp; Drop Glitches</span>
+                <input type="checkbox" id="musicBeatFxToggle" checked />
+              </label>
+            </div>
+
+          </div>
+        </div>
+
         <!-- Panel: CapCut Blend Mode Overlay Engine (54+ Studio Textures) -->
         <div class="drawer-panel" id="panelOverlays" style="display: none;">
           <div class="drawer-controls-grid">
@@ -2082,6 +2202,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <button class="dock-tool-btn" id="dockBtnEffects" onclick="openToolPanel('Effects', 'fa-wand-magic-sparkles')" type="button">
           <i class="fa-solid fa-wand-magic-sparkles" style="color: #A78BFA;"></i>
           <span>Effects</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnMusic" onclick="openToolPanel('Music', 'fa-music')" type="button">
+          <i class="fa-solid fa-music" style="color: #06B6D4;"></i>
+          <span>Music</span>
         </button>
 
         <button class="dock-tool-btn" id="dockBtnOverlays" onclick="openToolPanel('Overlays', 'fa-sparkles')" type="button">

@@ -31,6 +31,9 @@ from .render_engine import RenderConfig, RenderEngine
 from .vision_tracker import VisionTracker
 from .broll import BRollManager
 from .captions import Transcriber
+from .music_sync import MultiTakeSyncEngine, TakeSyncInfo
+from .music_analyzer import MusicBeatAnalyzer, MusicAnalysisResult
+from .music_director import MusicVideoDirector
 from .filler_remover import (
     DEFAULT_FILLER_WORDS,
     detect_lexical_fillers,
@@ -87,6 +90,144 @@ def generate_cut_sheet(shot_plans, raw_duration: float) -> str:
     lines.append(f"Total Camera Switches: {len(shot_plans)}")
     lines.append("=" * 80)
     return "\n".join(lines)
+
+
+def _run_music_video_pipeline(args, input_path: str, output_path: str):
+    print("\n" + "=" * 65)
+    print(" 🎵 OMNICAM AI // MUSIC VIDEO PRODUCTION STUDIO")
+    print("=" * 65)
+
+    song_path = os.path.abspath(args.song) if args.song else input_path
+    if not os.path.isfile(song_path):
+        print(f"[-] Error: Master song audio file not found: {song_path}")
+        sys.exit(1)
+
+    all_takes = [input_path]
+    for tk in getattr(args, "takes", []):
+        abs_tk = os.path.abspath(tk)
+        if os.path.isfile(abs_tk) and abs_tk not in all_takes:
+            all_takes.append(abs_tk)
+
+    print(f"[*] Master Audio:        {song_path}")
+    print(f"[*] Camera Takes:        {len(all_takes)} take(s) detected")
+    for i, t in enumerate(all_takes):
+        print(f"    - Take {i + 1}: {t}")
+
+    # Phase 1: Multi-Take Waveform Auto-Sync
+    print("\n[Phase 1/4] Multi-Take Waveform Auto-Sync (FFT Cross-Correlation)...")
+    sync_engine = MultiTakeSyncEngine()
+    takes_info = sync_engine.align_multiple_takes(song_path, all_takes)
+
+    print("  +-----------------+---------------+------------+----------+")
+    print("  | Camera Take     | Time Offset   | Confidence | Status   |")
+    print("  +-----------------+---------------+------------+----------+")
+    for ti in takes_info:
+        fn = os.path.basename(ti.take_path)[:15]
+        status = "LOCKED [✓]" if ti.is_locked else "UNLOCKED"
+        print(f"  | {fn:<15} | {ti.offset_seconds:>+11.3f}s | {ti.confidence*100:>8.1f}% | {status:<8} |")
+    print("  +-----------------+---------------+------------+----------+")
+
+    # Phase 2: Beat & Energy Grid Detection
+    print("\n[Phase 2/4] Beat & Energy Grid Detection (FFT Spectral Flux)...")
+    music_analyzer = MusicBeatAnalyzer()
+    analysis = music_analyzer.analyze(song_path, manual_bpm=args.bpm)
+    print(f"  -> Detected Tempo:    {analysis.bpm:.1f} BPM (Beat: {analysis.beat_duration:.3f}s, Bar: {analysis.beat_duration*4:.2f}s)")
+    print(f"  -> Total Measures:    {len(analysis.downbeats)} musical bars")
+    print(f"  -> Kick Drops (808):  {len(analysis.kick_onsets)} sub-bass transients")
+    print(f"  -> Snare Hits:        {len(analysis.snare_onsets)} transient cracks")
+    sec_names = ", ".join(s.name.upper() for s in analysis.sections)
+    print(f"  -> Song Structure:    {len(analysis.sections)} sections ({sec_names})")
+
+    # Phase 3: Subject & Performer Tracking
+    print("\n[Phase 3/4] Subject & Performer Face Tracking...")
+    tracker = VisionTracker(input_path)
+    tracker.analyze()
+
+    # Phase 4: Musical Virtual Camera Directing
+    print("\n[Phase 4/4] Orchestrating Musical Camera Cuts & 808 Drops...")
+    director = MusicVideoDirector(
+        analysis=analysis,
+        takes=takes_info,
+        tracker=tracker,
+        target_resolution=args.resolution,
+        zoom_factor=args.zoom,
+        enable_drop_punchins=True,
+        enable_speed_ramps=args.speed_ramps,
+        enable_beat_fx=args.beat_fx,
+    )
+    shot_plans = director.plan_music_video()
+    print(f"  -> Generated {len(shot_plans)} downbeat-locked camera cuts.")
+
+    if args.dry_run:
+        print("\n[*] Dry-run mode: Render skipped.")
+        return
+
+    base_w, base_h = 1280, 720
+    if args.resolution == "1080p":
+        base_w, base_h = 1920, 1080
+    elif args.resolution == "4k":
+        base_w, base_h = 3840, 2160
+
+    target_w, target_h = (base_h, base_w) if tracker.metadata.is_portrait else (base_w, base_h)
+
+    render_config = RenderConfig(
+        target_width=target_w,
+        target_height=target_h,
+        is_portrait=tracker.metadata.is_portrait,
+        color_grade=args.color,
+        normalize_audio=not args.no_normalize_audio,
+        input_videos=all_takes,
+        transition_style=args.transition,
+        show_hud=not args.no_hud,
+        show_title=bool(args.title),
+        title_text=args.title or "OMNICAM // MUSIC VIDEO MASTER",
+        subtitle_text=args.subtitle or f"{analysis.bpm:.0f} BPM // 4K CINEMATIC",
+        letterbox=args.letterbox,
+        film_grain=args.film_grain,
+        overlay_effect=args.overlay,
+        overlay_blend_mode=args.overlay_blend,
+        overlay_opacity=args.overlay_opacity,
+        overlay_target=args.overlay_target,
+        target_person=args.target_person,
+        selective_color=args.selective_color,
+        music_mode=True,
+        song_audio_path=song_path,
+        bpm=analysis.bpm,
+        enable_bass_pump=args.bass_pump,
+        enable_speed_ramps=args.speed_ramps,
+        beat_reactive_fx=args.beat_fx,
+    )
+
+    print("\n[Mastering] Rendering Master 4K / 1080p Music Video...")
+    engine = RenderEngine(input_path, config=render_config)
+
+    def on_progress(pct: float, msg: str):
+        bar_len = 30
+        filled = int(bar_len * pct)
+        bar = "█" * filled + "░" * (bar_len - filled)
+        print(f"\r  [{bar}] {int(pct*100):>3}% - {msg}", end="", flush=True)
+
+    t0 = time.time()
+    try:
+        engine.render(shot_plans, output_path, progress_callback=on_progress)
+        print()
+    except Exception as e:
+        print(f"\n[-] Rendering Error: {e}")
+        sys.exit(1)
+
+    t_render = time.time() - t0
+    file_size_mb = os.path.getsize(output_path) / (1024 * 1024)
+
+    print("\n" + "=" * 65)
+    print(" [✓] MUSIC VIDEO MASTER COMPLETE")
+    print("=" * 65)
+    print(f" Output Video:     {output_path}")
+    print(f" File Size:        {file_size_mb:.2f} MB")
+    print(f" Render Time:      {t_render:.1f} seconds")
+    print(f" Locked Tempo:     {analysis.bpm:.1f} BPM")
+    print(f" Motion Pumping:   {'ENABLED (Bass Pump)' if args.bass_pump else 'DISABLED'}")
+    print(f" Speed Ramps:      {'ENABLED' if args.speed_ramps else 'DISABLED'}")
+    print("=" * 65 + "\n")
 
 
 def main():
@@ -391,6 +532,46 @@ def main():
         help="Force multi-clip disk chunking instead of single-pass filtergraph.",
     )
 
+    # ==========================================
+    # MUSIC VIDEO STUDIO ARGUMENTS
+    # ==========================================
+    parser.add_argument(
+        "--music-mode",
+        action="store_true",
+        help="Enable Music Video Production Mode (downbeat cutting, 808 drop punch-ins, beat-synced overlays).",
+    )
+    parser.add_argument(
+        "--song",
+        help="Path to clean Studio Master audio file (song.wav / song.mp3) to lock footage against.",
+    )
+    parser.add_argument(
+        "--takes",
+        nargs="+",
+        default=[],
+        help="Additional camera takes (e.g. Take 2 close-up, Take 3 dynamic performance) to auto-sync and rotate.",
+    )
+    parser.add_argument(
+        "--bpm",
+        type=float,
+        default=None,
+        help="Tempo of the song in BPM (automatically detected via FFT autocorrelation if omitted).",
+    )
+    parser.add_argument(
+        "--bass-pump",
+        action="store_true",
+        help="Enable kick-drum sub-bass camera vibration / motion pumping.",
+    )
+    parser.add_argument(
+        "--speed-ramps",
+        action="store_true",
+        help="Enable Cole Bennett / Lyrical Lemonade style slow-to-fast transition speed ramping.",
+    )
+    parser.add_argument(
+        "--beat-fx",
+        action="store_true",
+        help="Trigger lens flares, film burns, and RGB chromatic glitches on downbeats and drops.",
+    )
+
     args = parser.parse_args()
 
     if args.web:
@@ -415,6 +596,10 @@ def main():
         output_path = f"{stem}_omnicam.mp4"
     else:
         output_path = os.path.abspath(args.output)
+
+    if args.music_mode or args.song:
+        _run_music_video_pipeline(args, input_path, output_path)
+        return
 
     print(f"[*] Input Video:        {input_path}")
     print(f"[*] Director Pacing:    {args.pacing.upper()}")

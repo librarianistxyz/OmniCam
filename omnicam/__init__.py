@@ -26,7 +26,10 @@ __author__ = "OmniCam Engine"
 from .audio_analyzer import AudioAnalyzer, SpeechSegment
 from .vision_tracker import VisionTracker, FaceRegion
 from .director import CameraDirector, ShotPlan, CameraAngle
-from .render_engine import RenderEngine
+from .render_engine import RenderEngine, RenderConfig
+from .music_sync import MultiTakeSyncEngine, TakeSyncInfo
+from .music_analyzer import MusicBeatAnalyzer, MusicAnalysisResult, SongSection
+from .music_director import MusicVideoDirector
 from .captions import Transcriber, WordTiming, remap_words_to_edited_timeline, generate_hormozi_ass
 from .stabilizer import VideoStabilizer, is_vidstab_supported
 from .broll import BRollManager, BRollAsset

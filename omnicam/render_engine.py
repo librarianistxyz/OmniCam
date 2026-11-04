@@ -475,6 +475,13 @@ class RenderEngine:
             bgm_input_idx = input_args.count("-i")
             input_args.extend(["-stream_loop", "-1", "-t", f"{total_speech_dur + 5.0:.3f}", "-i", self.config.bgm_path])
 
+        # Studio Master Song input index (Music Video Mode)
+        has_song = getattr(self.config, "song_audio_path", None) and os.path.isfile(self.config.song_audio_path)
+        song_input_idx = None
+        if has_song:
+            song_input_idx = input_args.count("-i")
+            input_args.extend(["-i", self.config.song_audio_path])
+
         # Digital Gimbal Master Stabilization for primary clip
         if self.active_trf_path and os.path.isfile(self.active_trf_path):
             escaped_trf = self.active_trf_path.replace("\\", "/").replace(":", "\\:")
@@ -539,6 +546,21 @@ class RenderEngine:
             elif dur > 0.4:
                 v_chain_list.append("fade=t=in:st=0:d=0.04")
 
+            # Music Video Speed Ramping (FFmpeg setpts curve)
+            ramp = getattr(shot, "speed_ramp", "none")
+            if (ramp == "slow_to_fast" or getattr(self.config, "enable_speed_ramps", False)) and dur > 0.65:
+                t_split = dur * 0.65
+                v_chain_list.append(
+                    f"setpts='if(lt(T\\,{t_split:.2f})\\,PTS*1.30\\,({t_split:.2f}*1.30+(T-{t_split:.2f})*0.45)/TB)'"
+                )
+
+            # Beat-Reactive Strobe FX
+            bfx = getattr(shot, "beat_effect", None)
+            if bfx == "strobe":
+                v_chain_list.append(
+                    "eq=saturation='if(lt(mod(t\\,0.25)\\,0.12)\\,0.0\\,1.2)':contrast='if(lt(mod(t\\,0.25)\\,0.12)\\,1.4\\,1.0)'"
+                )
+
             if color_filter:
                 v_chain_list.append(color_filter)
 
@@ -596,14 +618,19 @@ class RenderEngine:
             f"{concat_in_str}concat=n={num_shots}:v=1:a=1[v_stitched][a_stitched]"
         )
 
-        # Voice Clean-up
+        # Voice / Audio Clean-up
         if self.config.highpass_audio:
             filter_parts.append("[a_stitched]highpass=f=80[a_voice]")
         else:
             filter_parts.append("[a_stitched]anull[a_voice]")
 
-        # Background Music & Auto-Ducking Pipeline
-        if has_bgm and bgm_input_idx is not None:
+        # Studio Master Song Track (Music Video Mode) vs Speech & Background Music Pipeline
+        if getattr(self.config, "music_mode", False) and song_input_idx is not None:
+            filter_parts.append(
+                f"[{song_input_idx}:a]atrim=0:{total_speech_dur:.3f},asetpts=PTS-STARTPTS,aresample=44100[a_master_song]"
+            )
+            final_audio_in = "[a_master_song]"
+        elif has_bgm and bgm_input_idx is not None:
             bgm_vol = self.config.bgm_volume
             # Trim BGM to exact speech duration and sidechain-compress against speech
             filter_parts.append(
@@ -692,6 +719,16 @@ class RenderEngine:
                 f"drawtext=fontfile='{font_esc}':text='OCT. 24 1998':fontcolor=white:fontsize=13:x={tw-120}:y={th-40}[v_osd]"
             )
             current_v_label = "[v_osd]"
+
+        # 8. Beat-Reactive Sub-Bass Camera Shake (Bass Pump)
+        if getattr(self.config, "enable_bass_pump", False):
+            bpm_val = float(getattr(self.config, "bpm", 120.0) or 120.0)
+            filter_parts.append(
+                f"{current_v_label}crop=w='iw-18':h='ih-18':"
+                f"x='9+7*sin(t*2*PI*{bpm_val:.1f}/60)*exp(-mod(t\\,60/{bpm_val:.1f})*8)':"
+                f"y='9+5*cos(t*2*PI*{bpm_val:.1f}/60)*exp(-mod(t\\,60/{bpm_val:.1f})*8)'[v_bass_pump]"
+            )
+            current_v_label = "[v_bass_pump]"
 
         # Selective Color Person Isolation Pipeline (Sin City / Oppenheimer / Sherlock)
         sel_color = getattr(self.config, "selective_color", "none") or "none"
