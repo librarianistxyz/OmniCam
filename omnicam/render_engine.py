@@ -412,14 +412,14 @@ class RenderEngine:
         shot_broll_in_idx: Dict[int, int] = {}
         for shot in shot_plans:
             if shot.angle == CameraAngle.BROLL and shot.index in temp_broll_files:
-                in_idx = len(input_args) // 2
+                in_idx = input_args.count("-i")
                 shot_broll_in_idx[shot.index] = in_idx
                 input_args.extend(["-i", temp_broll_files[shot.index]])
 
         # Whoosh SFX input index
         sfx_input_idx = None
         if temp_whoosh_file and os.path.isfile(temp_whoosh_file):
-            sfx_input_idx = len(input_args) // 2
+            sfx_input_idx = input_args.count("-i")
             input_args.extend(["-i", temp_whoosh_file])
 
         # CapCut Blend Mode Overlay input index (Light leaks, film burns, VHS dust, etc.)
@@ -430,7 +430,7 @@ class RenderEngine:
             target_ov = self.config.overlay_path or self.config.overlay_effect
             overlay_file = ov_engine.get_overlay_path(target_ov)
             if overlay_file and os.path.isfile(overlay_file):
-                overlay_input_idx = len(input_args) // 2
+                overlay_input_idx = input_args.count("-i")
                 input_args.extend(["-stream_loop", "-1", "-i", overlay_file])
 
         # BGM input index
@@ -438,7 +438,7 @@ class RenderEngine:
         bgm_input_idx = None
         total_speech_dur = sum(s.segment.duration for s in shot_plans)
         if has_bgm:
-            bgm_input_idx = len(input_args) // 2
+            bgm_input_idx = input_args.count("-i")
             input_args.extend(["-stream_loop", "-1", "-t", f"{total_speech_dur + 5.0:.3f}", "-i", self.config.bgm_path])
 
         # Digital Gimbal Master Stabilization for primary clip
@@ -466,8 +466,8 @@ class RenderEngine:
             a_master_src = f"[{clip_idx}:a]"
 
             # Video branch: choose B-roll source or camera source
-            if shot.angle == CameraAngle.BROLL and idx in shot_broll_in_idx:
-                broll_in_idx = shot_broll_in_idx[idx]
+            if shot.angle == CameraAngle.BROLL and shot.index in shot_broll_in_idx:
+                broll_in_idx = shot_broll_in_idx[shot.index]
                 v_in = f"[{broll_in_idx}:v]setpts=PTS-STARTPTS"
                 v_chain_list = [v_in]
             else:
