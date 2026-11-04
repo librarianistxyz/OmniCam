@@ -1105,6 +1105,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       </div>
 
       <div class="topbar-right">
+        <select class="res-select" id="aspectRatioSelect" onchange="setAspectRatio(this.value)" title="Canvas Aspect Ratio">
+          <option value="16:9" selected>16:9 Landscape</option>
+          <option value="9:16">9:16 Vertical</option>
+          <option value="1:1">1:1 Square</option>
+        </select>
+
         <select class="res-select" id="targetResolutionSelect">
           <option value="1080p" selected>1080p FHD</option>
           <option value="720p">720p Mobile</option>
@@ -1404,6 +1410,141 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             </div>
           </div>
         </div>
+
+        <!-- Panel 9: Transitions -->
+        <div class="drawer-panel" id="panelTransitions" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">Angle Cut Transition</span>
+              <select class="nle-select" id="transitionSelect">
+                <option value="flash" selected>⚡ White Flash (High Impact Cut)</option>
+                <option value="zoom">🌀 Crash Zoom (Punch-in Sweep)</option>
+                <option value="glitch">📺 RGB Glitch (Cyber Chromatic Aberration)</option>
+                <option value="dissolve">🌫️ Cross Dissolve (Smooth Film Blend)</option>
+                <option value="none">🎬 Hard Cut (Clean NLE Splicing)</option>
+              </select>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Whoosh Transition SFX</span>
+              <label class="toggle-row">
+                <span>Play Sound Effect on Cuts</span>
+                <input type="checkbox" id="transitionSfxToggle" checked />
+              </label>
+            </div>
+            <div class="control-item">
+              <span class="control-label">SFX Volume (<span id="sfxVolLabel">35%</span>)</span>
+              <input type="range" class="nle-range-slider" id="sfxVolSlider" min="10" max="80" value="35" oninput="document.getElementById('sfxVolLabel').innerText = this.value + '%'" />
+            </div>
+            <div class="control-item">
+              <span class="control-label">Punchline Freeze-Frame</span>
+              <label class="toggle-row">
+                <span>Dramatic Freeze Hold on Key Statements</span>
+                <input type="checkbox" id="freezeFrameToggle" checked />
+              </label>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Freeze Hold Duration (<span id="freezeDurLabel">0.6s</span>)</span>
+              <input type="range" class="nle-range-slider" id="freezeDurSlider" min="0.3" max="1.5" step="0.1" value="0.6" oninput="document.getElementById('freezeDurLabel').innerText = this.value + 's'" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 10: Effects -->
+        <div class="drawer-panel" id="panelEffects" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">Cinema Letterbox</span>
+              <label class="toggle-row">
+                <span>2.35:1 Anamorphic Top/Bottom Bars</span>
+                <input type="checkbox" id="letterboxToggle" />
+              </label>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Analog 35mm Film Grain</span>
+              <label class="toggle-row">
+                <span>Organic Film Grain Noise</span>
+                <input type="checkbox" id="filmGrainToggle" />
+              </label>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Organic Lens Vignette</span>
+              <label class="toggle-row">
+                <span>Subtle Corner Shadow Falloff</span>
+                <input type="checkbox" id="vignetteToggle" checked />
+              </label>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Studio Optical Clarity</span>
+              <span style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+                Automatic Lanczos unsharp contrast is burned in so 4K punch-in close-ups retain crisp optical clarity.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 11: Text & Titles -->
+        <div class="drawer-panel" id="panelText" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">Broadcast Lower-Third Title</span>
+              <label class="toggle-row">
+                <span>Animated Title Card in Intro</span>
+                <input type="checkbox" id="showTitleToggle" checked />
+              </label>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Main Headline Title</span>
+              <input type="text" class="nle-input" id="titleTextInput" value="OMNICAM AI • MULTI-CAM PRODUCTION" placeholder="Headline text..." />
+            </div>
+            <div class="control-item">
+              <span class="control-label">Subtitle / Presenter Line</span>
+              <input type="text" class="nle-input" id="subtitleTextInput" value="PRO VIRTUAL STUDIO // 4K CLARITY" placeholder="Presenter handle or subtitle..." />
+            </div>
+            <div class="control-item">
+              <span class="control-label">Virtual Camera HUD Badge</span>
+              <label class="toggle-row">
+                <span>Show CAM 1 / CAM 2 + Red REC Dot</span>
+                <input type="checkbox" id="hudToggle" checked />
+              </label>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Custom Watermark Handle</span>
+              <input type="text" class="nle-input" id="customWatermarkInput" placeholder="@channel_name or logo text" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 12: Canvas Ratio -->
+        <div class="drawer-panel" id="panelRatio" style="display: none;">
+          <div class="drawer-controls-grid">
+            <div class="control-item">
+              <span class="control-label">Video Canvas Aspect Ratio</span>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                <button class="btn-action-glow ratio-btn active" id="btnRatio169" onclick="setAspectRatio('16:9')" type="button" style="flex: 1; flex-direction: column; padding: 0.75rem 0.5rem; gap: 0.3rem;">
+                  <i class="fa-solid fa-desktop" style="font-size: 1.25rem; color: var(--accent-neon);"></i>
+                  <span style="font-weight: 700; font-size: 0.82rem;">16:9 Landscape</span>
+                  <span style="font-size: 0.65rem; color: var(--text-dim);">YouTube / Desktop</span>
+                </button>
+                <button class="btn-action-glow ratio-btn" id="btnRatio916" onclick="setAspectRatio('9:16')" type="button" style="flex: 1; flex-direction: column; padding: 0.75rem 0.5rem; gap: 0.3rem;">
+                  <i class="fa-solid fa-mobile-screen" style="font-size: 1.25rem; color: #EC4899;"></i>
+                  <span style="font-weight: 700; font-size: 0.82rem;">9:16 Vertical</span>
+                  <span style="font-size: 0.65rem; color: var(--text-dim);">TikTok / Reels / Shorts</span>
+                </button>
+                <button class="btn-action-glow ratio-btn" id="btnRatio11" onclick="setAspectRatio('1:1')" type="button" style="flex: 1; flex-direction: column; padding: 0.75rem 0.5rem; gap: 0.3rem;">
+                  <i class="fa-solid fa-square" style="font-size: 1.25rem; color: #10B981;"></i>
+                  <span style="font-weight: 700; font-size: 0.82rem;">1:1 Square</span>
+                  <span style="font-size: 0.65rem; color: var(--text-dim);">Instagram Feed</span>
+                </button>
+              </div>
+            </div>
+            <div class="control-item">
+              <span class="control-label">AI Center Framing</span>
+              <span style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;">
+                OmniCam automatically crops around the subject's face to keep you perfectly framed across all aspect ratios without cutting off your headroom.
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- VN-Style Horizontal Action Dock -->
@@ -1418,9 +1559,19 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <span>Angles</span>
         </button>
 
-        <button class="dock-tool-btn" id="dockBtnFillers" onclick="openToolPanel('Fillers', 'fa-scissors')" type="button">
-          <i class="fa-solid fa-scissors"></i>
-          <span>Fillers</span>
+        <button class="dock-tool-btn" id="dockBtnTransitions" onclick="openToolPanel('Transitions', 'fa-bolt')" type="button">
+          <i class="fa-solid fa-bolt" style="color: var(--accent-neon);"></i>
+          <span>Transitions</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnEffects" onclick="openToolPanel('Effects', 'fa-wand-magic-sparkles')" type="button">
+          <i class="fa-solid fa-wand-magic-sparkles" style="color: #A78BFA;"></i>
+          <span>Effects</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnText" onclick="openToolPanel('Text', 'fa-font')" type="button">
+          <i class="fa-solid fa-font" style="color: #FBBF24;"></i>
+          <span>Text</span>
         </button>
 
         <button class="dock-tool-btn" id="dockBtnColor" onclick="openToolPanel('Color', 'fa-palette')" type="button">
@@ -1438,6 +1589,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <span>Captions</span>
         </button>
 
+        <button class="dock-tool-btn" id="dockBtnFillers" onclick="openToolPanel('Fillers', 'fa-scissors')" type="button">
+          <i class="fa-solid fa-scissors"></i>
+          <span>Fillers</span>
+        </button>
+
         <button class="dock-tool-btn" id="dockBtnGimbal" onclick="openToolPanel('Gimbal', 'fa-compass')" type="button">
           <i class="fa-solid fa-compass"></i>
           <span>Gimbal</span>
@@ -1446,6 +1602,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <button class="dock-tool-btn" id="dockBtnBRoll" onclick="openToolPanel('BRoll', 'fa-layer-group')" type="button">
           <i class="fa-solid fa-layer-group"></i>
           <span>B-Roll</span>
+        </button>
+
+        <button class="dock-tool-btn" id="dockBtnRatio" onclick="openToolPanel('Ratio', 'fa-crop-simple')" type="button">
+          <i class="fa-solid fa-crop-simple"></i>
+          <span>Canvas</span>
         </button>
       </div>
     </footer>
@@ -1563,6 +1724,32 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     let currentTotalDur = 0;
     let activeDrawerPanel = null;
     let renderedOutputPath = null;
+    let currentAspectRatio = '16:9';
+
+    function setAspectRatio(ratio) {
+      currentAspectRatio = ratio;
+      const box = document.getElementById('monitorCanvasBox');
+      const select = document.getElementById('aspectRatioSelect');
+      if (select) select.value = ratio;
+
+      document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+      if (ratio === '16:9') {
+        box.style.aspectRatio = '16 / 9';
+        box.style.maxWidth = '900px';
+        const b = document.getElementById('btnRatio169');
+        if (b) b.classList.add('active');
+      } else if (ratio === '9:16') {
+        box.style.aspectRatio = '9 / 16';
+        box.style.maxWidth = '360px';
+        const b = document.getElementById('btnRatio916');
+        if (b) b.classList.add('active');
+      } else if (ratio === '1:1') {
+        box.style.aspectRatio = '1 / 1';
+        box.style.maxWidth = '500px';
+        const b = document.getElementById('btnRatio11');
+        if (b) b.classList.add('active');
+      }
+    }
 
     function escapeHtml(str) {
       if (!str) return '';
@@ -2045,6 +2232,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         output_path: null,
         target_width: targetW,
         target_height: targetH,
+        aspect_ratio: currentAspectRatio,
+        resolution: resVal,
         color_grade: document.getElementById('colorGradeSelect').value,
         bgm_path: document.getElementById('bgmTrackSelect').value === 'ambient' ? 'ambient' : null,
         bgm_volume: parseFloat(document.getElementById('bgmVolSlider').value) / 100.0,
@@ -2053,7 +2242,20 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         stabilize: document.getElementById('stabilizeToggle').checked,
         stabilize_smoothing: parseInt(document.getElementById('stabilizeSmoothingSlider').value),
         remove_fillers: document.getElementById('removeFillersToggle').checked,
-        broll_dir: document.getElementById('brollFolderInput').value.trim() || null
+        broll_dir: document.getElementById('brollFolderInput').value.trim() || null,
+        transition_style: document.getElementById('transitionSelect') ? document.getElementById('transitionSelect').value : 'flash',
+        enable_sfx: document.getElementById('transitionSfxToggle') ? document.getElementById('transitionSfxToggle').checked : true,
+        sfx_volume: document.getElementById('sfxVolSlider') ? parseFloat(document.getElementById('sfxVolSlider').value) / 100.0 : 0.35,
+        enable_freeze_frames: document.getElementById('freezeFrameToggle') ? document.getElementById('freezeFrameToggle').checked : true,
+        freeze_duration: document.getElementById('freezeDurSlider') ? parseFloat(document.getElementById('freezeDurSlider').value) : 0.6,
+        letterbox: document.getElementById('letterboxToggle') ? document.getElementById('letterboxToggle').checked : false,
+        film_grain: document.getElementById('filmGrainToggle') ? document.getElementById('filmGrainToggle').checked : false,
+        vignette: document.getElementById('vignetteToggle') ? document.getElementById('vignetteToggle').checked : true,
+        show_hud: document.getElementById('hudToggle') ? document.getElementById('hudToggle').checked : true,
+        show_title: document.getElementById('showTitleToggle') ? document.getElementById('showTitleToggle').checked : true,
+        title_text: document.getElementById('titleTextInput') ? document.getElementById('titleTextInput').value.trim() : 'OMNICAM AI • MULTI-CAM PRODUCTION',
+        subtitle_text: document.getElementById('subtitleTextInput') ? document.getElementById('subtitleTextInput').value.trim() : 'PRO VIRTUAL STUDIO // 4K CLARITY',
+        custom_watermark: (document.getElementById('customWatermarkInput') && document.getElementById('customWatermarkInput').value.trim()) || null
       };
 
       try {
@@ -2443,26 +2645,50 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                     res_choice = params.get("resolution", "720p")
                     res_map = {"720p": (1280, 720), "1080p": (1920, 1080), "4k": (3840, 2160)}
                     bw, bh = res_map.get(res_choice, (1280, 720))
-                    if tracker.metadata.is_portrait:
+
+                    aspect_ratio = params.get("aspect_ratio", "16:9")
+                    if aspect_ratio == "9:16":
                         tw, th = bh, bw
+                        is_portrait_target = True
+                    elif aspect_ratio == "1:1":
+                        dim = min(bw, bh)
+                        tw, th = dim, dim
+                        is_portrait_target = False
                     else:
-                        tw, th = bw, bh
+                        if tracker.metadata.is_portrait:
+                            tw, th = bh, bw
+                            is_portrait_target = True
+                        else:
+                            tw, th = bw, bh
+                            is_portrait_target = False
+
+                    trans_choice = params.get("transition_style") or params.get("transition", "flash")
 
                     config = RenderConfig(
                         target_width=tw,
                         target_height=th,
-                        is_portrait=tracker.metadata.is_portrait,
-                        color_grade=params.get("color", "cinematic"),
-                        bgm_path=params.get("bgm"),
+                        is_portrait=is_portrait_target,
+                        color_grade=params.get("color_grade") or params.get("color", "cinematic"),
+                        bgm_path=params.get("bgm_path") or params.get("bgm"),
                         bgm_volume=float(params.get("bgm_volume", 0.22)),
-                        enable_captions=bool(params.get("captions")),
-                        stabilize=bool(params.get("stabilize")),
+                        enable_captions=bool(params.get("enable_captions", params.get("captions", False))),
+                        caption_color=params.get("caption_color", "yellow"),
+                        stabilize=bool(params.get("stabilize", False)),
+                        stabilize_smoothing=int(params.get("stabilize_smoothing", 25)),
                         letterbox=bool(params.get("letterbox", False)),
+                        film_grain=bool(params.get("film_grain", False)),
+                        vignette=bool(params.get("vignette", True)),
+                        show_hud=bool(params.get("show_hud", True)),
+                        show_title=bool(params.get("show_title", True)),
+                        title_text=params.get("title_text") or params.get("title", "OMNICAM AI • MULTI-CAM PRODUCTION"),
+                        subtitle_text=params.get("subtitle_text", "PRO VIRTUAL STUDIO // 4K CLARITY"),
+                        custom_watermark=params.get("custom_watermark"),
                         broll_dir=broll_dir,
-                        title_text=params.get("title", "OMNICAM AI • MULTI-CAM PRODUCTION"),
-                        transition_style=params.get("transition", "flash"),
-                        enable_freeze_frames=bool(params.get("freeze_frame", True)),
-                        enable_sfx=bool(params.get("sfx", True)),
+                        transition_style=trans_choice,
+                        enable_freeze_frames=bool(params.get("enable_freeze_frames", params.get("freeze_frame", True))),
+                        freeze_duration=float(params.get("freeze_duration", 0.6)),
+                        enable_sfx=bool(params.get("enable_sfx", params.get("sfx", True))),
+                        sfx_volume=float(params.get("sfx_volume", 0.35)),
                     )
 
                     engine = RenderEngine(input_path, config=config)

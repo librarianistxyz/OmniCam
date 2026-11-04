@@ -72,6 +72,8 @@ class RenderConfig:
     input_videos: Optional[List[str]] = None
     letterbox: bool = False
     vignette: bool = True
+    film_grain: bool = False
+    custom_watermark: Optional[str] = None
     video_codec: str = "libx264"
     audio_codec: str = "aac"
     crf: int = 21
@@ -502,6 +504,13 @@ class RenderEngine:
                 bar_h = int(th * 0.08)
                 v_chain_list.append(f"drawbox=x=0:y=0:w={tw}:h={bar_h}:color=black:t=fill")
                 v_chain_list.append(f"drawbox=x=0:y={th-bar_h}:w={tw}:h={bar_h}:color=black:t=fill")
+
+            if self.config.film_grain:
+                v_chain_list.append("noise=alls=12:allf=t+u")
+
+            if self.config.custom_watermark and self.font_path:
+                wm = self.config.custom_watermark.replace("'", "\\'")
+                v_chain_list.append(f"drawtext=fontfile='{self.font_path}':text='{wm}':fontcolor=white@0.65:fontsize=13:x={tw}-text_w-25:y=25")
 
             v_chain = ",".join(v_chain_list)
             v_out_label = f"[v{idx}]"
