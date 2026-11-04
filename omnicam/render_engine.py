@@ -86,6 +86,8 @@ class RenderConfig:
     overlay_opacity: float = 0.85
     overlay_path: Optional[str] = None
     overlay_target: str = "fullscreen"  # "fullscreen" or "background_only"
+    target_person: str = "primary"  # "primary", "left", "right", "person_1", "person_2"
+    selective_color: str = "none"  # "none", "person_color_bg_mono", "person_color_bg_sherlock", "person_color_bg_oppenheimer", "person_grade_only", "bg_grade_only"
     video_codec: str = "libx264"
     audio_codec: str = "aac"
     crf: int = 21
@@ -339,6 +341,25 @@ class RenderEngine:
             filters.append("eq=contrast=1.08:brightness=0.02:saturation=1.14")
         elif grade == "vintage":
             filters.append("eq=contrast=1.02:saturation=0.88,colorbalance=gs=0.02:bs=-0.04")
+        elif grade in ("oppenheimer_mono", "oppenheimer_bw"):
+            # IMAX 70mm high-contrast Los Alamos monochrome
+            filters.append("format=gray,eq=contrast=1.35:brightness=-0.04,format=yuv420p")
+        elif grade == "oppenheimer_fission":
+            # Atomic Trinity scorched amber & radioactive gold dual-tone
+            filters.append("eq=contrast=1.28:brightness=0.02:saturation=1.35")
+            filters.append("colorbalance=rs=0.15:gs=0.06:bs=-0.18:rm=0.10:gm=0.04:bm=-0.12")
+        elif grade in ("sherlock_noir", "sherlock_fog"):
+            # Baker Street cold Victorian foggy desaturated teal
+            filters.append("eq=contrast=1.18:saturation=0.55")
+            filters.append("colorbalance=rs=-0.08:gs=0.02:bs=0.12:rm=-0.06:gm=0.04:bm=0.08")
+        elif grade == "sherlock_gaslamp":
+            # Victorian gaslamp warm antique sepia & amber soot
+            filters.append("eq=contrast=1.14:saturation=0.75")
+            filters.append("colorbalance=rs=0.14:gs=0.05:bs=-0.14:rm=0.08:gm=0.02:bm=-0.08")
+        elif grade == "vintage_technicolor":
+            # 1930s 3-strip Technicolor dye transfer saturation
+            filters.append("eq=contrast=1.16:brightness=0.01:saturation=1.45")
+            filters.append("colorbalance=rs=0.08:gs=-0.02:bs=0.05")
 
         if self.config.vignette and grade != "none":
             filters.append("vignette=PI/4.5")
@@ -666,6 +687,51 @@ class RenderEngine:
             )
             current_v_label = "[v_osd]"
 
+        # Selective Color Person Isolation Pipeline (Sin City / Oppenheimer / Sherlock)
+        sel_color = getattr(self.config, "selective_color", "none") or "none"
+        target_p = getattr(self.config, "target_person", "primary") or "primary"
+        person_x = 0.50
+        if target_p in ("left", "person_1", "p1"):
+            person_x = 0.35
+        elif target_p in ("right", "person_2", "p2"):
+            person_x = 0.65
+
+        if sel_color != "none":
+            filter_parts.append(f"{current_v_label}split=2[v_sc_base][v_sc_grade_in]")
+
+            # Generate the background or selective graded branch
+            if sel_color == "person_color_bg_mono":
+                # Tracked person in natural color, background in Oppenheimer 70mm B&W
+                filter_parts.append("[v_sc_grade_in]format=gray,eq=contrast=1.35:brightness=-0.04,format=yuv420p[v_sc_bg]")
+            elif sel_color == "person_color_bg_sherlock":
+                # Tracked person in color, background in Baker Street Victorian fog & sepia
+                filter_parts.append("[v_sc_grade_in]eq=contrast=1.14:saturation=0.50,colorbalance=rs=0.12:gs=0.04:bs=-0.14[v_sc_bg]")
+            elif sel_color == "person_color_bg_oppenheimer":
+                # Tracked person in color, background in Los Alamos fission scorched amber
+                filter_parts.append("[v_sc_grade_in]eq=contrast=1.28:brightness=0.02:saturation=1.35,colorbalance=rs=0.18:gs=0.07:bs=-0.18[v_sc_bg]")
+            elif sel_color == "person_grade_only":
+                # The selected color grade applies ONLY to the tracked person
+                cf = self._get_color_filter() or "null"
+                filter_parts.append(f"[v_sc_grade_in]{cf}[v_sc_person_graded]")
+            elif sel_color == "bg_grade_only":
+                # The selected color grade applies ONLY to the background
+                cf = self._get_color_filter() or "null"
+                filter_parts.append(f"[v_sc_grade_in]{cf}[v_sc_bg]")
+
+            # Generate soft feathered spatial person mask (0 = person center, 255 = background)
+            filter_parts.append(
+                f"[v_sc_base]format=gray,geq=lum='255*clip(pow(hypot((X-W*{person_x:.2f})/(W*0.28),(Y-H*0.48)/(H*0.42)),2.2),0,1)',boxblur=18:2[v_sc_mask]"
+            )
+
+            if sel_color in ("person_color_bg_mono", "person_color_bg_sherlock", "person_color_bg_oppenheimer", "bg_grade_only"):
+                # Mask 0 (person) = v_sc_base (clean color), Mask 255 (background) = v_sc_bg
+                filter_parts.append("[v_sc_base][v_sc_bg][v_sc_mask]maskedmerge[v_selective]")
+            else:  # person_grade_only
+                # Mask 0 (person) = v_sc_person_graded, Mask 255 (background) = v_sc_base
+                filter_parts.append("[v_sc_person_graded][v_sc_base][v_sc_mask]maskedmerge[v_selective]")
+
+            current_v_label = "[v_selective]"
+
         # CapCut Blend Mode Overlay Engine (blend=mode=screen / addition / overlay)
         if overlay_input_idx is not None and overlay_file:
             blend_mode = getattr(self.config, "overlay_blend_mode", "screen") or "screen"
@@ -680,6 +746,8 @@ class RenderEngine:
                 target_height=th,
                 output_label="v_blended",
                 background_only=is_bg_only,
+                person_center_x=person_x,
+                person_center_y=0.48,
             )
             filter_parts.extend(ov_filters)
             current_v_label = blended_label

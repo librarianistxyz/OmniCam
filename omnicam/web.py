@@ -1070,6 +1070,24 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
+    .cat-pill {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      border-radius: 999px;
+      padding: 0.24rem 0.65rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+    .cat-pill:hover, .cat-pill.active {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--accent-neon);
+      color: #fff;
+    }
 
     .dock-tool-btn {
       background: transparent;
@@ -1465,6 +1483,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <!-- Video Player Display -->
         <video id="studioVideoPlayer" playsinline></video>
 
+        <!-- Real-time Selective Color Person Isolation Overlay -->
+        <div id="liveSelectiveColorOverlay" style="position: absolute; inset: 0; pointer-events: none; z-index: 7; display: none;"></div>
+
         <!-- Real-time CapCut Blend Mode Overlay Player -->
         <video id="liveOverlayPlayer" loop playsinline muted style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; mix-blend-mode: screen; opacity: 0; transition: opacity 0.25s ease; z-index: 8;"></video>
 
@@ -1670,17 +1691,42 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Panel 4: 3D Color LUT -->
+        <!-- Panel 4: 3D Color LUT & Selective Isolation -->
         <div class="drawer-panel" id="panelColor" style="display: none;">
           <div class="drawer-controls-grid">
             <div class="control-item">
-              <span class="control-label">Cinematic Grading Preset</span>
+              <span class="control-label">Cinematic Color Palette &amp; Grading</span>
               <select class="nle-select" id="colorGradeSelect" onchange="applyLiveFilters()">
-                <option value="cinematic" selected>Cinematic S-Curve (Warm skin, cool shadows)</option>
-                <option value="podcast">Modern Tech Podcast (High vibrance &amp; pop)</option>
-                <option value="vintage">Vintage 35mm (Muted organic tones)</option>
-                <option value="noir">Noir Monochrome (High contrast black &amp; white)</option>
+                <option value="cinematic" selected>🎬 Cinematic S-Curve (Warm skin, teal shadows)</option>
+                <option value="oppenheimer_mono">⚛️ Oppenheimer 70mm Monochrome (IMAX Los Alamos B&amp;W)</option>
+                <option value="oppenheimer_fission">🔥 Oppenheimer Trinity Fission (Scorched Amber &amp; Gold)</option>
+                <option value="sherlock_noir">🕵️ Sherlock Holmes Victorian Noir (Baker St. Fog &amp; Cold Teal)</option>
+                <option value="sherlock_gaslamp">🏮 Sherlock Gaslamp Sepia (1890s Warm Lantern Glow)</option>
+                <option value="vintage_technicolor">🎨 1930s 3-Strip Technicolor (Vivid Dye-Transfer Pop)</option>
+                <option value="podcast">🎙️ Modern Tech Podcast (High vibrance &amp; pop)</option>
+                <option value="vintage">🎞️ Vintage 35mm (Muted organic tones)</option>
+                <option value="noir">🌑 Classic Film Noir (High contrast monochrome)</option>
                 <option value="none">Clean / Neutral (Raw sensor pass-through)</option>
+              </select>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Target Speaker to Track</span>
+              <select class="nle-select" id="targetPersonSelect" onchange="applyLiveFilters(); reAnalyzeFootage();">
+                <option value="primary" selected>🎯 Primary Speaker (Main Talking Head)</option>
+                <option value="left">👤 Speaker 1 (Left Side)</option>
+                <option value="right">👤 Speaker 2 (Right Side)</option>
+                <option value="center">👤 Center Speaker</option>
+              </select>
+            </div>
+            <div class="control-item">
+              <span class="control-label">Selective Color Isolation (Subject Splash)</span>
+              <select class="nle-select" id="selectiveColorSelect" onchange="applyLiveFilters()">
+                <option value="none" selected>Off (Grade Whole Frame)</option>
+                <option value="person_color_bg_mono">👤 Tracked Person in Natural Color, Background in Oppenheimer B&amp;W</option>
+                <option value="person_color_bg_sherlock">👤 Tracked Person in Color, Background in Sherlock Victorian Fog</option>
+                <option value="person_color_bg_oppenheimer">👤 Tracked Person in Color, Background in Atomic Fission Amber</option>
+                <option value="person_grade_only">🎨 Apply Color Grade ONLY to Tracked Person</option>
+                <option value="bg_grade_only">🖼️ Apply Color Grade ONLY to Background (Behind Person)</option>
               </select>
             </div>
             <div class="control-item">
@@ -1810,107 +1856,37 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Panel: CapCut Blend Mode Overlay Engine -->
+        <!-- Panel: CapCut Blend Mode Overlay Engine (54+ Studio Textures) -->
         <div class="drawer-panel" id="panelOverlays" style="display: none;">
           <div class="drawer-controls-grid">
             <div class="control-item" style="grid-column: 1 / -1;">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
-                <span class="control-label"><i class="fa-solid fa-wand-magic-sparkles"></i> CapCut Blend Mode Overlay Engine</span>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                <span class="control-label"><i class="fa-solid fa-wand-magic-sparkles"></i> 54+ Studio Overlays &amp; Textures</span>
                 <span style="font-size: 0.72rem; color: var(--accent-neon); font-weight: 700;" id="activeOverlayBadge">No Overlay Active</span>
               </div>
-              <p style="font-size: 0.76rem; color: var(--text-muted); margin: 0 0 0.65rem 0; line-height: 1.4;">
-                Looping cinematic textures blended seamlessly over footage using FFmpeg screen &amp; addition blend modes (Film burns, light leaks, 35mm grain, and lens flares).
+              <p style="font-size: 0.76rem; color: var(--text-muted); margin: 0 0 0.5rem 0; line-height: 1.4;">
+                Looping vintage films, Oppenheimer atomic fission, Sherlock Victorian mist, sci-fi telemetry HUDs, and light leaks.
               </p>
-              <div class="overlay-cards-scroll">
+              
+              <!-- Category Filter Tabs -->
+              <div class="overlay-category-bar" style="display: flex; gap: 0.35rem; overflow-x: auto; padding-bottom: 0.4rem; margin-bottom: 0.5rem;">
+                <button type="button" class="cat-pill active" onclick="filterOverlayCategory('All', this)">All (54)</button>
+                <button type="button" class="cat-pill" onclick="filterOverlayCategory('Oppenheimer &amp; Atomic', this)">⚛️ Oppenheimer</button>
+                <button type="button" class="cat-pill" onclick="filterOverlayCategory('Sherlock &amp; Victorian', this)">🕵️ Sherlock</button>
+                <button type="button" class="cat-pill" onclick="filterOverlayCategory('Vintages &amp; Old Films', this)">🎞️ Vintages</button>
+                <button type="button" class="cat-pill" onclick="filterOverlayCategory('Light Leaks &amp; Burns', this)">🔥 Leaks &amp; Burns</button>
+                <button type="button" class="cat-pill" onclick="filterOverlayCategory('Sci-Fi &amp; Cyberpunk', this)">⚡ Sci-Fi &amp; HUD</button>
+                <button type="button" class="cat-pill" onclick="filterOverlayCategory('Atmosphere &amp; Particles', this)">✨ Atmosphere</button>
+              </div>
+
+              <!-- Instant Search Filter -->
+              <input type="text" class="nle-input" id="overlaySearchInput" placeholder="🔍 Search overlays (e.g. fire, fog, 16mm, laser, rain)..." oninput="searchOverlays(this.value)" style="margin-bottom: 0.6rem; font-size: 0.78rem; padding: 0.4rem 0.6rem; width: 100%; border: 1px solid var(--border-subtle); border-radius: 6px; background: var(--bg-surface); color: var(--text-main);" />
+
+              <div class="overlay-cards-scroll" id="overlayCardsContainer">
                 <div class="overlay-thumb-card active" id="ovCard_none" onclick="selectOverlay('none', 'No Overlay')">
                   <div class="ov-thumb-icon"><i class="fa-solid fa-ban"></i></div>
                   <div class="ov-thumb-name">None</div>
                   <div class="ov-thumb-tag">Clean</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_light_leak_01" onclick="selectOverlay('light_leak_01', 'Golden Flare Leak')">
-                  <div class="ov-thumb-icon" style="color: #F59E0B;"><i class="fa-solid fa-sun"></i></div>
-                  <div class="ov-thumb-name">Golden Leak 1</div>
-                  <div class="ov-thumb-tag">Warm Flare</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_light_leak_02" onclick="selectOverlay('light_leak_02', 'Sunset Crimson Burst')">
-                  <div class="ov-thumb-icon" style="color: #EC4899;"><i class="fa-solid fa-sun-plant-wilt"></i></div>
-                  <div class="ov-thumb-name">Sunset Leak 2</div>
-                  <div class="ov-thumb-tag">Neon Crimson</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_film_dust_scratches" onclick="selectOverlay('film_dust_scratches', '16mm/35mm Dust & Scratches')">
-                  <div class="ov-thumb-icon" style="color: #A3E635;"><i class="fa-solid fa-film"></i></div>
-                  <div class="ov-thumb-name">Film Dust</div>
-                  <div class="ov-thumb-tag">16mm Grain</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_vhs_static_overlay" onclick="selectOverlay('vhs_static_overlay', '90s Retro VHS Static')">
-                  <div class="ov-thumb-icon" style="color: #38BDF8;"><i class="fa-solid fa-tape"></i></div>
-                  <div class="ov-thumb-name">VHS Static</div>
-                  <div class="ov-thumb-tag">Retro 90s</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_prism_bokeh" onclick="selectOverlay('prism_bokeh', 'Dreamy Prism Bokeh')">
-                  <div class="ov-thumb-icon" style="color: #C084FC;"><i class="fa-solid fa-gem"></i></div>
-                  <div class="ov-thumb-name">Prism Bokeh</div>
-                  <div class="ov-thumb-tag">Hexagonal</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_film_burn_01" onclick="selectOverlay('film_burn_01', 'Fiery Film Burn')">
-                  <div class="ov-thumb-icon" style="color: #F97316;"><i class="fa-solid fa-fire"></i></div>
-                  <div class="ov-thumb-name">Film Burn 1</div>
-                  <div class="ov-thumb-tag">Fiery Burst</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_film_burn_02" onclick="selectOverlay('film_burn_02', 'Edge Halation Burn')">
-                  <div class="ov-thumb-icon" style="color: #EF4444;"><i class="fa-solid fa-volcano"></i></div>
-                  <div class="ov-thumb-name">Halation Burn</div>
-                  <div class="ov-thumb-tag">Gate Halation</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_retro_crt_scanlines" onclick="selectOverlay('retro_crt_scanlines', 'Cyber CRT Scanlines')">
-                  <div class="ov-thumb-icon" style="color: #06B6D4;"><i class="fa-solid fa-tv"></i></div>
-                  <div class="ov-thumb-name">CRT Scanlines</div>
-                  <div class="ov-thumb-tag">Cyber Lines</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_lens_flare_anamorphic" onclick="selectOverlay('lens_flare_anamorphic', 'Anamorphic Flare Streak')">
-                  <div class="ov-thumb-icon" style="color: #00F0FF;"><i class="fa-solid fa-lightbulb"></i></div>
-                  <div class="ov-thumb-name">Anamorphic</div>
-                  <div class="ov-thumb-tag">Cyan Streak</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_golden_particles" onclick="selectOverlay('golden_particles', 'Floating Golden Particles')">
-                  <div class="ov-thumb-icon" style="color: #FBBF24;"><i class="fa-solid fa-sparkles"></i></div>
-                  <div class="ov-thumb-name">Golden Motes</div>
-                  <div class="ov-thumb-tag">Luxury Dust</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_glitch_digital" onclick="selectOverlay('glitch_digital', 'Cyber Digital Glitch')">
-                  <div class="ov-thumb-icon" style="color: #E11D48;"><i class="fa-solid fa-bug"></i></div>
-                  <div class="ov-thumb-name">RGB Glitch</div>
-                  <div class="ov-thumb-tag">Cyberpunk</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_vintage_super8" onclick="selectOverlay('vintage_super8', 'Super 8 Projector')">
-                  <div class="ov-thumb-icon" style="color: #D97706;"><i class="fa-solid fa-video"></i></div>
-                  <div class="ov-thumb-name">Super 8mm</div>
-                  <div class="ov-thumb-tag">Projector Bob</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_cyber_hud_matrix" onclick="selectOverlay('cyber_hud_matrix', 'Cyber Telemetry HUD')">
-                  <div class="ov-thumb-icon" style="color: #00F0FF;"><i class="fa-solid fa-crosshairs"></i></div>
-                  <div class="ov-thumb-name">Cyber HUD</div>
-                  <div class="ov-thumb-tag">Sci-Fi Telemetry</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_holo_matrix_grid" onclick="selectOverlay('holo_matrix_grid', 'Hologram Matrix Grid')">
-                  <div class="ov-thumb-icon" style="color: #10B981;"><i class="fa-solid fa-border-all"></i></div>
-                  <div class="ov-thumb-name">Holo Grid</div>
-                  <div class="ov-thumb-tag">3D Tron Floor</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_neural_circuit_core" onclick="selectOverlay('neural_circuit_core', 'Neural Circuit Core')">
-                  <div class="ov-thumb-icon" style="color: #A855F7;"><i class="fa-solid fa-microchip"></i></div>
-                  <div class="ov-thumb-name">Neural Core</div>
-                  <div class="ov-thumb-tag">Neon Circuits</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_tactical_sonar_radar" onclick="selectOverlay('tactical_sonar_radar', 'Tactical Sonar Radar')">
-                  <div class="ov-thumb-icon" style="color: #06B6D4;"><i class="fa-solid fa-radar"></i></div>
-                  <div class="ov-thumb-name">Sonar Radar</div>
-                  <div class="ov-thumb-tag">Tactical Sweep</div>
-                </div>
-                <div class="overlay-thumb-card" id="ovCard_quantum_particles_stream" onclick="selectOverlay('quantum_particles_stream', 'Quantum Particles Stream')">
-                  <div class="ov-thumb-icon" style="color: #38BDF8;"><i class="fa-solid fa-atom"></i></div>
-                  <div class="ov-thumb-name">Quantum Stream</div>
-                  <div class="ov-thumb-tag">Sci-Fi Bokeh</div>
                 </div>
               </div>
             </div>
@@ -2271,6 +2247,100 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     let currentTotalDur = 0;
     let activeDrawerPanel = null;
     let selectedOverlayEffect = 'none';
+    let allOverlaysList = [];
+    let activeOverlayCategory = 'All';
+
+    async function loadOverlaysCatalog() {
+      try {
+        const res = await fetch('/api/overlays');
+        const data = await res.json();
+        allOverlaysList = data.overlays || [];
+        renderOverlayCards();
+      } catch (err) {
+        console.warn('Could not fetch overlays catalog:', err);
+      }
+    }
+
+    function renderOverlayCards(filteredList) {
+      const container = document.getElementById('overlayCardsContainer');
+      if (!container) return;
+
+      const list = filteredList || (activeOverlayCategory === 'All' 
+        ? allOverlaysList 
+        : allOverlaysList.filter(o => o.category === activeOverlayCategory));
+
+      let html = `
+        <div class="overlay-thumb-card ${selectedOverlayEffect === 'none' ? 'active' : ''}" id="ovCard_none" onclick="selectOverlay('none', 'No Overlay')">
+          <div class="ov-thumb-icon"><i class="fa-solid fa-ban"></i></div>
+          <div class="ov-thumb-name">None</div>
+          <div class="ov-thumb-tag">Clean</div>
+        </div>
+      `;
+
+      list.forEach(o => {
+        let iconHtml = '<i class="fa-solid fa-wand-magic-sparkles"></i>';
+        let iconColor = '#00F0FF';
+        const cat = o.category || '';
+        if (cat.includes('Oppenheimer')) {
+          iconHtml = '<i class="fa-solid fa-atom"></i>';
+          iconColor = '#F59E0B';
+        } else if (cat.includes('Sherlock')) {
+          iconHtml = '<i class="fa-solid fa-magnifying-glass"></i>';
+          iconColor = '#38BDF8';
+        } else if (cat.includes('Vintage')) {
+          iconHtml = '<i class="fa-solid fa-film"></i>';
+          iconColor = '#A3E635';
+        } else if (cat.includes('Leaks') || cat.includes('Burns')) {
+          iconHtml = '<i class="fa-solid fa-fire"></i>';
+          iconColor = '#FB923C';
+        } else if (cat.includes('Sci-Fi')) {
+          iconHtml = '<i class="fa-solid fa-crosshairs"></i>';
+          iconColor = '#00F0FF';
+        } else if (cat.includes('Atmosphere')) {
+          iconHtml = '<i class="fa-solid fa-sparkles"></i>';
+          iconColor = '#E879F9';
+        }
+
+        const isAct = (selectedOverlayEffect === o.id) ? 'active' : '';
+        const shortName = o.title.replace('Oppenheimer ', '').replace('Sherlock ', '');
+        const escTitle = o.title.replace(/'/g, "\\'");
+        html += `
+          <div class="overlay-thumb-card ${isAct}" id="ovCard_${o.id}" onclick="selectOverlay('${o.id}', '${escTitle}')" title="${o.description}">
+            <div class="ov-thumb-icon" style="color: ${iconColor};">${iconHtml}</div>
+            <div class="ov-thumb-name">${shortName}</div>
+            <div class="ov-thumb-tag">${cat.split(' ')[0]}</div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function filterOverlayCategory(cat, btn) {
+      activeOverlayCategory = cat;
+      document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      const searchVal = document.getElementById('overlaySearchInput')?.value.trim().toLowerCase() || '';
+      if (searchVal) {
+        searchOverlays(searchVal);
+      } else {
+        renderOverlayCards();
+      }
+    }
+
+    function searchOverlays(query) {
+      const q = (query || '').toLowerCase().trim();
+      if (!q) {
+        renderOverlayCards();
+        return;
+      }
+      const filtered = allOverlaysList.filter(o => {
+        const matchCat = (activeOverlayCategory === 'All' || o.category === activeOverlayCategory);
+        const matchText = (o.title || '').toLowerCase().includes(q) || (o.description || '').toLowerCase().includes(q) || (o.id || '').toLowerCase().includes(q);
+        return matchCat && matchText;
+      });
+      renderOverlayCards(filtered);
+    }
 
     function selectOverlay(overlayId, title) {
       selectedOverlayEffect = overlayId;
@@ -2366,8 +2436,46 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         filterParts.push('contrast(1.12) brightness(1.04) saturate(1.28)');
       } else if (grade === 'vintage') {
         filterParts.push('contrast(1.04) brightness(0.98) saturate(0.82) sepia(0.24) hue-rotate(-8deg)');
-      } else if (grade === 'noir') {
-        filterParts.push('contrast(1.28) brightness(0.96) grayscale(1.0)');
+      } else if (grade === 'noir' || grade === 'oppenheimer_mono') {
+        filterParts.push('contrast(1.35) brightness(0.96) grayscale(1.0)');
+      } else if (grade === 'oppenheimer_fission') {
+        filterParts.push('contrast(1.28) brightness(1.02) saturate(1.35) sepia(0.28) hue-rotate(-15deg)');
+      } else if (grade === 'sherlock_noir') {
+        filterParts.push('contrast(1.18) brightness(0.96) saturate(0.55) sepia(0.12) hue-rotate(160deg)');
+      } else if (grade === 'sherlock_gaslamp') {
+        filterParts.push('contrast(1.14) brightness(0.98) saturate(0.75) sepia(0.38) hue-rotate(-20deg)');
+      } else if (grade === 'vintage_technicolor') {
+        filterParts.push('contrast(1.16) brightness(1.02) saturate(1.50)');
+      }
+
+      // Selective Color Isolation Live GPU Preview
+      const selColor = document.getElementById('selectiveColorSelect')?.value || 'none';
+      const targetP = document.getElementById('targetPersonSelect')?.value || 'primary';
+      const scOverlay = document.getElementById('liveSelectiveColorOverlay');
+      if (scOverlay) {
+        if (selColor === 'none') {
+          scOverlay.style.display = 'none';
+        } else {
+          scOverlay.style.display = 'block';
+          let px = 50;
+          if (targetP === 'left') px = 35;
+          else if (targetP === 'right') px = 65;
+
+          if (selColor === 'person_color_bg_mono') {
+            scOverlay.style.backdropFilter = 'grayscale(1) contrast(1.35) brightness(0.95)';
+          } else if (selColor === 'person_color_bg_sherlock') {
+            scOverlay.style.backdropFilter = 'contrast(1.15) saturate(0.50) sepia(0.35) hue-rotate(150deg)';
+          } else if (selColor === 'person_color_bg_oppenheimer') {
+            scOverlay.style.backdropFilter = 'contrast(1.28) saturate(1.35) sepia(0.40) hue-rotate(-15deg)';
+          } else if (selColor === 'bg_grade_only') {
+            scOverlay.style.backdropFilter = filterParts.join(' ') || 'none';
+          } else {
+            scOverlay.style.backdropFilter = 'grayscale(0.8) contrast(1.2)';
+          }
+          const maskStr = `radial-gradient(ellipse 30% 45% at ${px}% 48%, transparent 40%, black 80%)`;
+          scOverlay.style.webkitMaskImage = maskStr;
+          scOverlay.style.maskImage = maskStr;
+        }
       }
 
       // 2. Pro-Mist Highlight Diffusion Bloom FX
@@ -2953,6 +3061,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             input_path: inputPath,
             pacing: document.getElementById('pacingSelect').value,
             remove_fillers: document.getElementById('removeFillersToggle').checked,
+            target_person: document.getElementById('targetPersonSelect') ? document.getElementById('targetPersonSelect').value : 'primary',
             broll_dir: document.getElementById('brollFolderInput').value.trim() || null
           })
         });
@@ -3249,6 +3358,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         overlay_blend_mode: document.getElementById('overlayBlendModeSelect') ? document.getElementById('overlayBlendModeSelect').value : 'screen',
         overlay_opacity: document.getElementById('overlayOpacitySlider') ? parseFloat(document.getElementById('overlayOpacitySlider').value) / 100.0 : 0.85,
         overlay_target: document.getElementById('overlayTargetSelect') ? document.getElementById('overlayTargetSelect').value : 'fullscreen',
+        target_person: document.getElementById('targetPersonSelect') ? document.getElementById('targetPersonSelect').value : 'primary',
+        selective_color: document.getElementById('selectiveColorSelect') ? document.getElementById('selectiveColorSelect').value : 'none',
         vignette: document.getElementById('vignetteToggle') ? document.getElementById('vignetteToggle').checked : true,
         show_hud: document.getElementById('hudToggle') ? document.getElementById('hudToggle').checked : true,
         show_title: document.getElementById('showTitleToggle') ? document.getElementById('showTitleToggle').checked : true,
@@ -3336,6 +3447,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       closeExportModal();
       selectVideoSource(renderedOutputPath, 'Master_Cut.mp4');
     }
+
+    // Auto-load 54+ studio overlay presets catalog
+    window.addEventListener('DOMContentLoaded', loadOverlaysCatalog);
+    setTimeout(loadOverlaysCatalog, 500);
   </script>
 
 </body>
@@ -3518,6 +3633,14 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
             fname = path[len("/assets/overlays/"):]
             safe_fname = os.path.basename(fname)
             full_p = os.path.join("assets", "overlays", safe_fname)
+            if not os.path.isfile(full_p):
+                # Auto-synthesize on-the-fly if it's a known preset
+                engine = OverlayEngine()
+                target_id = os.path.splitext(safe_fname)[0]
+                preset = engine.get_preset_by_id(target_id)
+                if preset:
+                    engine.generate_preset(preset, full_p)
+
             if os.path.isfile(full_p):
                 try:
                     self.send_response(200)
@@ -3619,6 +3742,7 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                     tracker=tracker,
                     pacing_style=params.get("pacing", "dynamic"),
                     broll_manager=broll_mgr,
+                    target_person=params.get("target_person", "primary"),
                 )
                 shot_plans = director.plan_production(segments)
 
@@ -3683,6 +3807,9 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                     broll_dir = params.get("broll_dir")
                     broll_mgr = BRollManager(broll_dir) if (broll_dir and os.path.isdir(broll_dir)) else None
 
+                    target_person = params.get("target_person", "primary")
+                    selective_color = params.get("selective_color", "none")
+
                     director = CameraDirector(
                         tracker=tracker,
                         pacing_style=params.get("pacing", "dynamic"),
@@ -3690,6 +3817,7 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                         broll_manager=broll_mgr,
                         enable_freeze_frames=bool(params.get("freeze_frame", True)),
                         transition_style=params.get("transition", "flash"),
+                        target_person=target_person,
                     )
                     shot_plans = director.plan_production(segments)
 
@@ -3742,6 +3870,8 @@ class StudioHTTPHandler(http.server.BaseHTTPRequestHandler):
                         overlay_blend_mode=params.get("overlay_blend_mode") or params.get("overlay_blend", "screen"),
                         overlay_opacity=float(params.get("overlay_opacity", 0.85)),
                         overlay_target=params.get("overlay_target", "fullscreen"),
+                        target_person=target_person,
+                        selective_color=selective_color,
                         show_hud=bool(params.get("show_hud", True)),
                         show_title=bool(params.get("show_title", True)),
                         title_text=params.get("title_text") or params.get("title", "OMNICAM AI • MULTI-CAM PRODUCTION"),

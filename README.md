@@ -201,23 +201,57 @@ git pull origin master
 - **White Flash & Crash Zoom**: 0.08s flash and punch-in transitions between angle cuts.
 - **Dramatic 0.6s Freeze Frames**: Pauses on emphatic pauses with synthesized whoosh sound effects.
 
-### 3. ✨ Blend Mode Overlays (`--overlay` & `--overlay-target`)
-- **Sci-Fi & High-Tech HUD Suite**:
-  - `cyber_hud_matrix` (Futuristic targeting rings, telemetry grid & radar scan)
-  - `holo_matrix_grid` (3D cyber wireframe floor & wall matrix grid)
-  - `neural_circuit_core` (Glowing electronic circuit traces & neon data packets)
-  - `tactical_sonar_radar` (Circular sci-fi sonar sweep beam & range rings)
-  - `quantum_particles_stream` (Floating luminescent cyber dust bokeh stream)
-- **Cinematic Film Suite**:
-  - `light_leak_01` (Golden flare edge leaks)
-  - `light_leak_02` (Sunset crimson burst)
-  - `film_dust_scratches` (16mm/35mm organic dust specks)
-  - `vhs_static_overlay` (90s retro tracking CRT static)
-  - `prism_bokeh` (Floating optical prism bokeh)
-  - `film_burn_01` (Fiery amber film burn)
-  - `vintage_super8` (Super 8mm projector gate)
-- **Subject-Isolation Background Masking** (`--overlay-target background_only`):
-  - In Web Studio and FFmpeg rendering, puts the high-tech matrix and telemetry overlays **behind the speaker**, keeping the face, hair, and torso completely clean and untouched.
+### 3. ✨ 54+ Studio Blend Mode Overlays (`--overlay` & `--overlay-target`)
+- **⚛️ Oppenheimer & Atomic Suite (8 Presets)**:
+  - `oppenheimer_trinity_fire`: Scorched fiery nuclear fission embers & atmospheric plasma flames (Trinity test).
+  - `oppenheimer_imax_mono`: IMAX 70mm high-contrast black & white silver halide grain & negative gate breathing.
+  - `oppenheimer_radiation_glow`: Luminous Cherenkov radiation ultraviolet-cyan reactor pulse bloom.
+  - `oppenheimer_quantum_waves`: Subatomic wave-particle interference fringes & probability ripples.
+  - `oppenheimer_atomic_sparks`: Swirling uranium core fission sparks, radiant embers & glowing isotopes.
+  - `oppenheimer_los_alamos_dust`: Arid New Mexico desert windblown micro-grit & thermal sun haze.
+  - `oppenheimer_fission_burst`: Strobe atomic chain-reaction flashes & expanding fireball luminance.
+  - `oppenheimer_trinity_shockwave`: Supersonic atmospheric pressure wave refraction ring.
+- **🕵️ Sherlock & Victorian Noir Suite (8 Presets)**:
+  - `sherlock_baker_st_fog`: Dense London Thames river fog & 1890s coal-smoke mist rolling across streets.
+  - `sherlock_gaslamp_glow`: Flickering Victorian street gaslamp amber flare, soot halo & warm cobblestone glow.
+  - `sherlock_cobblestone_rain`: Moody vertical English drizzle, rain streaks & dark wet pavement reflections.
+  - `sherlock_pipe_smoke`: Graceful tobacco smoke tendrils drifting lazily through the study.
+  - `sherlock_victorian_dust`: Suspended vintage room dust motes illuminated by leaded window sunbeams.
+  - `sherlock_candlelight_flicker`: Intimate 221B Baker Street oscillating candlelight glow & breathing shadows.
+  - `sherlock_wet_carriage_glass`: Rain droplets trickling down the glass of a Victorian hansom cab window.
+  - `sherlock_antique_parchment`: Aged yellowed manuscript texture, tea-stain border vignette & fiber grain.
+- **🎞️ Vintages & Old Films Suite (12 Presets)**:
+  - `vintage_super8`: Super 8mm mechanical projector gate jitter, corner vignette & optical jitter.
+  - `vintage_16mm_grain`: French New Wave 16mm Kodak Tri-X silver halide organic grain.
+  - `vintage_35mm_dust`: 35mm cinema reel scratches, black hair artifacts & organic dust specks.
+  - `vintage_nitrate_burn`: 1920s flammable nitrate film edge melting & burning amber flare.
+  - `vintage_silent_1920`: Silent cinema gate weave, frame stutter & optical vignetting.
+  - `vintage_technicolor_leak`: 3-strip dye transfer magenta/cyan optical light bleed.
+  - `vintage_kodachrome_64`: 1970s Kodachrome slide color bleeding & golden sunlight wash.
+  - `vintage_film_leader`: Mechanical countdown leader frame flash, sprockets & crosshairs.
+  - `vintage_damaged_tape`: VHS magnetic oxide tape loss, tracking jitter & line dropouts.
+  - `vintage_polaroid_fade`: 1980s instant film chemical dispersion border & pastel wash.
+  - `vintage_sepia_saloon`: 19th-century daguerreotype antique sepia toning & silver tarnish.
+  - `vintage_drive_in_grain`: Outdoor drive-in projector light dust beam & reel flutter.
+- **🔥 Light Leaks, Film Burns & Prisms (10 Presets)**:
+  - `light_leak_01`, `light_leak_02`, `light_leak_warm_radial`, `light_leak_cyan_streak`
+  - `film_burn_01`, `film_burn_02`, `film_burn_slow_amber`, `film_burn_solar_white`
+  - `prism_bokeh`, `prism_refraction_halo`
+- **⚡ Sci-Fi & Cyberpunk Telemetry (10 Presets)**:
+  - `cyber_hud_matrix`, `holo_matrix_grid`, `neural_circuit_core`, `tactical_sonar_radar`, `quantum_particles_stream`
+  - `glitch_digital`, `retro_crt_scanlines`, `cyber_matrix_rain`, `cyber_hex_shield`, `lens_flare_anamorphic`
+- **✨ Atmosphere & Elements (6 Presets)**:
+  - `golden_particles`, `cinema_smoke_fog`, `snow_frost_drift`, `ember_fire_sparks`, `lens_dirt_grime`, `stage_concert_lasers`
+- **👤 Subject-Isolation Masking & Person Tracking (`--target-person`, `--selective-color`, `--overlay-target`)**:
+  - **Track Specific Speaker**: Select between `primary` (main speaker), `left` / `person_1`, `right` / `person_2`, or `center`.
+  - **Selective Color Isolation (Sin City / Oppenheimer Splash)**:
+    - `person_color_bg_mono`: Tracked speaker stays in natural color while background & others turn into Oppenheimer 70mm B&W.
+    - `person_color_bg_sherlock`: Tracked speaker stays in natural color while background turns into Victorian foggy sepia.
+    - `person_color_bg_oppenheimer`: Tracked speaker stays in color while background turns into atomic fission amber.
+    - `person_grade_only`: Apply color grade ONLY to the tracked person.
+    - `bg_grade_only`: Apply color grade ONLY to the background behind the speaker.
+  - **Behind-the-Speaker Overlay Placement** (`--overlay-target background_only`):
+    - Places the high-tech matrix, film burn, or vintage dust behind the speaker, leaving their face and body untouched.
 
 ### 4. 🎛️ Visual Effects (FX) Suite
 - **Pro-Mist Diffusion Bloom** (`--fx-glow promist`): Creamy highlights & smooth skin tones.

@@ -133,9 +133,38 @@ def main():
     )
     parser.add_argument(
         "--color",
-        choices=["cinematic", "podcast", "vintage", "none"],
+        choices=[
+            "cinematic",
+            "podcast",
+            "vintage",
+            "oppenheimer_mono",
+            "oppenheimer_fission",
+            "sherlock_noir",
+            "sherlock_gaslamp",
+            "vintage_technicolor",
+            "none",
+        ],
         default="cinematic",
-        help="Color grading profile (default: cinematic)",
+        help="Color grading profile (default: cinematic). Includes Oppenheimer B&W, Fission, Sherlock Noir, Gaslamp & Technicolor.",
+    )
+    parser.add_argument(
+        "--target-person",
+        choices=["primary", "left", "right", "person_1", "person_2", "center"],
+        default="primary",
+        help="Target speaker to frame and isolate in multi-person videos (default: primary).",
+    )
+    parser.add_argument(
+        "--selective-color",
+        choices=[
+            "none",
+            "person_color_bg_mono",
+            "person_color_bg_sherlock",
+            "person_color_bg_oppenheimer",
+            "person_grade_only",
+            "bg_grade_only",
+        ],
+        default="none",
+        help="Selective color isolation mode: isolate tracked speaker in full color while grading background (Oppenheimer B&W, Sherlock fog, or Fission amber).",
     )
     parser.add_argument(
         "--resolution",
@@ -467,6 +496,7 @@ def main():
         enable_freeze_frames=args.freeze_frame,
         freeze_duration=args.freeze_dur,
         transition_style=args.transition,
+        target_person=args.target_person,
     )
     shot_plans = director.plan_production(segments)
 
@@ -533,6 +563,8 @@ def main():
         overlay_blend_mode=args.overlay_blend,
         overlay_opacity=args.overlay_opacity,
         overlay_target=args.overlay_target,
+        target_person=args.target_person,
+        selective_color=args.selective_color,
         force_chunk_mode=args.chunk_mode,
     )
 
