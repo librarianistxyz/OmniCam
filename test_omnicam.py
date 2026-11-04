@@ -361,6 +361,52 @@ def run_tests():
         assert "shots" in analysis and len(analysis["shots"]) == 3
         print(f"  [✓] Web API /api/analyze returned {len(analysis['shots'])} timeline shots successfully.")
 
+        # 8. Test CapCut Blend Mode Overlay Engine
+        print("\n[Test 7] Testing CapCut Blend Mode Overlay Engine...")
+        from omnicam.overlay_engine import OverlayEngine
+        ov_engine = OverlayEngine("assets/overlays")
+        ov_list = ov_engine.list_available_overlays()
+        assert len(ov_list) >= 12, f"Expected at least 12 overlays, found {len(ov_list)}"
+        print(f"  [✓] OverlayEngine verified {len(ov_list)} looping video textures in assets/overlays.")
+
+        # Test overlay API endpoint
+        req_ov = urllib.request.urlopen("http://localhost:8899/api/overlays")
+        ov_api_data = json.loads(req_ov.read().decode("utf-8"))
+        assert "overlays" in ov_api_data and len(ov_api_data["overlays"]) >= 12
+        print(f"  [✓] Web API /api/overlays verified with {len(ov_api_data['overlays'])} presets.")
+
+        # Test filtergraph construction
+        filter_lines, out_label = OverlayEngine.build_blend_filtergraph(
+            base_video_label="[v_in]",
+            overlay_input_idx=1,
+            blend_mode="screen",
+            opacity=0.85,
+            target_width=1280,
+            target_height=720,
+            output_label="v_out",
+        )
+        assert any("blend=all_mode='screen':all_opacity=0.85" in line for line in filter_lines)
+        assert out_label == "[v_out]"
+        print("  [✓] Verified FFmpeg blend=all_mode='screen':all_opacity=0.85 filtergraph generation.")
+
+        # Test rendering video with light_leak_01 screen overlay
+        ov_render_out = os.path.join(tmp_dir, "overlay_test_master.mp4")
+        ov_render_engine = RenderEngine(
+            input_vid,
+            config=RenderConfig(
+                target_width=1280,
+                target_height=720,
+                overlay_effect="light_leak_01",
+                overlay_blend_mode="screen",
+                overlay_opacity=0.85,
+                preset="ultrafast",
+            ),
+        )
+        ov_render_file = ov_render_engine.render(shot_plans[:1], ov_render_out)
+        assert os.path.isfile(ov_render_file)
+        assert os.path.getsize(ov_render_file) > 1000
+        print(f"  [✓] Successfully rendered video with Golden Light Leak screen overlay: {ov_render_file}")
+
     print("\n" + "=" * 65)
     print(" [✓] ALL UNIT & INTEGRATION TESTS PASSED WITH 100% SUCCESS")
     print("=" * 65)
